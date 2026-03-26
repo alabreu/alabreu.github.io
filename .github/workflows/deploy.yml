@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mtg-deck-builder/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mtg-deck-builder
+
+      - name: Build
+        run: npm run build
+        working-directory: mtg-deck-builder
+
+      - name: Prepare site
+        run: |
+          mkdir -p _site/mtg-deck-builder
+          rsync -av \
+            --exclude='mtg-deck-builder' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='_site' \
+            --exclude='*.tar' \
+            . _site/
+          cp -r mtg-deck-builder/dist/* _site/mtg-deck-builder/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
