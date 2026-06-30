@@ -338,7 +338,7 @@ export default function NewDeck() {
                 onChange={(e) => setCommanderQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  fontSize: '15px',
+                  fontSize: '16px',
                   fontFamily: 'inherit',
                   color: 'var(--text-primary)',
                   backgroundColor: 'var(--surface-1)',
