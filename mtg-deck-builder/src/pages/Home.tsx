@@ -351,7 +351,6 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '12px',
-                marginBottom: '16px',
               }}
             >
               <AnimatePresence>
@@ -367,31 +366,28 @@ export default function Home() {
                   </motion.div>
                 ))}
               </AnimatePresence>
-            </motion.div>
 
-            {/* New deck button */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <button
+              {/* New deck silhouette card */}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: decks.length * 0.05 + 0.05 }}
+                whileTap={{ scale: 0.97, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
                 onClick={() => navigate('/new-deck')}
                 style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: 'transparent',
-                  border: '1px dashed var(--border-default)',
+                  minHeight: '160px',
                   borderRadius: 'var(--radius-lg)',
-                  cursor: 'pointer',
+                  border: '1px dashed var(--border-default)',
+                  backgroundColor: 'transparent',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
+                  cursor: 'pointer',
                   color: 'var(--text-muted)',
-                  fontSize: '14px',
                   fontFamily: 'inherit',
-                  fontWeight: 500,
+                  padding: 0,
                   transition: 'border-color 0.15s, color 0.15s, background-color 0.15s',
                 }}
                 onMouseEnter={(e) => {
@@ -405,9 +401,11 @@ export default function Home() {
                   e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
-                <Plus size={16} />
-                Novo Deck
-              </button>
+                <Plus size={22} strokeWidth={1.5} />
+                <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Novo deck
+                </span>
+              </motion.button>
             </motion.div>
           </>
         )}
