@@ -323,7 +323,7 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: '0 16px 32px' }}>
+      <main style={{ flex: 1, padding: '0 16px 32px', display: 'flex', flexDirection: 'column' }}>
         {decks.length === 0 ? (
           /* Empty state */
           <motion.div
@@ -331,30 +331,16 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             style={{
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '20px',
-              padding: '60px 24px',
+              padding: '24px',
               textAlign: 'center',
             }}
           >
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: 'var(--radius-xl)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '36px',
-              }}
-            >
-              🃏
-            </div>
             <div>
               <h2
                 style={{
@@ -372,7 +358,7 @@ export default function Home() {
               </p>
             </div>
             <Button
-              variant="primary"
+              variant="white"
               size="lg"
               leftIcon={<Plus size={18} />}
               onClick={() => setNewDeckSheetOpen(true)}
