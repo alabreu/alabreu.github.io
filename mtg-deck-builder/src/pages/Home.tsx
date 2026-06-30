@@ -253,8 +253,8 @@ export default function Home() {
       {/* Header */}
       <header
         style={{
-          padding: '20px 20px 0',
-          paddingTop: 'max(20px, env(safe-area-inset-top))',
+          padding: '0 20px 0',
+          paddingTop: 'max(56px, calc(env(safe-area-inset-top) + 20px))',
         }}
       >
         <motion.div
@@ -262,16 +262,18 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
             <div>
               <h1
                 style={{
-                  fontSize: '28px',
+                  fontFamily: "'Fraunces', serif",
+                  fontVariationSettings: "'opsz' 144, 'wght' 800",
                   fontWeight: 800,
+                  fontSize: '34px',
                   color: 'var(--text-primary)',
-                  letterSpacing: '-0.04em',
-                  margin: '0 0 2px 0',
-                  lineHeight: 1.1,
+                  letterSpacing: '-0.02em',
+                  margin: '0 0 3px 0',
+                  lineHeight: 1.05,
                 }}
               >
                 My decks
@@ -292,8 +294,8 @@ export default function Home() {
             <button
               onClick={() => setMenuOpen(true)}
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
                 backgroundColor: 'var(--surface-2)',
                 border: '1px solid var(--border-default)',
@@ -314,7 +316,7 @@ export default function Home() {
                 e.currentTarget.style.borderColor = 'var(--border-default)';
               }}
             >
-              <User size={17} />
+              <User size={18} />
             </button>
           </div>
         </motion.div>
