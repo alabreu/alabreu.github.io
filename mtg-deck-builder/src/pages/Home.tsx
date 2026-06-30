@@ -267,8 +267,8 @@ export default function Home() {
               <h1
                 style={{
                   fontFamily: "'Fraunces', serif",
-                  fontVariationSettings: "'opsz' 144, 'wght' 900",
-                  fontWeight: 900,
+                  fontVariationSettings: "'opsz' 144, 'wght' 800",
+                  fontWeight: 800,
                   fontSize: '34px',
                   color: 'var(--text-primary)',
                   letterSpacing: '-0.01em',
