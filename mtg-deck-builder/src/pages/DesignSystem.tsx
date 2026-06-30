@@ -200,6 +200,9 @@ export default function DesignSystem() {
               <Button variant="danger" size="md" leftIcon={<AlertTriangle size={14} />}>
                 Danger
               </Button>
+              <Button variant="white" size="md">
+                White
+              </Button>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
               <Button variant="primary" size="sm">
