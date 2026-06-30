@@ -265,7 +265,7 @@ export function CardBottomSheet({
                 border: '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-md)',
                 padding: '0 36px 0 12px',
-                fontSize: '14px',
+                fontSize: '16px',
                 fontFamily: 'inherit',
                 cursor: 'pointer',
                 appearance: 'none',
