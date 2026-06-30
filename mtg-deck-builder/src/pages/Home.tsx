@@ -1,11 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, Sparkles, User, Palette, ChevronRight as MenuArrow } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, Palette, ChevronRight as MenuArrow } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
 import { Button } from '../design-system/components/Button';
-import { Input } from '../design-system/components/Input';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { Badge } from '../design-system/components/Badge';
@@ -215,31 +214,9 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
 }
 
 export default function Home() {
-  const { decks, createDeck, deleteDeck } = useDeckStore();
+  const { decks, deleteDeck } = useDeckStore();
   const navigate = useNavigate();
-  const [newDeckSheetOpen, setNewDeckSheetOpen] = React.useState(false);
-  const [newDeckName, setNewDeckName] = React.useState('');
-  const [nameError, setNameError] = React.useState('');
   const [menuOpen, setMenuOpen] = React.useState(false);
-
-  function handleCreateDeck() {
-    const trimmed = newDeckName.trim();
-    if (!trimmed) {
-      setNameError('Por favor, insira um nome para o deck');
-      return;
-    }
-    const deck = createDeck(trimmed);
-    setNewDeckSheetOpen(false);
-    setNewDeckName('');
-    setNameError('');
-    navigate(`/deck/${deck.id}`);
-  }
-
-  function handleSheetClose() {
-    setNewDeckSheetOpen(false);
-    setNewDeckName('');
-    setNameError('');
-  }
 
   return (
     <div
@@ -361,7 +338,7 @@ export default function Home() {
               variant="white"
               size="lg"
               leftIcon={<Plus size={18} />}
-              onClick={() => setNewDeckSheetOpen(true)}
+              onClick={() => navigate('/new-deck')}
             >
               Criar Primeiro Deck
             </Button>
@@ -399,7 +376,7 @@ export default function Home() {
               transition={{ delay: 0.2 }}
             >
               <button
-                onClick={() => setNewDeckSheetOpen(true)}
+                onClick={() => navigate('/new-deck')}
                 style={{
                   width: '100%',
                   padding: '14px',
@@ -537,57 +514,6 @@ export default function Home() {
         </div>
       </BottomSheet>
 
-      {/* New Deck Bottom Sheet */}
-      <BottomSheet
-        isOpen={newDeckSheetOpen}
-        onClose={handleSheetClose}
-        title="Novo Deck"
-      >
-        <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              borderRadius: 'var(--radius-md)',
-              display: 'flex',
-              gap: '8px',
-              alignItems: 'flex-start',
-            }}
-          >
-            <Sparkles size={15} style={{ color: 'var(--accent)', marginTop: '1px', flexShrink: 0 }} />
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Dê um nome ao seu deck. Depois, busque cartas e defina seu Comandante.
-            </p>
-          </div>
-
-          <Input
-            label="Nome do Deck"
-            placeholder="Ex: Atraxa Proliferação"
-            value={newDeckName}
-            onChange={(e) => {
-              setNewDeckName(e.target.value);
-              if (nameError) setNameError('');
-            }}
-            error={nameError}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateDeck();
-            }}
-            autoFocus
-          />
-
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            leftIcon={<Plus size={18} />}
-            onClick={handleCreateDeck}
-            disabled={!newDeckName.trim()}
-          >
-            Criar Deck
-          </Button>
-        </div>
-      </BottomSheet>
     </div>
   );
 }
