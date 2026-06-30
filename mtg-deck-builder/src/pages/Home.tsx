@@ -267,12 +267,12 @@ export default function Home() {
               <h1
                 style={{
                   fontFamily: "'Fraunces', serif",
-                  fontVariationSettings: "'opsz' 144, 'wght' 800",
-                  fontWeight: 800,
+                  fontVariationSettings: "'opsz' 144, 'wght' 900",
+                  fontWeight: 900,
                   fontSize: '34px',
                   color: 'var(--text-primary)',
-                  letterSpacing: '-0.02em',
-                  margin: '0 0 3px 0',
+                  letterSpacing: '-0.01em',
+                  margin: '0 0 5px 0',
                   lineHeight: 1.05,
                 }}
               >
@@ -280,7 +280,7 @@ export default function Home() {
               </h1>
               <p
                 style={{
-                  fontSize: '13px',
+                  fontSize: '14px',
                   color: 'var(--text-muted)',
                   margin: 0,
                   letterSpacing: '-0.01em',
