@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'white';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -41,6 +41,11 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     color: 'var(--error)',
     border: '1px solid rgba(248, 113, 113, 0.25)',
   },
+  white: {
+    backgroundColor: '#ffffff',
+    color: '#0f0f0f',
+    border: '1px solid transparent',
+  },
 };
 
 const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
@@ -57,6 +62,9 @@ const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   danger: {
     backgroundColor: 'rgba(248, 113, 113, 0.2)',
+  },
+  white: {
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
   },
 };
 
