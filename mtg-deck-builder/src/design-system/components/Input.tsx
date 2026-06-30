@@ -11,9 +11,9 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
 }
 
 const sizeConfig = {
-  sm: { height: '32px', fontSize: '13px', padding: '0 10px', iconSize: 14 },
-  md: { height: '38px', fontSize: '14px', padding: '0 12px', iconSize: 16 },
-  lg: { height: '44px', fontSize: '15px', padding: '0 14px', iconSize: 18 },
+  sm: { height: '32px', fontSize: '16px', padding: '0 10px', iconSize: 14 },
+  md: { height: '38px', fontSize: '16px', padding: '0 12px', iconSize: 16 },
+  lg: { height: '44px', fontSize: '16px', padding: '0 14px', iconSize: 18 },
 };
 
 export function Input({
