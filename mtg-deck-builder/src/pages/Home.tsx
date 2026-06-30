@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Sparkles, User, Palette, ChevronRight as MenuArrow } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -220,6 +220,7 @@ export default function Home() {
   const [newDeckSheetOpen, setNewDeckSheetOpen] = React.useState(false);
   const [newDeckName, setNewDeckName] = React.useState('');
   const [nameError, setNameError] = React.useState('');
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   function handleCreateDeck() {
     const trimmed = newDeckName.trim();
@@ -261,47 +262,61 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '22px' }}>🃏</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div>
               <h1
                 style={{
-                  fontSize: '20px',
+                  fontSize: '28px',
                   fontWeight: 800,
                   color: 'var(--text-primary)',
                   letterSpacing: '-0.04em',
-                  margin: 0,
+                  margin: '0 0 2px 0',
+                  lineHeight: 1.1,
                 }}
               >
-                MTG Deck Builder
+                my decks
               </h1>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  margin: 0,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
+              </p>
             </div>
+
+            {/* Avatar button */}
             <button
-              onClick={() => navigate('/design')}
+              onClick={() => setMenuOpen(true)}
               style={{
-                background: 'none',
-                border: 'none',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--surface-2)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 cursor: 'pointer',
-                color: 'var(--text-muted)',
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-sm)',
-                fontFamily: 'inherit',
+                color: 'var(--text-secondary)',
+                flexShrink: 0,
+                transition: 'background-color 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--surface-3)';
+                e.currentTarget.style.borderColor = 'var(--border-strong)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--surface-2)';
+                e.currentTarget.style.borderColor = 'var(--border-default)';
               }}
             >
-              Design
+              <User size={17} />
             </button>
           </div>
-          <p
-            style={{
-              fontSize: '13px',
-              color: 'var(--text-muted)',
-              margin: '0 0 20px 0',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Commander Deck Builder — {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
-          </p>
         </motion.div>
       </header>
 
@@ -432,6 +447,56 @@ export default function Home() {
           </>
         )}
       </main>
+
+      {/* Menu Bottom Sheet */}
+      <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
+        <div style={{ padding: '8px 0 24px' }}>
+          <button
+            onClick={() => { setMenuOpen(false); navigate('/design'); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-2)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Palette size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Design System
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Componentes e tokens visuais
+              </p>
+            </div>
+            <MenuArrow size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          </button>
+        </div>
+      </BottomSheet>
 
       {/* New Deck Bottom Sheet */}
       <BottomSheet
