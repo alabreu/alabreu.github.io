@@ -274,7 +274,7 @@ export default function Home() {
                   lineHeight: 1.1,
                 }}
               >
-                my decks
+                My decks
               </h1>
               <p
                 style={{
