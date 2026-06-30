@@ -7,53 +7,70 @@ interface ManaSymbolProps {
   style?: React.CSSProperties;
 }
 
-const colorConfig: Record<
-  ManaColor,
-  { bg: string; text: string; label: string }
-> = {
-  W: { bg: 'var(--mana-w)', text: '#1a1a1a', label: 'W' },
-  U: { bg: 'var(--mana-u)', text: '#ffffff', label: 'U' },
-  B: { bg: 'var(--mana-b)', text: '#ffffff', label: 'B' },
-  R: { bg: 'var(--mana-r)', text: '#ffffff', label: 'R' },
-  G: { bg: 'var(--mana-g)', text: '#ffffff', label: 'G' },
-  C: { bg: 'var(--mana-c)', text: '#1a1a1a', label: 'C' },
+const fallbackConfig: Record<ManaColor, { bg: string; text: string }> = {
+  W: { bg: 'var(--mana-w)', text: '#1a1a1a' },
+  U: { bg: 'var(--mana-u)', text: '#ffffff' },
+  B: { bg: 'var(--mana-b)', text: '#ffffff' },
+  R: { bg: 'var(--mana-r)', text: '#ffffff' },
+  G: { bg: 'var(--mana-g)', text: '#ffffff' },
+  C: { bg: 'var(--mana-c)', text: '#1a1a1a' },
 };
 
 const sizeConfig = {
-  sm: { diameter: 18, fontSize: 9, fontWeight: 700 },
-  md: { diameter: 24, fontSize: 11, fontWeight: 700 },
-  lg: { diameter: 32, fontSize: 14, fontWeight: 700 },
+  sm: 18,
+  md: 24,
+  lg: 32,
 };
 
 export function ManaSymbol({ color, size = 'md', style }: ManaSymbolProps) {
-  const { bg, text, label } = colorConfig[color];
-  const { diameter, fontSize, fontWeight } = sizeConfig[size];
+  const diameter = sizeConfig[size];
+  const [errored, setErrored] = React.useState(false);
+
+  if (errored) {
+    const { bg, text } = fallbackConfig[color];
+    return (
+      <span
+        aria-label={`Mana ${color}`}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${diameter}px`,
+          height: `${diameter}px`,
+          borderRadius: '50%',
+          backgroundColor: bg,
+          color: text,
+          fontSize: `${Math.round(diameter * 0.46)}px`,
+          fontWeight: 700,
+          lineHeight: 1,
+          flexShrink: 0,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+          userSelect: 'none',
+          ...style,
+        }}
+      >
+        {color}
+      </span>
+    );
+  }
 
   return (
-    <span
-      aria-label={`Mana ${label}`}
+    <img
+      src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
+      alt={`Mana ${color}`}
+      draggable={false}
+      onError={() => setErrored(true)}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'inline-block',
         width: `${diameter}px`,
         height: `${diameter}px`,
         borderRadius: '50%',
-        backgroundColor: bg,
-        color: text,
-        fontSize: `${fontSize}px`,
-        fontWeight,
-        fontFamily: 'inherit',
-        lineHeight: 1,
-        letterSpacing: 0,
         flexShrink: 0,
         boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
         userSelect: 'none',
         ...style,
       }}
-    >
-      {label}
-    </span>
+    />
   );
 }
 
