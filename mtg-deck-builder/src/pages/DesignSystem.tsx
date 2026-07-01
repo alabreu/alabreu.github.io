@@ -66,6 +66,7 @@ export default function DesignSystem() {
     <div
       style={{
         minHeight: '100dvh',
+        width: '100%',
         backgroundColor: 'var(--bg-base)',
       }}
     >
@@ -110,7 +111,7 @@ export default function DesignSystem() {
         </Badge>
       </header>
 
-      <main style={{ padding: '24px 16px', maxWidth: '600px', margin: '0 auto' }}>
+      <main style={{ padding: '24px 16px', width: '100%', boxSizing: 'border-box' }}>
         {/* ── Colors ── */}
         <Section title="Colors — Backgrounds">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
@@ -139,7 +140,7 @@ export default function DesignSystem() {
         </Section>
 
         <Section title="Colors — Mana">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))', gap: '8px' }}>
             {(['W', 'U', 'B', 'R', 'G', 'C'] as ManaColor[]).map((c) => (
               <ColorSwatch key={c} cssVar={`--mana-${c.toLowerCase()}`} label={c} />
             ))}
