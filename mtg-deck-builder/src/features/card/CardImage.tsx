@@ -87,6 +87,7 @@ export function CardImage({
         onError={() => setError(true)}
         style={{
           width: '100%',
+          maxWidth: '100%',
           display: 'block',
           borderRadius: '4.8%',
           boxShadow: 'var(--shadow-md)',

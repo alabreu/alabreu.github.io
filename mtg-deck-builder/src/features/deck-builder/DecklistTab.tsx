@@ -68,9 +68,10 @@ function FlippableCard({
     <motion.div
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      style={{ minWidth: 0, overflow: 'hidden' }}
     >
       {/* 3-D flip container */}
-      <div style={{ perspective: '900px' }}>
+      <div style={{ perspective: '900px', overflow: 'hidden' }}>
         <motion.div
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}

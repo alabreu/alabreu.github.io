@@ -410,7 +410,7 @@ export function SearchTab({ deck }: SearchTabProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}
                 >
                   <div style={{ position: 'relative' }}>
                     <CardImage
