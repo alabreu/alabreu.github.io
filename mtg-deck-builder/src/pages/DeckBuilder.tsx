@@ -249,14 +249,14 @@ export default function DeckBuilder() {
           left: '16px',
           right: '16px',
           zIndex: 50,
-          borderRadius: '32px',
+          borderRadius: '999px',
           backgroundColor: 'rgba(18, 18, 20, 0.92)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
           display: 'flex',
-          padding: '6px',
+          padding: '4px',
         }}
       >
         {TABS.map((tab, i) => {
@@ -272,49 +272,24 @@ export default function DeckBuilder() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '4px',
-                padding: '6px 0 8px',
+                gap: '3px',
+                padding: '6px 0 5px',
                 backgroundColor: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 WebkitTapHighlightColor: 'transparent',
+                color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
+                transition: 'color 0.2s',
               }}
             >
-              <div
-                style={{
-                  position: 'relative',
-                  width: '56px',
-                  height: '32px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
-                  transition: 'color 0.2s',
-                }}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="floating-tab-highlight"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '16px',
-                      backgroundColor: 'rgba(212, 175, 55, 0.14)',
-                    }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                  />
-                )}
-                <Icon size={19} style={{ position: 'relative', zIndex: 1 }} />
-              </div>
+              <Icon size={18} />
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: active ? 600 : 400,
-                  color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
                   letterSpacing: '0.01em',
-                  transition: 'color 0.2s, font-weight 0.2s',
+                  lineHeight: 1,
                 }}
               >
                 {tab.label}
