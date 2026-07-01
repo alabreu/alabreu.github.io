@@ -1,10 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, List, Search, Bot } from 'lucide-react';
+import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useDeckStore } from '../store/useDeckStore';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
+import { BottomSheet } from '../design-system/components/BottomSheet';
+import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab } from '../features/deck-builder/CoachTab';
@@ -19,11 +21,13 @@ export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { decks } = useDeckStore();
+  const { decks, deleteDeck } = useDeckStore();
 
   const initialTab = Math.min(Number(searchParams.get('tab') ?? '0'), 2);
   const [activeTab, setActiveTab] = React.useState(initialTab);
   const [direction, setDirection] = React.useState(0);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -185,6 +189,26 @@ export default function DeckBuilder() {
               </span>
             </div>
           </div>
+
+          {/* Context menu button */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            style={{
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              borderRadius: 'var(--radius-md)',
+              flexShrink: 0,
+            }}
+          >
+            <MoreHorizontal size={20} />
+          </button>
         </div>
 
         {/* Tab bar */}
@@ -274,6 +298,138 @@ export default function DeckBuilder() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Deck actions bottom sheet */}
+      <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">
+        <div style={{ padding: '8px 0 24px' }}>
+          <button
+            onClick={() => { setMenuOpen(false); setConfirmDelete(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'rgba(248, 113, 113, 0.12)',
+                border: '1px solid rgba(248, 113, 113, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--error)',
+              }}
+            >
+              <Trash2 size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--error)', margin: 0 }}>
+                Excluir deck
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Remove permanentemente este deck
+              </p>
+            </div>
+          </button>
+        </div>
+      </BottomSheet>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 100,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px',
+            }}
+            onClick={() => setConfirmDelete(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '24px',
+                width: '100%',
+                maxWidth: '320px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: 'var(--radius-lg)',
+                  backgroundColor: 'rgba(248, 113, 113, 0.12)',
+                  border: '1px solid rgba(248, 113, 113, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--error)',
+                }}
+              >
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                  Excluir "{deck.name}"?
+                </p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                  Esta ação não pode ser desfeita. O deck e todas as suas cartas serão removidos permanentemente.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button variant="ghost" size="md" fullWidth onClick={() => setConfirmDelete(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="danger"
+                  size="md"
+                  fullWidth
+                  onClick={() => {
+                    deleteDeck(deck.id);
+                    navigate('/');
+                  }}
+                >
+                  Excluir
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
