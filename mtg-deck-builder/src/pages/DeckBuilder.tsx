@@ -110,24 +110,26 @@ export default function DeckBuilder() {
       <header
         style={{
           flexShrink: 0,
-          backgroundColor: 'var(--bg-elevated)',
-          borderBottom: '1px solid var(--border-subtle)',
+          backgroundColor: 'rgba(15, 15, 15, 0.72)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
           paddingTop: 'max(12px, env(safe-area-inset-top))',
         }}
       >
         <div
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: '44px 1fr 44px',
             alignItems: 'center',
-            gap: '8px',
-            padding: '0 16px 12px',
+            padding: '0 12px 12px',
           }}
         >
           <button
             onClick={() => navigate('/')}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '36px',
+              height: '36px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -136,32 +138,12 @@ export default function DeckBuilder() {
               cursor: 'pointer',
               color: 'var(--text-secondary)',
               borderRadius: 'var(--radius-md)',
-              flexShrink: 0,
             }}
           >
             <ArrowLeft size={20} />
           </button>
 
-          {deck.commanderArtUrl && (
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
-                border: '1px solid var(--border-default)',
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src={deck.commanderArtUrl}
-                alt={deck.commanderName ?? ''}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-              />
-            </div>
-          )}
-
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ textAlign: 'center', minWidth: 0 }}>
             <h1
               style={{
                 fontSize: '16px',
@@ -176,7 +158,7 @@ export default function DeckBuilder() {
             >
               {deck.name}
             </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '3px' }}>
               <ManaGroup
                 colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']}
                 size="sm"
@@ -187,24 +169,25 @@ export default function DeckBuilder() {
             </div>
           </div>
 
-          <button
-            onClick={() => setMenuOpen(true)}
-            style={{
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              borderRadius: 'var(--radius-md)',
-              flexShrink: 0,
-            }}
-          >
-            <MoreHorizontal size={20} />
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setMenuOpen(true)}
+              style={{
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <MoreHorizontal size={20} />
+            </button>
+          </div>
         </div>
       </header>
 
