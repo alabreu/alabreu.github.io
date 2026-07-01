@@ -185,8 +185,6 @@ export function SearchTab({ deck }: SearchTabProps) {
       <div
         style={{
           padding: '12px 16px',
-          backgroundColor: 'var(--bg-elevated)',
-          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           gap: '8px',
           alignItems: 'center',
@@ -355,7 +353,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       </BottomSheet>
 
       {/* Results */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 12px' }}>
         {isLoading && (
           <div
             style={{
@@ -413,15 +411,16 @@ export function SearchTab({ deck }: SearchTabProps) {
         {!isLoading && !hasSearched && (
           <div
             style={{
+              height: '100%',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
-              padding: '40px 24px',
+              padding: '24px',
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '36px' }}>🔍</div>
             <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
               Busque cartas para seu deck
             </p>
