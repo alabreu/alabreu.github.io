@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
-import { ScryfallCard, DeckCard } from '../types';
+import { ScryfallCard, DeckCard, ManaColor } from '../types';
 import { Button } from '../design-system/components/Button';
 
 function scryfallToDeckCard(card: ScryfallCard): DeckCard {
   const face = card.card_faces?.[0];
+  const validColors = ['W', 'U', 'B', 'R', 'G', 'C'];
   return {
     scryfallId: card.id,
     name: card.name,
@@ -18,6 +19,7 @@ function scryfallToDeckCard(card: ScryfallCard): DeckCard {
     manaCost: card.mana_cost ?? face?.mana_cost ?? null,
     typeLine: card.type_line ?? face?.type_line ?? null,
     cmc: card.cmc,
+    colorIdentity: card.color_identity.filter((c): c is ManaColor => validColors.includes(c)),
   };
 }
 
