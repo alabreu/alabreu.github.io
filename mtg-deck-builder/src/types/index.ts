@@ -22,6 +22,7 @@ export type DeckCard = {
   manaCost: string | null;
   typeLine: string | null;
   cmc: number;
+  colorIdentity?: ManaColor[];
 };
 
 export type ScryfallCard = {
