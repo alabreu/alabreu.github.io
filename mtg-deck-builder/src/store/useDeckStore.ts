@@ -93,14 +93,16 @@ export const useDeckStore = create<DeckStore>()(
       },
 
       setCommander: (deckId: string, card: DeckCard) => {
-        const colorIdentity = parseColorIdentity(
-          card.manaCost
-            ? card.manaCost
-                .replace(/[^WUBRGC]/g, '')
-                .split('')
-                .filter((c, i, arr) => arr.indexOf(c) === i)
-            : []
-        );
+        const colorIdentity = card.colorIdentity?.length
+          ? card.colorIdentity
+          : parseColorIdentity(
+              card.manaCost
+                ? card.manaCost
+                    .replace(/[^WUBRGC]/g, '')
+                    .split('')
+                    .filter((c, i, arr) => arr.indexOf(c) === i)
+                : []
+            );
 
         set((state) => ({
           decks: state.decks.map((d) => {
