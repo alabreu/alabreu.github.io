@@ -49,6 +49,10 @@ function deckCardToScryfall(card: DeckCard): ScryfallCard {
   };
 }
 
+function dfcBackUrl(id: string): string {
+  return `https://cards.scryfall.io/normal/back/${id[0]}/${id[1]}/${id}.jpg`;
+}
+
 function FlippableCard({
   card,
   onCardClick,
@@ -57,7 +61,8 @@ function FlippableCard({
   onCardClick: (card: DeckCard) => void;
 }) {
   const [flipped, setFlipped] = React.useState(false);
-  const isDfc = Boolean(card.backImageUrl);
+  const isDfc = card.name.includes(' // ');
+  const backImageUrl = card.backImageUrl || (isDfc ? dfcBackUrl(card.scryfallId) : null);
 
   return (
     <motion.div
@@ -93,7 +98,7 @@ function FlippableCard({
               }}
             >
               <CardImage
-                imageUrl={card.backImageUrl!}
+                imageUrl={backImageUrl}
                 name={card.name}
                 size="normal"
                 onClick={() => onCardClick(card)}

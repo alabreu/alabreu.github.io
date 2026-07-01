@@ -79,11 +79,11 @@ export function CardBottomSheet({
     card.card_faces?.[0]?.image_uris?.art_crop ||
     null;
 
+  const isDfc = card.name.includes(' // ') || Boolean(existingCard?.backImageUrl);
   const backImageUrl =
-    existingCard?.backImageUrl ??
-    card.card_faces?.[1]?.image_uris?.normal ??
-    null;
-  const isDfc = Boolean(backImageUrl);
+    existingCard?.backImageUrl ||
+    card.card_faces?.[1]?.image_uris?.normal ||
+    (isDfc ? `https://cards.scryfall.io/normal/back/${card.id[0]}/${card.id[1]}/${card.id}.jpg` : null);
 
   const isInDeck = !!existingCard;
   const quantity = existingCard?.quantity ?? 0;
