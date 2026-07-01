@@ -11,6 +11,7 @@ type DeckStore = {
   removeCard: (deckId: string, scryfallId: string) => void;
   setCommander: (deckId: string, card: DeckCard) => void;
   updateCardCategory: (deckId: string, scryfallId: string, category: string) => void;
+  importCards: (deckId: string, cards: DeckCard[]) => void;
 };
 
 function generateId(): string {
@@ -138,6 +139,26 @@ export const useDeckStore = create<DeckStore>()(
               ),
               updatedAt: Date.now(),
             };
+          }),
+        }));
+      },
+
+      importCards: (deckId: string, cards: DeckCard[]) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            let updated = [...d.cards];
+            for (const card of cards) {
+              const idx = updated.findIndex((c) => c.scryfallId === card.scryfallId);
+              if (idx >= 0) {
+                updated = updated.map((c, i) =>
+                  i === idx ? { ...c, quantity: c.quantity + card.quantity } : c
+                );
+              } else {
+                updated.push({ ...card });
+              }
+            }
+            return { ...d, cards: updated, updatedAt: Date.now() };
           }),
         }));
       },
