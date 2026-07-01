@@ -33,6 +33,23 @@ export default function NewDeck() {
   const [selected, setSelected] = React.useState<ScryfallCard | null>(null);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const footerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      if (!footerRef.current) return;
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+      footerRef.current.style.transform = `translateY(-${keyboardHeight}px)`;
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -489,6 +506,7 @@ export default function NewDeck() {
 
       {/* Sticky footer */}
       <div
+        ref={footerRef}
         style={{
           position: 'fixed',
           bottom: 0,
@@ -498,6 +516,8 @@ export default function NewDeck() {
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           backgroundColor: 'var(--bg-base)',
           borderTop: '1px solid var(--border-subtle)',
+          transition: 'transform 0.15s ease',
+          willChange: 'transform',
         }}
       >
         <Button
