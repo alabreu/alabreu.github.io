@@ -38,9 +38,8 @@ export default function DeckBuilder() {
     setSearchParams({ tab: String(newTab) }, { replace: true });
   }
 
-  // Swipe gesture for tab switching
   const bind = useDrag(
-    ({ last, movement: [mx], velocity: [vx], cancel }) => {
+    ({ last, movement: [mx], velocity: [vx] }) => {
       if (!last) return;
       const threshold = 50;
       if (mx < -threshold || vx < -0.5) {
@@ -116,7 +115,6 @@ export default function DeckBuilder() {
           paddingTop: 'max(12px, env(safe-area-inset-top))',
         }}
       >
-        {/* Top row */}
         <div
           style={{
             display: 'flex',
@@ -144,7 +142,6 @@ export default function DeckBuilder() {
             <ArrowLeft size={20} />
           </button>
 
-          {/* Commander art thumbnail */}
           {deck.commanderArtUrl && (
             <div
               style={{
@@ -190,7 +187,6 @@ export default function DeckBuilder() {
             </div>
           </div>
 
-          {/* Context menu button */}
           <button
             onClick={() => setMenuOpen(true)}
             style={{
@@ -209,61 +205,6 @@ export default function DeckBuilder() {
           >
             <MoreHorizontal size={20} />
           </button>
-        </div>
-
-        {/* Tab bar */}
-        <div
-          style={{
-            display: 'flex',
-            borderTop: '1px solid var(--border-subtle)',
-          }}
-        >
-          {TABS.map((tab, i) => {
-            const Icon = tab.icon;
-            const active = activeTab === i;
-            return (
-              <button
-                key={tab.label}
-                onClick={() => handleTabChange(i)}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '3px',
-                  padding: '10px 0',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: active ? 'var(--accent)' : 'var(--text-muted)',
-                  fontFamily: 'inherit',
-                  position: 'relative',
-                  transition: 'color 0.15s',
-                }}
-              >
-                <Icon size={16} />
-                <span style={{ fontSize: '10px', fontWeight: active ? 600 : 400, letterSpacing: '0.02em' }}>
-                  {tab.label}
-                </span>
-                {active && (
-                  <motion.div
-                    layoutId="tab-indicator"
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: '20%',
-                      right: '20%',
-                      height: '2px',
-                      backgroundColor: 'var(--accent)',
-                      borderRadius: 'var(--radius-full)',
-                    }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-              </button>
-            );
-          })}
         </div>
       </header>
 
@@ -290,6 +231,7 @@ export default function DeckBuilder() {
               inset: 0,
               overflowY: 'auto',
               overflowX: 'hidden',
+              paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
             }}
           >
             {activeTab === 0 && <DecklistTab deck={deck} />}
@@ -297,6 +239,89 @@ export default function DeckBuilder() {
             {activeTab === 2 && <CoachTab deck={deck} />}
           </motion.div>
         </AnimatePresence>
+      </div>
+
+      {/* Floating bottom tab bar */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
+          left: '16px',
+          right: '16px',
+          zIndex: 50,
+          borderRadius: '32px',
+          backgroundColor: 'rgba(18, 18, 20, 0.92)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+          display: 'flex',
+          padding: '6px',
+        }}
+      >
+        {TABS.map((tab, i) => {
+          const Icon = tab.icon;
+          const active = activeTab === i;
+          return (
+            <button
+              key={tab.label}
+              onClick={() => handleTabChange(i)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                padding: '6px 0 8px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  width: '56px',
+                  height: '32px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
+                  transition: 'color 0.2s',
+                }}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="floating-tab-highlight"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(212, 175, 55, 0.14)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon size={19} style={{ position: 'relative', zIndex: 1 }} />
+              </div>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: active ? 600 : 400,
+                  color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
+                  letterSpacing: '0.01em',
+                  transition: 'color 0.2s, font-weight 0.2s',
+                }}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Deck actions bottom sheet */}
