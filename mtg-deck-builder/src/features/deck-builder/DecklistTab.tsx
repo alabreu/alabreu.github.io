@@ -189,7 +189,7 @@ function CategorySection({ category, cards, onCardClick }: CategorySectionProps)
           border: 'none',
           cursor: 'pointer',
           color: 'var(--text-secondary)',
-          fontSize: '13px',
+          fontSize: '16px',
           fontWeight: 600,
           letterSpacing: '0.01em',
           textAlign: 'left',
