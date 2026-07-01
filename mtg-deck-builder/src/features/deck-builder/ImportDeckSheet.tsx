@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { useDeckStore } from '../../store/useDeckStore';
@@ -9,51 +10,127 @@ import { parseDecklist, fetchCardsByName } from './importUtils';
 type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; total: number }
-  | { kind: 'done'; added: number; notFound: string[] };
+  | { kind: 'done'; added: number; notFound: string[]; deckId: string };
 
-interface ImportCardsSheetProps {
+interface ImportDeckSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  deckId: string;
 }
 
-export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetProps) {
-  const { importCards } = useDeckStore();
+export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
+  const { createDeck, importCards } = useDeckStore();
+  const navigate = useNavigate();
+  const [deckName, setDeckName] = React.useState('');
   const [text, setText] = React.useState('');
   const [phase, setPhase] = React.useState<Phase>({ kind: 'idle' });
+  const [nameError, setNameError] = React.useState('');
 
   function handleClose() {
     onClose();
     setTimeout(() => {
+      setDeckName('');
       setText('');
       setPhase({ kind: 'idle' });
+      setNameError('');
     }, 350);
   }
 
   async function handleImport() {
+    const trimmedName = deckName.trim();
+    if (!trimmedName) {
+      setNameError('Insira um nome para o deck');
+      return;
+    }
     const parsed = parseDecklist(text);
     if (!parsed.length) return;
+
     setPhase({ kind: 'loading', total: parsed.length });
     try {
       const { toImport, notFound } = await fetchCardsByName(parsed);
-      importCards(deckId, toImport);
-      setPhase({ kind: 'done', added: toImport.length, notFound });
+      const deck = createDeck(trimmedName);
+      importCards(deck.id, toImport);
+      setPhase({ kind: 'done', added: toImport.length, notFound, deckId: deck.id });
     } catch {
       setPhase({ kind: 'idle' });
     }
   }
 
   const parsedCount = React.useMemo(() => parseDecklist(text).length, [text]);
+  const canImport = deckName.trim().length > 0 && parsedCount > 0;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar cartas" maxHeight="92vh">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar deck" maxHeight="92vh">
       <div style={{ padding: '20px 20px 32px' }}>
 
         {phase.kind === 'idle' && (
           <>
+            {/* Deck name */}
+            <div style={{ marginBottom: '20px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  marginBottom: '8px',
+                }}
+              >
+                Nome do deck
+              </label>
+              <input
+                autoFocus
+                placeholder="Ex: Atraxa Proliferação"
+                value={deckName}
+                onChange={(e) => {
+                  setDeckName(e.target.value);
+                  if (nameError) setNameError('');
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  color: 'var(--text-primary)',
+                  backgroundColor: 'var(--surface-1)',
+                  border: `1px solid ${nameError ? 'var(--error)' : 'var(--border-default)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  padding: '11px 12px',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={(e) => {
+                  if (!nameError) e.currentTarget.style.borderColor = 'var(--accent)';
+                }}
+                onBlur={(e) => {
+                  if (!nameError) e.currentTarget.style.borderColor = 'var(--border-default)';
+                }}
+              />
+              {nameError && (
+                <p style={{ fontSize: '12px', color: 'var(--error)', marginTop: '5px' }}>
+                  {nameError}
+                </p>
+              )}
+            </div>
+
             {/* Format hint */}
+            <label
+              style={{
+                display: 'block',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                marginBottom: '8px',
+              }}
+            >
+              Lista de cartas
+            </label>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
-              Cole sua lista no formato padrão. Uma carta por linha:
+              Cole no formato padrão — uma carta por linha:
             </p>
             <div
               style={{
@@ -64,7 +141,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '10px 12px',
-                marginBottom: '16px',
+                marginBottom: '12px',
                 lineHeight: 1.7,
               }}
             >
@@ -73,7 +150,6 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               36 Island
             </div>
 
-            {/* Textarea */}
             <textarea
               placeholder={'Cole sua lista aqui...\n\n1 Sol Ring\n4 Lightning Bolt\n36 Island'}
               value={text}
@@ -81,7 +157,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               style={{
                 display: 'block',
                 width: '100%',
-                minHeight: '180px',
+                minHeight: '160px',
                 resize: 'vertical',
                 fontFamily: 'monospace',
                 fontSize: '14px',
@@ -110,10 +186,12 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={parsedCount === 0}
+                disabled={!canImport}
                 onClick={handleImport}
               >
-                {parsedCount > 0 ? `Importar ${parsedCount} cartas` : 'Importar cartas'}
+                {parsedCount > 0
+                  ? `Criar deck com ${parsedCount} cartas`
+                  : 'Criar deck'}
               </Button>
             </div>
           </>
@@ -144,7 +222,6 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
 
         {phase.kind === 'done' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Success banner */}
             <div
               style={{
                 display: 'flex',
@@ -159,7 +236,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               <CheckCircle2 size={24} style={{ color: 'var(--success)', flexShrink: 0 }} />
               <div>
                 <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                  {phase.added} {phase.added === 1 ? 'carta adicionada' : 'cartas adicionadas'}
+                  Deck criado com {phase.added} {phase.added === 1 ? 'carta' : 'cartas'}
                 </p>
                 {phase.notFound.length > 0 && (
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
@@ -169,7 +246,6 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               </div>
             </div>
 
-            {/* Not found list */}
             {phase.notFound.length > 0 && (
               <div
                 style={{
@@ -199,8 +275,16 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
             )}
 
             <div style={{ marginTop: '4px' }}>
-              <Button variant="primary" size="lg" fullWidth onClick={handleClose}>
-                Concluir
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={() => {
+                  handleClose();
+                  navigate(`/deck/${phase.deckId}`);
+                }}
+              >
+                Abrir deck
               </Button>
             </div>
           </div>

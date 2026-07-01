@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, Palette, ChevronRight as MenuArrow } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, Palette, FileInput, ChevronRight as MenuArrow } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -8,6 +8,7 @@ import { Button } from '../design-system/components/Button';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { Badge } from '../design-system/components/Badge';
+import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 
 function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => void }) {
   const navigate = useNavigate();
@@ -217,6 +218,7 @@ export default function Home() {
   const { decks, deleteDeck } = useDeckStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
 
   return (
     <div
@@ -411,9 +413,59 @@ export default function Home() {
         )}
       </main>
 
+      {/* Import deck sheet */}
+      <ImportDeckSheet isOpen={importOpen} onClose={() => setImportOpen(false)} />
+
       {/* Menu Bottom Sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <div style={{ padding: '8px 0 24px' }}>
+          {/* Import deck */}
+          <button
+            onClick={() => { setMenuOpen(false); setImportOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--accent)',
+              }}
+            >
+              <FileInput size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Importar deck
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Criar deck a partir de uma lista
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
           {/* Design System link */}
           <button
             onClick={() => { setMenuOpen(false); navigate('/design'); }}
