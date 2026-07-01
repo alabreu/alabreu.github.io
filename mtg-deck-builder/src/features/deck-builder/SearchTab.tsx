@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Plus, Minus, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
+import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { ManaSymbol } from '../../design-system/components/ManaSymbol';
 import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
@@ -72,6 +73,7 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [hasSearched, setHasSearched] = React.useState(false);
   const [selectedCard, setSelectedCard] = React.useState<ScryfallCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,17 +134,6 @@ export function SearchTab({ deck }: SearchTabProps) {
     triggerSearch(searchText, selectedColors, val, cmcMin, cmcMax);
   }
 
-  function clearSearch() {
-    setSearchText('');
-    setSelectedColors([]);
-    setTypeFilter('');
-    setCmcMin('');
-    setCmcMax('');
-    setResults([]);
-    setHasSearched(false);
-    setError(null);
-  }
-
   function handleQuickAdd(card: ScryfallCard, e: React.MouseEvent) {
     e.stopPropagation();
     const imageUrl =
@@ -178,24 +169,33 @@ export function SearchTab({ deck }: SearchTabProps) {
     setSheetOpen(true);
   }
 
+  const hasActiveFilters = selectedColors.length > 0 || !!typeFilter || !!cmcMin || !!cmcMax;
+
+  function clearFilters() {
+    setSelectedColors([]);
+    setTypeFilter('');
+    setCmcMin('');
+    setCmcMax('');
+    triggerSearch(searchText, [], '', '', '');
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Search controls */}
+      {/* Search bar */}
       <div
         style={{
           padding: '12px 16px',
           backgroundColor: 'var(--bg-elevated)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
+          gap: '8px',
+          alignItems: 'center',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}
       >
-        {/* Main search input */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
           <Input
             placeholder="Buscar por nome, texto..."
             value={searchText}
@@ -218,99 +218,141 @@ export function SearchTab({ deck }: SearchTabProps) {
           />
         </div>
 
-        {/* Color identity filters */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '2px', whiteSpace: 'nowrap' }}>
-            Cores:
-          </span>
-          {MANA_COLORS.map((color) => {
-            const active = selectedColors.includes(color);
-            return (
-              <button
-                key={color}
-                onClick={() => toggleColor(color)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  opacity: active ? 1 : 0.35,
-                  transform: active ? 'scale(1.1)' : 'scale(1)',
-                  transition: 'opacity 0.15s, transform 0.15s',
-                  outline: active ? '2px solid var(--accent)' : 'none',
-                  outlineOffset: '2px',
-                  borderRadius: '50%',
-                }}
-              >
-                <ManaSymbol color={color} size="md" />
-              </button>
-            );
-          })}
-          {selectedColors.length > 0 && (
-            <button
-              onClick={() => {
-                setSelectedColors([]);
-                triggerSearch(searchText, [], typeFilter, cmcMin, cmcMax);
-              }}
+        {/* Filter button */}
+        <button
+          onClick={() => setFilterSheetOpen(true)}
+          style={{
+            position: 'relative',
+            width: '38px',
+            height: '38px',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: hasActiveFilters ? 'var(--accent-subtle)' : 'var(--surface-1)',
+            border: `1px solid ${hasActiveFilters ? 'var(--accent-border)' : 'var(--border-default)'}`,
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            color: hasActiveFilters ? 'var(--accent)' : 'var(--text-muted)',
+            transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <SlidersHorizontal size={16} />
+          {hasActiveFilters && (
+            <span
               style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                fontSize: '11px',
-                padding: '2px 6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '2px',
+                position: 'absolute',
+                top: '5px',
+                right: '5px',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--accent)',
+                border: '1.5px solid var(--bg-elevated)',
               }}
-            >
-              <X size={11} /> Limpar
-            </button>
+            />
           )}
-        </div>
-
-        {/* Advanced filters row */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Input
-            placeholder="Tipo (ex: Creature)"
-            value={typeFilter}
-            onChange={handleTypeChange}
-            size="sm"
-            fullWidth
-          />
-          <Input
-            placeholder="CMC min"
-            value={cmcMin}
-            onChange={(e) => {
-              setCmcMin(e.target.value);
-              triggerSearch(searchText, selectedColors, typeFilter, e.target.value, cmcMax);
-            }}
-            type="number"
-            min={0}
-            size="sm"
-            style={{ width: '80px' }}
-            fullWidth={false}
-          />
-          <Input
-            placeholder="max"
-            value={cmcMax}
-            onChange={(e) => {
-              setCmcMax(e.target.value);
-              triggerSearch(searchText, selectedColors, typeFilter, cmcMin, e.target.value);
-            }}
-            type="number"
-            min={0}
-            size="sm"
-            style={{ width: '70px' }}
-            fullWidth={false}
-          />
-          {(searchText || selectedColors.length > 0 || typeFilter || cmcMin || cmcMax) && (
-            <Button variant="ghost" size="sm" onClick={clearSearch}>
-              <X size={13} />
-            </Button>
-          )}
-        </div>
+        </button>
       </div>
+
+      {/* Filter bottom sheet */}
+      <BottomSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        title="Filtros"
+      >
+        <div style={{ padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Color filter */}
+          <div>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+              Identidade de cor
+            </p>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {MANA_COLORS.map((color) => {
+                const active = selectedColors.includes(color);
+                return (
+                  <button
+                    key={color}
+                    onClick={() => toggleColor(color)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      opacity: active ? 1 : 0.3,
+                      transform: active ? 'scale(1.15)' : 'scale(1)',
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      outline: active ? '2px solid var(--accent)' : 'none',
+                      outlineOffset: '3px',
+                      borderRadius: '50%',
+                    }}
+                  >
+                    <ManaSymbol color={color} size="lg" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Type filter */}
+          <div>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              Tipo
+            </p>
+            <Input
+              placeholder="Ex: Creature, Instant, Land..."
+              value={typeFilter}
+              onChange={handleTypeChange}
+              fullWidth
+            />
+          </div>
+
+          {/* CMC filter */}
+          <div>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              CMC (custo convertido de mana)
+            </p>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <Input
+                placeholder="Mínimo"
+                value={cmcMin}
+                onChange={(e) => {
+                  setCmcMin(e.target.value);
+                  triggerSearch(searchText, selectedColors, typeFilter, e.target.value, cmcMax);
+                }}
+                type="number"
+                min={0}
+                fullWidth
+              />
+              <span style={{ color: 'var(--text-muted)', fontSize: '14px', flexShrink: 0 }}>—</span>
+              <Input
+                placeholder="Máximo"
+                value={cmcMax}
+                onChange={(e) => {
+                  setCmcMax(e.target.value);
+                  triggerSearch(searchText, selectedColors, typeFilter, cmcMin, e.target.value);
+                }}
+                type="number"
+                min={0}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {hasActiveFilters && (
+              <Button variant="secondary" size="md" fullWidth onClick={clearFilters}>
+                Limpar filtros
+              </Button>
+            )}
+            <Button variant="primary" size="md" fullWidth onClick={() => setFilterSheetOpen(false)}>
+              Aplicar
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* Results */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
