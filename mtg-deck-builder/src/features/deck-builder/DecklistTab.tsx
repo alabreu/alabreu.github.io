@@ -6,6 +6,7 @@ import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
 import { Button } from '../../design-system/components/Button';
+import { ManaGroup } from '../../design-system/components/ManaSymbol';
 import { useNavigate } from 'react-router-dom';
 
 interface DecklistTabProps {
@@ -332,6 +333,17 @@ export function DecklistTab({ deck }: DecklistTabProps) {
 
   return (
     <div style={{ padding: '12px 16px' }}>
+      {/* Deck title */}
+      <div style={{ marginBottom: '16px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: '0 0 4px' }}>
+          {deck.name}
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <ManaGroup colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']} size="sm" />
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
+        </div>
+      </div>
+
       {/* Stats bar */}
       <div
         style={{
