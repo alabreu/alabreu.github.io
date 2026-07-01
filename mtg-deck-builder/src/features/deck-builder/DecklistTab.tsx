@@ -335,7 +335,7 @@ export function DecklistTab({ deck }: DecklistTabProps) {
     <div style={{ padding: '12px 16px' }}>
       {/* Deck title */}
       <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: '0 0 4px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: '0 0 4px' }}>
           {deck.name}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
