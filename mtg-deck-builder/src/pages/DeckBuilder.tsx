@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useDeckStore } from '../store/useDeckStore';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
@@ -10,6 +10,7 @@ import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab } from '../features/deck-builder/CoachTab';
+import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 
 const TABS = [
   { label: 'Decklist', icon: List },
@@ -28,6 +29,7 @@ export default function DeckBuilder() {
   const [direction, setDirection] = React.useState(0);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -285,6 +287,54 @@ export default function DeckBuilder() {
       {/* Deck actions bottom sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">
         <div style={{ padding: '8px 0 24px' }}>
+          {/* Import cards */}
+          <button
+            onClick={() => { setMenuOpen(false); setImportOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--accent)',
+              }}
+            >
+              <FileInput size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Importar cartas
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Adicionar de uma lista de texto
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
+          {/* Delete deck */}
           <button
             onClick={() => { setMenuOpen(false); setConfirmDelete(true); }}
             style={{
@@ -330,6 +380,13 @@ export default function DeckBuilder() {
           </button>
         </div>
       </BottomSheet>
+
+      {/* Import cards sheet */}
+      <ImportCardsSheet
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        deckId={deck.id}
+      />
 
       {/* Delete confirmation modal */}
       <AnimatePresence>
