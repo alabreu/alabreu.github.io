@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Badge } from '../../design-system/components/Badge';
@@ -6,7 +7,7 @@ import { ManaSymbol } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
-import { Crown, Trash2, Plus, ChevronDown } from 'lucide-react';
+import { Crown, Trash2, Plus, ChevronDown, RefreshCw } from 'lucide-react';
 
 interface CardBottomSheetProps {
   isOpen: boolean;
@@ -51,8 +52,10 @@ export function CardBottomSheet({
 }: CardBottomSheetProps) {
   const { addCard, removeCard, setCommander, updateCardCategory } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
+  const [flipped, setFlipped] = React.useState(false);
 
   React.useEffect(() => {
+    setFlipped(false);
     if (existingCard) {
       setSelectedCategory(existingCard.category);
     } else if (card) {
@@ -75,6 +78,12 @@ export function CardBottomSheet({
     card.image_uris?.art_crop ||
     card.card_faces?.[0]?.image_uris?.art_crop ||
     null;
+
+  const backImageUrl =
+    existingCard?.backImageUrl ??
+    card.card_faces?.[1]?.image_uris?.normal ??
+    null;
+  const isDfc = Boolean(backImageUrl);
 
   const isInDeck = !!existingCard;
   const quantity = existingCard?.quantity ?? 0;
@@ -125,9 +134,64 @@ export function CardBottomSheet({
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={card.name} maxHeight="92vh">
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Card image */}
-        <div style={{ maxWidth: '220px', margin: '0 auto', width: '100%' }}>
-          <CardImage imageUrl={imageUrl} name={card.name} size="normal" />
+        {/* Card image with DFC flip */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+          <div style={{ maxWidth: '220px', width: '100%', perspective: '900px' }}>
+            <motion.div
+              animate={{ rotateY: flipped ? 180 : 0 }}
+              transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+              style={{ position: 'relative', transformStyle: 'preserve-3d' }}
+            >
+              {/* Front face */}
+              <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+                <CardImage imageUrl={imageUrl} name={card.name} size="normal" />
+              </div>
+              {/* Back face */}
+              {isDfc && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                  }}
+                >
+                  <CardImage imageUrl={backImageUrl!} name={card.name} size="normal" />
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {isDfc && (
+            <button
+              onClick={() => setFlipped((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                padding: '5px 12px 5px 10px',
+                borderRadius: '999px',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border-default)',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontSize: '12px',
+                fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <motion.div
+                animate={{ rotate: flipped ? 180 : 0 }}
+                transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+                style={{ display: 'flex' }}
+              >
+                <RefreshCw size={11} />
+              </motion.div>
+              Transformar
+            </button>
+          )}
         </div>
 
         {/* Card details */}
