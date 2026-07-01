@@ -414,7 +414,6 @@ export default function Home() {
       {/* Menu Bottom Sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <div style={{ padding: '8px 0 24px' }}>
-          {/* Design System link */}
           <button
             onClick={() => { setMenuOpen(false); navigate('/design'); }}
             style={{
@@ -459,56 +458,6 @@ export default function Home() {
             </div>
             <MenuArrow size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           </button>
-
-          {/* Divider */}
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px 16px' }} />
-
-          {/* Font samples */}
-          <div style={{ padding: '0 20px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 12px' }}>
-              Amostras de fonte
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { name: 'Fraunces', family: "'Fraunces', serif", weight: 800, note: 'Personalidade marcante' },
-                { name: 'Young Serif', family: "'Young Serif', serif", weight: 400, note: 'Serifas arredondadas' },
-                { name: 'Lora', family: "'Lora', serif", weight: 700, note: 'Humanista e equilibrada' },
-                { name: 'Bitter', family: "'Bitter', serif", weight: 700, note: 'Slab, feita pra tela' },
-                { name: 'DM Serif Display', family: "'DM Serif Display', serif", weight: 400, note: 'Alto contraste, elegante' },
-              ].map(({ name, family, weight, note }) => (
-                <div
-                  key={name}
-                  style={{
-                    padding: '12px 14px',
-                    backgroundColor: 'var(--surface-1)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: family,
-                      fontWeight: weight,
-                      fontSize: '22px',
-                      color: 'var(--text-primary)',
-                      letterSpacing: '-0.03em',
-                      lineHeight: 1,
-                    }}
-                  >
-                    My decks
-                  </span>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>{name}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '1px 0 0' }}>{note}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </BottomSheet>
 
