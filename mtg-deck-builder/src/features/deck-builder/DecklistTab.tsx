@@ -188,7 +188,7 @@ function CategorySection({ category, cards, onCardClick }: CategorySectionProps)
           backgroundColor: 'transparent',
           border: 'none',
           cursor: 'pointer',
-          color: 'var(--text-secondary)',
+          color: 'var(--text-primary)',
           fontSize: '16px',
           fontWeight: 600,
           letterSpacing: '0.01em',
@@ -196,13 +196,13 @@ function CategorySection({ category, cards, onCardClick }: CategorySectionProps)
           fontFamily: 'inherit',
         }}
       >
-        <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </span>
         <span style={{ flex: 1 }}>{category}</span>
         <Badge variant="default" size="sm">
           {totalQty}
         </Badge>
+        <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </span>
       </button>
 
       {/* Cards grid */}
