@@ -84,7 +84,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 minHeight: '180px',
                 resize: 'vertical',
                 fontFamily: 'monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 lineHeight: 1.65,
                 color: 'var(--text-primary)',
                 backgroundColor: 'var(--surface-1)',

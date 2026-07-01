@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw } from 'lucide-react';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
@@ -47,6 +47,114 @@ function deckCardToScryfall(card: DeckCard): ScryfallCard {
       : undefined,
     legalities: { commander: 'legal' },
   };
+}
+
+function FlippableCard({
+  card,
+  onCardClick,
+}: {
+  card: DeckCard;
+  onCardClick: (card: DeckCard) => void;
+}) {
+  const [flipped, setFlipped] = React.useState(false);
+  const isDfc = Boolean(card.backImageUrl);
+
+  return (
+    <motion.div
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    >
+      <div style={{ position: 'relative' }}>
+        {/* 3-D flip container */}
+        <div style={{ perspective: '900px' }}>
+          <motion.div
+            animate={{ rotateY: flipped ? 180 : 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+            style={{ position: 'relative', transformStyle: 'preserve-3d' }}
+          >
+            {/* Front face */}
+            <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+              <CardImage
+                imageUrl={card.imageUrl}
+                name={card.name}
+                size="normal"
+                onClick={() => onCardClick(card)}
+                showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
+              />
+            </div>
+            {/* Back face */}
+            {isDfc && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                }}
+              >
+                <CardImage
+                  imageUrl={card.backImageUrl!}
+                  name={card.name}
+                  size="normal"
+                  onClick={() => onCardClick(card)}
+                />
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Flip button */}
+        {isDfc && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlipped((v) => !v);
+            }}
+            style={{
+              position: 'absolute',
+              bottom: '8px',
+              right: '6px',
+              zIndex: 10,
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(0,0,0,0.58)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.85)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <motion.div
+              animate={{ rotate: flipped ? 180 : 0 }}
+              transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+              style={{ display: 'flex' }}
+            >
+              <RefreshCw size={12} />
+            </motion.div>
+          </button>
+        )}
+      </div>
+
+      <p
+        style={{
+          marginTop: '4px',
+          fontSize: '11px',
+          color: 'var(--text-muted)',
+          textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {card.name}
+      </p>
+    </motion.div>
+  );
 }
 
 interface CategorySectionProps {
@@ -111,32 +219,11 @@ function CategorySection({ category, cards, onCardClick }: CategorySectionProps)
               }}
             >
               {cards.map((card) => (
-                <motion.div
+                <FlippableCard
                   key={card.scryfallId}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                >
-                  <CardImage
-                    imageUrl={card.imageUrl}
-                    name={card.name}
-                    size="normal"
-                    onClick={() => onCardClick(card)}
-                    showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
-                  />
-                  <p
-                    style={{
-                      marginTop: '4px',
-                      fontSize: '11px',
-                      color: 'var(--text-muted)',
-                      textAlign: 'center',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {card.name}
-                  </p>
-                </motion.div>
+                  card={card}
+                  onCardClick={onCardClick}
+                />
               ))}
             </div>
           </motion.div>

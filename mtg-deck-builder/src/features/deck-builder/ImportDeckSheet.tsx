@@ -160,7 +160,7 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
                 minHeight: '160px',
                 resize: 'vertical',
                 fontFamily: 'monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 lineHeight: 1.65,
                 color: 'var(--text-primary)',
                 backgroundColor: 'var(--surface-1)',
