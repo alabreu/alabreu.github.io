@@ -149,6 +149,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
     const artCropUrl =
       card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || null;
+    const backImageUrl = card.card_faces?.[1]?.image_uris?.normal ?? null;
 
     let category = 'Outros';
     if (card.type_line?.includes('Land')) category = 'Terrenos';
@@ -160,6 +161,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       category,
       imageUrl,
       artCropUrl,
+      backImageUrl,
       manaCost: card.mana_cost,
       typeLine: card.type_line,
       cmc: card.cmc,

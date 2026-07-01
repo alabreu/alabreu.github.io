@@ -19,6 +19,7 @@ export type DeckCard = {
   category: string;
   imageUrl: string | null;
   artCropUrl: string | null;
+  backImageUrl?: string | null;
   manaCost: string | null;
   typeLine: string | null;
   cmc: number;
