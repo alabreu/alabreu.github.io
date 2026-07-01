@@ -88,7 +88,7 @@ export function CardImage({
         style={{
           width: '100%',
           display: 'block',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: '4.8%',
           boxShadow: 'var(--shadow-md)',
           opacity: loaded ? 1 : 0,
           transition: 'opacity 0.2s ease',
