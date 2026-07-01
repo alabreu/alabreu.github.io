@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useDeckStore } from '../store/useDeckStore';
-import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
@@ -98,6 +97,26 @@ export default function DeckBuilder() {
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
 
+  const floatingBtnStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 'max(12px, env(safe-area-inset-top))',
+    zIndex: 50,
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(28, 28, 30, 0.78)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '0.5px solid rgba(255,255,255,0.10)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: 'rgba(255,255,255,0.88)',
+    WebkitTapHighlightColor: 'transparent',
+  };
+
   return (
     <div
       style={{
@@ -108,90 +127,15 @@ export default function DeckBuilder() {
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
-      <header
-        style={{
-          flexShrink: 0,
-          backgroundColor: 'rgba(15, 15, 15, 0.72)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
-          paddingTop: 'max(12px, env(safe-area-inset-top))',
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '44px 1fr 44px',
-            alignItems: 'center',
-            padding: '0 12px 12px',
-          }}
-        >
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              borderRadius: 'var(--radius-md)',
-            }}
-          >
-            <ArrowLeft size={20} />
-          </button>
+      {/* Floating back button */}
+      <button style={{ ...floatingBtnStyle, left: '16px' }} onClick={() => navigate('/')}>
+        <ArrowLeft size={17} />
+      </button>
 
-          <div style={{ textAlign: 'center', minWidth: 0 }}>
-            <h1
-              style={{
-                fontSize: '16px',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                margin: 0,
-              }}
-            >
-              {deck.name}
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '3px' }}>
-              <ManaGroup
-                colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']}
-                size="sm"
-              />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {totalCards} cartas
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => setMenuOpen(true)}
-              style={{
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                borderRadius: 'var(--radius-md)',
-              }}
-            >
-              <MoreHorizontal size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Floating menu button */}
+      <button style={{ ...floatingBtnStyle, right: '16px' }} onClick={() => setMenuOpen(true)}>
+        <MoreHorizontal size={17} />
+      </button>
 
       {/* Tab content */}
       <div
@@ -216,6 +160,7 @@ export default function DeckBuilder() {
               inset: 0,
               overflowY: 'auto',
               overflowX: 'hidden',
+              paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
               paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
             }}
           >
