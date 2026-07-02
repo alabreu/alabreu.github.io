@@ -8,6 +8,7 @@ export type Deck = {
   commanderArtUrl: string | null;
   colorIdentity: ManaColor[];
   cards: DeckCard[];
+  categories?: string[];
   createdAt: number;
   updatedAt: number;
 };

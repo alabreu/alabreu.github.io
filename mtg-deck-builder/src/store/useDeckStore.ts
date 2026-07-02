@@ -12,6 +12,9 @@ type DeckStore = {
   setCommander: (deckId: string, card: DeckCard) => void;
   updateCardCategory: (deckId: string, scryfallId: string, category: string) => void;
   importCards: (deckId: string, cards: DeckCard[]) => void;
+  reorderCategories: (deckId: string, categories: string[]) => void;
+  addCategory: (deckId: string, name: string) => void;
+  deleteCategory: (deckId: string, name: string) => void;
 };
 
 function generateId(): string {
@@ -159,6 +162,37 @@ export const useDeckStore = create<DeckStore>()(
               }
             }
             return { ...d, cards: updated, updatedAt: Date.now() };
+          }),
+        }));
+      },
+      reorderCategories: (deckId: string, categories: string[]) => {
+        set((state) => ({
+          decks: state.decks.map((d) =>
+            d.id === deckId ? { ...d, categories, updatedAt: Date.now() } : d
+          ),
+        }));
+      },
+
+      addCategory: (deckId: string, name: string) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const existing = d.categories ?? [];
+            if (existing.includes(name)) return d;
+            return { ...d, categories: [...existing, name], updatedAt: Date.now() };
+          }),
+        }));
+      },
+
+      deleteCategory: (deckId: string, name: string) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const categories = (d.categories ?? []).filter((c) => c !== name);
+            const cards = d.cards.map((c) =>
+              c.category === name ? { ...c, category: 'Outros' } : c
+            );
+            return { ...d, categories, cards, updatedAt: Date.now() };
           }),
         }));
       },
