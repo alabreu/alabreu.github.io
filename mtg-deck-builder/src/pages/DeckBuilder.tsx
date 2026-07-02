@@ -1,8 +1,7 @@
 import React from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
-import { useDrag } from '@use-gesture/react';
+import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -12,20 +11,11 @@ import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../fe
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 
-const TABS = [
-  { label: 'Decklist', icon: List },
-  { label: 'Busca', icon: Search },
-];
-
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { decks, deleteDeck } = useDeckStore();
 
-  const initialTab = Math.min(Number(searchParams.get('tab') ?? '0'), 1);
-  const [activeTab, setActiveTab] = React.useState(initialTab);
-  const [direction, setDirection] = React.useState(0);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
@@ -39,32 +29,9 @@ export default function DeckBuilder() {
   });
   const [allExpanded, setAllExpanded] = React.useState(true);
   const [coachOpen, setCoachOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
-
-  function handleTabChange(newTab: number) {
-    if (newTab === activeTab) return;
-    setDirection(newTab > activeTab ? 1 : -1);
-    setActiveTab(newTab);
-    setSearchParams({ tab: String(newTab) }, { replace: true });
-  }
-
-  const bind = useDrag(
-    ({ last, movement: [mx], velocity: [vx] }) => {
-      if (!last) return;
-      const threshold = 50;
-      if (mx < -threshold || vx < -0.5) {
-        if (activeTab < TABS.length - 1) handleTabChange(activeTab + 1);
-      } else if (mx > threshold || vx > 0.5) {
-        if (activeTab > 0) handleTabChange(activeTab - 1);
-      }
-    },
-    {
-      axis: 'x',
-      filterTaps: true,
-      threshold: 10,
-    }
-  );
 
   if (!deck) {
     return (
@@ -105,8 +72,6 @@ export default function DeckBuilder() {
     );
   }
 
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
-
   const floatingBtnStyle: React.CSSProperties = {
     position: 'fixed',
     top: 'max(12px, env(safe-area-inset-top))',
@@ -137,16 +102,20 @@ export default function DeckBuilder() {
         overflow: 'hidden',
       }}
     >
-      {/* Floating back button — closes coach if open, else goes home */}
+      {/* Floating back button — closes overlays first, then goes home */}
       <button
         style={{ ...floatingBtnStyle, left: '16px' }}
-        onClick={() => coachOpen ? setCoachOpen(false) : navigate('/')}
+        onClick={() => {
+          if (searchOpen) { setSearchOpen(false); return; }
+          if (coachOpen) { setCoachOpen(false); return; }
+          navigate('/');
+        }}
       >
         <ArrowLeft size={17} />
       </button>
 
-      {/* Floating expand/collapse — only on Decklist, not in coach */}
-      {!coachOpen && activeTab === 0 && (
+      {/* Floating expand/collapse — only on main view */}
+      {!coachOpen && !searchOpen && (
         <button
           style={{ ...floatingBtnStyle, right: '104px' }}
           onClick={() => setAllExpanded((v) => !v)}
@@ -155,8 +124,8 @@ export default function DeckBuilder() {
         </button>
       )}
 
-      {/* Floating Coach button — hidden when coach is already open */}
-      {!coachOpen && (
+      {/* Floating Coach button — hidden when any overlay is open */}
+      {!coachOpen && !searchOpen && (
         <button
           style={{ ...floatingBtnStyle, right: '60px' }}
           onClick={() => setCoachOpen(true)}
@@ -170,40 +139,44 @@ export default function DeckBuilder() {
         <MoreHorizontal size={17} />
       </button>
 
-      {/* Tab content */}
-      <div
-        {...(!coachOpen ? bind() : {})}
-        style={{
-          flex: 1,
-          overflow: 'hidden',
-          position: 'relative',
-          touchAction: coachOpen ? 'auto' : 'pan-y',
-        }}
-      >
-        {/* Decklist / Search tabs */}
-        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-          <motion.div
-            key={activeTab}
-            custom={direction}
-            initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0.5 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: direction > 0 ? '-30%' : '30%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 35, mass: 0.8 }}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
-              paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
-            }}
-          >
-            {activeTab === 0 && <DecklistTab deck={deck} forcedExpandAll={allExpanded} />}
-            {activeTab === 1 && <SearchTab deck={deck} />}
-          </motion.div>
+      {/* Main content — Decklist is always the base view */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Decklist (permanent base) */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflowY: 'auto',
+            paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+            paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
+          }}
+        >
+          <DecklistTab deck={deck} forcedExpandAll={allExpanded} />
+        </div>
+
+        {/* Search overlay */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              key="search"
+              initial={{ y: '30%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '30%', opacity: 0 }}
+              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
+                backgroundColor: 'var(--bg-base)',
+              }}
+            >
+              <SearchTab deck={deck} autoFocusSearch />
+            </motion.div>
+          )}
         </AnimatePresence>
 
-        {/* Coach full-screen overlay — slides in from right */}
+        {/* Coach overlay */}
         <AnimatePresence>
           {coachOpen && (
             <motion.div
@@ -226,63 +199,37 @@ export default function DeckBuilder() {
         </AnimatePresence>
       </div>
 
-      {/* Floating bottom tab bar */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
-          left: '16px',
-          right: '16px',
-          zIndex: 50,
-          borderRadius: '999px',
-          backgroundColor: 'rgba(18, 18, 20, 0.92)',
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
-          display: coachOpen ? 'none' : 'flex',
-          padding: '4px',
-        }}
-      >
-        {TABS.map((tab, i) => {
-          const Icon = tab.icon;
-          const active = activeTab === i;
-          return (
-            <button
-              key={tab.label}
-              onClick={() => handleTabChange(i)}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '3px',
-                padding: '6px 0 5px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                WebkitTapHighlightColor: 'transparent',
-                color: active ? 'var(--accent)' : 'rgba(255,255,255,0.38)',
-                transition: 'color 0.2s',
-              }}
-            >
-              <Icon size={18} />
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: active ? 600 : 400,
-                  letterSpacing: '0.01em',
-                  lineHeight: 1,
-                }}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Floating search pill */}
+      {!coachOpen && !searchOpen && (
+        <button
+          onClick={() => setSearchOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
+            left: '16px',
+            right: '16px',
+            zIndex: 50,
+            borderRadius: '999px',
+            backgroundColor: 'rgba(18, 18, 20, 0.92)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '14px 20px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <Search size={16} color="rgba(255,255,255,0.35)" />
+          <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.35)', flex: 1, textAlign: 'left' }}>
+            Buscar cartas...
+          </span>
+        </button>
+      )}
 
       {/* Deck actions bottom sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">

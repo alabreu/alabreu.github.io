@@ -15,6 +15,7 @@ const MANA_COLORS: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
 
 interface SearchTabProps {
   deck: Deck;
+  autoFocusSearch?: boolean;
 }
 
 async function searchScryfall(query: string): Promise<ScryfallCard[]> {
@@ -59,7 +60,7 @@ function buildQuery(
   return parts.join(' ');
 }
 
-export function SearchTab({ deck }: SearchTabProps) {
+export function SearchTab({ deck, autoFocusSearch }: SearchTabProps) {
   const { addCard, removeCard } = useDeckStore();
 
   const [searchText, setSearchText] = React.useState('');
@@ -198,6 +199,7 @@ export function SearchTab({ deck }: SearchTabProps) {
             placeholder="Buscar por nome, texto..."
             value={searchText}
             onChange={handleTextChange}
+            autoFocus={autoFocusSearch}
             leftIcon={<Search size={15} />}
             rightIcon={
               searchText ? (
