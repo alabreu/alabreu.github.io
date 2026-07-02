@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, Key, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Key, Trash2, ChevronDown, Check } from 'lucide-react';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
+import { BottomSheet } from '../../design-system/components/BottomSheet';
 
 interface CoachTabProps {
   deck: Deck;
@@ -16,8 +17,23 @@ interface Message {
   timestamp: number;
 }
 
-const MODEL = 'google/gemini-2.0-flash-exp:free';
+interface ModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  note?: string;
+}
+
+const MODELS: ModelOption[] = [
+  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash', provider: 'Google', note: 'Rápido e capaz' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Muito capaz' },
+  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Raciocínio avançado' },
+  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Raciocínio passo a passo' },
+  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Leve e rápido' },
+];
+
 const API_KEY_KEY = 'openrouter-api-key';
+const MODEL_KEY = 'openrouter-model';
 const MESSAGES_PREFIX = 'coach-messages-';
 
 function genId(): string {
@@ -67,69 +83,128 @@ Regras de resposta:
 - Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione`;
 }
 
-function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
+// --- Model picker ---
+function ModelPicker({
+  selected,
+  onChange,
+}: {
+  selected: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {MODELS.map((m) => {
+        const active = selected === m.id;
+        return (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '11px 14px',
+              backgroundColor: active ? 'var(--accent-subtle)' : 'var(--surface-1)',
+              border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-default)'}`,
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              WebkitTapHighlightColor: 'transparent',
+              transition: 'background-color 0.1s, border-color 0.1s',
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: active ? 'var(--accent)' : 'var(--text-primary)',
+                }}
+              >
+                {m.label}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                {m.provider}
+                {m.note ? ` · ${m.note}` : ''}
+                {' · '}
+                <span style={{ color: 'var(--accent)', fontWeight: 500 }}>Grátis</span>
+              </p>
+            </div>
+            {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// --- API key + model setup ---
+function ApiKeySetup({
+  model,
+  onModelChange,
+  onSave,
+}: {
+  model: string;
+  onModelChange: (id: string) => void;
+  onSave: (key: string) => void;
+}) {
   const [value, setValue] = React.useState('');
 
   return (
     <div
       style={{
         flex: 1,
+        overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         padding: '32px 24px',
         gap: '24px',
-        textAlign: 'center',
       }}
     >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        style={{
-          width: '64px',
-          height: '64px',
-          borderRadius: 'var(--radius-xl)',
-          backgroundColor: 'var(--accent-subtle)',
-          border: '1px solid var(--accent-border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Key size={28} style={{ color: 'var(--accent)' }} />
-      </motion.div>
-
-      <motion.div
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
-      >
-        <p
+      {/* Icon + title */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center' }}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            margin: 0,
-            letterSpacing: '-0.02em',
+            width: '64px',
+            height: '64px',
+            borderRadius: 'var(--radius-xl)',
+            backgroundColor: 'var(--accent-subtle)',
+            border: '1px solid var(--accent-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          Configurar Coach IA
-        </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-          Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo e nunca é
-          enviada a terceiros.
-        </p>
-      </motion.div>
+          <Key size={28} style={{ color: 'var(--accent)' }} />
+        </motion.div>
+        <motion.div
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+            Configurar Coach IA
+          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
+            Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo.
+          </p>
+        </motion.div>
+      </div>
 
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.15 }}
-        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}
+        transition={{ delay: 0.12 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
       >
+        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
+          API Key
+        </p>
         <Input
           placeholder="sk-or-v1-..."
           value={value}
@@ -140,6 +215,24 @@ function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
           type="password"
           fullWidth
         />
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+          Crie sua chave em openrouter.ai/keys
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.16 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+      >
+        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
+          Modelo — todos gratuitos
+        </p>
+        <ModelPicker selected={model} onChange={onModelChange} />
+      </motion.div>
+
+      <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
         <Button
           variant="primary"
           size="md"
@@ -149,14 +242,12 @@ function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
         >
           Ativar Coach
         </Button>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-          Crie sua chave em openrouter.ai/keys · Modelo gratuito por padrão
-        </p>
       </motion.div>
     </div>
   );
 }
 
+// --- Typing dots ---
 function TypingDots() {
   return (
     <div style={{ display: 'flex', gap: '4px', padding: '4px 2px', alignItems: 'center' }}>
@@ -165,29 +256,18 @@ function TypingDots() {
           key={i}
           animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
           transition={{ duration: 1, repeat: Infinity, delay: i * 0.18 }}
-          style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent)',
-          }}
+          style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent)' }}
         />
       ))}
     </div>
   );
 }
 
+// --- Message bubble ---
 function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolean }) {
   const isUser = msg.role === 'user';
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: isUser ? 'row-reverse' : 'row',
-        gap: '8px',
-        alignItems: 'flex-start',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-start' }}>
       <div
         style={{
           width: '28px',
@@ -201,11 +281,7 @@ function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolea
           flexShrink: 0,
         }}
       >
-        {isUser ? (
-          <User size={13} style={{ color: 'var(--text-secondary)' }} />
-        ) : (
-          <Bot size={13} style={{ color: 'var(--accent)' }} />
-        )}
+        {isUser ? <User size={13} style={{ color: 'var(--text-secondary)' }} /> : <Bot size={13} style={{ color: 'var(--accent)' }} />}
       </div>
 
       <div
@@ -222,27 +298,12 @@ function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolea
         {isStreaming && !msg.content ? (
           <TypingDots />
         ) : (
-          <p
-            style={{
-              fontSize: '13px',
-              color: 'var(--text-primary)',
-              lineHeight: 1.6,
-              whiteSpace: 'pre-wrap',
-              margin: 0,
-            }}
-          >
+          <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
             {msg.content}
             {isStreaming && <span style={{ opacity: 0.4 }}>▍</span>}
           </p>
         )}
-        <p
-          style={{
-            fontSize: '10px',
-            color: 'var(--text-muted)',
-            margin: '4px 0 0',
-            textAlign: isUser ? 'right' : 'left',
-          }}
-        >
+        <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0', textAlign: isUser ? 'right' : 'left' }}>
           {formatTime(msg.timestamp)}
         </p>
       </div>
@@ -256,8 +317,10 @@ const SUGGESTIONS = [
   'O meu deck está equilibrado para Commander?',
 ];
 
+// --- Main component ---
 export function CoachTab({ deck }: CoachTabProps) {
   const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(API_KEY_KEY) ?? '');
+  const [model, setModel] = React.useState(() => localStorage.getItem(MODEL_KEY) ?? MODELS[0].id);
   const [messages, setMessages] = React.useState<Message[]>(() => {
     try {
       const raw = localStorage.getItem(`${MESSAGES_PREFIX}${deck.id}`);
@@ -269,9 +332,11 @@ export function CoachTab({ deck }: CoachTabProps) {
   const [input, setInput] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
+  const [modelSheetOpen, setModelSheetOpen] = React.useState(false);
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const currentModel = MODELS.find((m) => m.id === model) ?? MODELS[0];
 
   React.useEffect(() => {
     localStorage.setItem(`${MESSAGES_PREFIX}${deck.id}`, JSON.stringify(messages));
@@ -286,6 +351,12 @@ export function CoachTab({ deck }: CoachTabProps) {
     setApiKey(key);
   }
 
+  function changeModel(id: string) {
+    localStorage.setItem(MODEL_KEY, id);
+    setModel(id);
+    setModelSheetOpen(false);
+  }
+
   async function sendMessage(content: string) {
     if (!content.trim() || isLoading || !apiKey) return;
 
@@ -296,8 +367,7 @@ export function CoachTab({ deck }: CoachTabProps) {
     setIsLoading(true);
 
     const aId = genId();
-    const assistantMsg: Message = { id: aId, role: 'assistant', content: '', timestamp: Date.now() };
-    setMessages([...history, assistantMsg]);
+    setMessages([...history, { id: aId, role: 'assistant', content: '', timestamp: Date.now() }]);
     setStreamingId(aId);
 
     try {
@@ -310,7 +380,7 @@ export function CoachTab({ deck }: CoachTabProps) {
           'X-Title': 'MTG Deck Builder Coach',
         },
         body: JSON.stringify({
-          model: MODEL,
+          model,
           stream: true,
           messages: [
             { role: 'system', content: buildSystemPrompt(deck) },
@@ -320,8 +390,7 @@ export function CoachTab({ deck }: CoachTabProps) {
       });
 
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`${res.status} — ${txt}`);
+        throw new Error(`${res.status} — ${await res.text()}`);
       }
 
       const reader = res.body!.getReader();
@@ -331,8 +400,7 @@ export function CoachTab({ deck }: CoachTabProps) {
       outer: while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
+        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           if (data === '[DONE]') break outer;
@@ -340,12 +408,10 @@ export function CoachTab({ deck }: CoachTabProps) {
             const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
             if (delta) {
               accumulated += delta;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === aId ? { ...m, content: accumulated } : m))
-              );
+              setMessages((prev) => prev.map((m) => (m.id === aId ? { ...m, content: accumulated } : m)));
             }
           } catch {
-            // skip malformed SSE lines
+            // skip malformed SSE line
           }
         }
       }
@@ -353,9 +419,7 @@ export function CoachTab({ deck }: CoachTabProps) {
       const msg = err instanceof Error ? err.message : String(err);
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === aId
-            ? { ...m, content: `Erro ao conectar com a API:\n${msg}\n\nVerifique sua chave e tente novamente.` }
-            : m
+          m.id === aId ? { ...m, content: `Erro ao conectar com a API:\n${msg}\n\nVerifique sua chave e tente novamente.` } : m
         )
       );
     } finally {
@@ -367,7 +431,7 @@ export function CoachTab({ deck }: CoachTabProps) {
   if (!apiKey) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ApiKeySetup onSave={saveApiKey} />
+        <ApiKeySetup model={model} onModelChange={changeModel} onSave={saveApiKey} />
       </div>
     );
   }
@@ -385,7 +449,7 @@ export function CoachTab({ deck }: CoachTabProps) {
           gap: '12px',
         }}
       >
-        {/* Deck context chip */}
+        {/* Context + model chip */}
         <div
           style={{
             padding: '8px 12px',
@@ -394,26 +458,51 @@ export function CoachTab({ deck }: CoachTabProps) {
             borderRadius: 'var(--radius-md)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             gap: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <Bot size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-            <span
-              style={{
-                fontSize: '12px',
-                color: 'var(--text-muted)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
-              {deck.commanderName ? ` · ${deck.commanderName}` : ''}
-              {` · ${totalCards} cartas`}
-            </span>
-          </div>
+          <Bot size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <span
+            style={{
+              flex: 1,
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
+            {deck.commanderName ? ` · ${deck.commanderName}` : ''}
+            {` · ${totalCards} cartas`}
+          </span>
+
+          {/* Model selector button */}
+          <button
+            onClick={() => setModelSheetOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3px',
+              padding: '3px 7px',
+              backgroundColor: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              color: 'var(--accent)',
+              fontSize: '11px',
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              flexShrink: 0,
+              WebkitTapHighlightColor: 'transparent',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {currentModel.label}
+            <ChevronDown size={11} />
+          </button>
+
+          {/* Clear history */}
           {messages.length > 0 && (
             <button
               onClick={() => setMessages([])}
@@ -435,7 +524,7 @@ export function CoachTab({ deck }: CoachTabProps) {
           )}
         </div>
 
-        {/* Empty state with suggestion chips */}
+        {/* Empty state */}
         {messages.length === 0 && (
           <div
             style={{
@@ -469,14 +558,7 @@ export function CoachTab({ deck }: CoachTabProps) {
                 Pergunte sobre cartas, sinergias, curva de mana ou como melhorar seu deck.
               </p>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                width: '100%',
-              }}
-            >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -504,7 +586,6 @@ export function CoachTab({ deck }: CoachTabProps) {
         {messages.map((msg) => (
           <MessageBubble key={msg.id} msg={msg} isStreaming={msg.id === streamingId} />
         ))}
-
         <div ref={bottomRef} />
       </div>
 
@@ -545,6 +626,16 @@ export function CoachTab({ deck }: CoachTabProps) {
           Enviar
         </Button>
       </div>
+
+      {/* Model picker bottom sheet */}
+      <BottomSheet isOpen={modelSheetOpen} onClose={() => setModelSheetOpen(false)} title="Escolher modelo">
+        <div style={{ padding: '8px 20px 32px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+            Todos os modelos abaixo são gratuitos via OpenRouter.
+          </p>
+          <ModelPicker selected={model} onChange={changeModel} />
+        </div>
+      </BottomSheet>
     </div>
   );
 }
