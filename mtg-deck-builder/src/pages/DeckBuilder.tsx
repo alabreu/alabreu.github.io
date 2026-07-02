@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput } from 'lucide-react';
+import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
@@ -10,6 +10,7 @@ import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab } from '../features/deck-builder/CoachTab';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
+import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 
 const TABS = [
   { label: 'Decklist', icon: List },
@@ -29,6 +30,7 @@ export default function DeckBuilder() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -232,6 +234,53 @@ export default function DeckBuilder() {
       {/* Deck actions bottom sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">
         <div style={{ padding: '8px 0 24px' }}>
+          {/* Manage sections */}
+          <button
+            onClick={() => { setMenuOpen(false); setManageSectionsOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <LayoutList size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Gerenciar seções
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Ordenar, criar e remover seções
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
           {/* Import cards */}
           <button
             onClick={() => { setMenuOpen(false); setImportOpen(true); }}
@@ -325,6 +374,13 @@ export default function DeckBuilder() {
           </button>
         </div>
       </BottomSheet>
+
+      {/* Manage sections sheet */}
+      <ManageSectionsSheet
+        isOpen={manageSectionsOpen}
+        onClose={() => setManageSectionsOpen(false)}
+        deck={deck}
+      />
 
       {/* Import cards sheet */}
       <ImportCardsSheet

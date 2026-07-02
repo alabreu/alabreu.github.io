@@ -166,19 +166,18 @@ function FlippableCard({
 interface CategorySectionProps {
   category: string;
   cards: DeckCard[];
-  deckId: string;
+  expanded: boolean;
+  onToggle: () => void;
   onCardClick: (card: DeckCard) => void;
 }
 
-function CategorySection({ category, cards, onCardClick }: CategorySectionProps) {
-  const [expanded, setExpanded] = React.useState(true);
+function CategorySection({ category, cards, expanded, onToggle, onCardClick }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
     <div style={{ marginBottom: '4px' }}>
-      {/* Category header */}
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={onToggle}
         style={{
           width: '100%',
           display: 'flex',
@@ -205,7 +204,6 @@ function CategorySection({ category, cards, onCardClick }: CategorySectionProps)
         </span>
       </button>
 
-      {/* Cards grid */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -243,6 +241,7 @@ export function DecklistTab({ deck }: DecklistTabProps) {
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const landCount = deck.cards
@@ -264,20 +263,32 @@ export function DecklistTab({ deck }: DecklistTabProps) {
       : '0.00';
 
   const grouped = groupCardsByCategory(deck.cards);
-  const categoryOrder = [
-    'Comandante',
-    'Terrenos',
-    'Ramp',
-    'Compra de Cartas',
-    'Remoção',
-    'Proteção',
-    'Wincons',
-    'Outros',
+  const DEFAULT_ORDER = [
+    'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
+    'Remoção', 'Proteção', 'Wincons', 'Outros',
   ];
-  const sortedCategories = [
-    ...categoryOrder.filter((c) => grouped[c]),
-    ...Object.keys(grouped).filter((c) => !categoryOrder.includes(c)),
-  ];
+  const knownCategories = deck.categories && deck.categories.length > 0 ? deck.categories : null;
+  const sortedCategories = knownCategories
+    ? [
+        ...knownCategories.filter((c) => grouped[c]),
+        ...Object.keys(grouped).filter((c) => !knownCategories.includes(c)),
+      ]
+    : [
+        ...DEFAULT_ORDER.filter((c) => grouped[c]),
+        ...Object.keys(grouped).filter((c) => !DEFAULT_ORDER.includes(c)),
+      ];
+
+  const allExpanded = sortedCategories.every((c) => expandedSections[c] !== false);
+
+  function toggleSection(cat: string) {
+    setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
+  }
+
+  function setAllExpanded(value: boolean) {
+    const next: Record<string, boolean> = {};
+    for (const cat of sortedCategories) next[cat] = value;
+    setExpandedSections(next);
+  }
 
   function handleCardClick(card: DeckCard) {
     setSelectedCard(card);
@@ -363,6 +374,25 @@ export function DecklistTab({ deck }: DecklistTabProps) {
         <StatItem icon={<Zap size={13} />} label="CMC médio" value={avgCmc} />
       </div>
 
+      {/* Collapse / expand toggle */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+        <button
+          onClick={() => setAllExpanded(!allExpanded)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '12px',
+            color: 'var(--text-muted)',
+            padding: '4px 0',
+            fontFamily: 'inherit',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {allExpanded ? 'Recolher tudo' : 'Expandir tudo'}
+        </button>
+      </div>
+
       {/* Cards by category */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {sortedCategories.map((cat) => (
@@ -370,7 +400,8 @@ export function DecklistTab({ deck }: DecklistTabProps) {
             key={cat}
             category={cat}
             cards={grouped[cat]}
-            deckId={deck.id}
+            expanded={expandedSections[cat] !== false}
+            onToggle={() => toggleSection(cat)}
             onCardClick={handleCardClick}
           />
         ))}
