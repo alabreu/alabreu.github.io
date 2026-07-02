@@ -15,7 +15,6 @@ import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsShee
 const TABS = [
   { label: 'Decklist', icon: List },
   { label: 'Busca', icon: Search },
-  { label: 'Coach', icon: Bot },
 ];
 
 export default function DeckBuilder() {
@@ -24,7 +23,7 @@ export default function DeckBuilder() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { decks, deleteDeck } = useDeckStore();
 
-  const initialTab = Math.min(Number(searchParams.get('tab') ?? '0'), 2);
+  const initialTab = Math.min(Number(searchParams.get('tab') ?? '0'), 1);
   const [activeTab, setActiveTab] = React.useState(initialTab);
   const [direction, setDirection] = React.useState(0);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -39,7 +38,7 @@ export default function DeckBuilder() {
     return MODELS[0].id;
   });
   const [allExpanded, setAllExpanded] = React.useState(true);
-  const [isKeyboardOpen, setIsKeyboardOpen] = React.useState(false);
+  const [coachOpen, setCoachOpen] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -138,18 +137,31 @@ export default function DeckBuilder() {
         overflow: 'hidden',
       }}
     >
-      {/* Floating back button */}
-      <button style={{ ...floatingBtnStyle, left: '16px' }} onClick={() => navigate('/')}>
+      {/* Floating back button — closes coach if open, else goes home */}
+      <button
+        style={{ ...floatingBtnStyle, left: '16px' }}
+        onClick={() => coachOpen ? setCoachOpen(false) : navigate('/')}
+      >
         <ArrowLeft size={17} />
       </button>
 
-      {/* Floating expand/collapse button — only on Decklist tab */}
-      {activeTab === 0 && (
+      {/* Floating expand/collapse — only on Decklist, not in coach */}
+      {!coachOpen && activeTab === 0 && (
         <button
-          style={{ ...floatingBtnStyle, right: '60px' }}
+          style={{ ...floatingBtnStyle, right: '104px' }}
           onClick={() => setAllExpanded((v) => !v)}
         >
           <ChevronsUpDown size={15} />
+        </button>
+      )}
+
+      {/* Floating Coach button — hidden when coach is already open */}
+      {!coachOpen && (
+        <button
+          style={{ ...floatingBtnStyle, right: '60px' }}
+          onClick={() => setCoachOpen(true)}
+        >
+          <Bot size={16} />
         </button>
       )}
 
@@ -160,14 +172,15 @@ export default function DeckBuilder() {
 
       {/* Tab content */}
       <div
-        {...bind()}
+        {...(!coachOpen ? bind() : {})}
         style={{
           flex: 1,
           overflow: 'hidden',
           position: 'relative',
-          touchAction: 'pan-y',
+          touchAction: coachOpen ? 'auto' : 'pan-y',
         }}
       >
+        {/* Decklist / Search tabs */}
         <AnimatePresence mode="popLayout" initial={false} custom={direction}>
           <motion.div
             key={activeTab}
@@ -187,8 +200,29 @@ export default function DeckBuilder() {
           >
             {activeTab === 0 && <DecklistTab deck={deck} forcedExpandAll={allExpanded} />}
             {activeTab === 1 && <SearchTab deck={deck} />}
-            {activeTab === 2 && <CoachTab deck={deck} model={coachModel} onKeyboardChange={setIsKeyboardOpen} />}
           </motion.div>
+        </AnimatePresence>
+
+        {/* Coach full-screen overlay — slides in from right */}
+        <AnimatePresence>
+          {coachOpen && (
+            <motion.div
+              key="coach"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 350, damping: 35, mass: 0.8 }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
+                backgroundColor: 'var(--bg-base)',
+              }}
+            >
+              <CoachTab deck={deck} model={coachModel} />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -206,7 +240,7 @@ export default function DeckBuilder() {
           WebkitBackdropFilter: 'blur(28px)',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
-          display: isKeyboardOpen ? 'none' : 'flex',
+          display: coachOpen ? 'none' : 'flex',
           padding: '4px',
         }}
       >
