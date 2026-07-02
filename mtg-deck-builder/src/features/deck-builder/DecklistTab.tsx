@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw, LayoutGrid, LayoutList } from 'lucide-react';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
@@ -164,15 +164,57 @@ function FlippableCard({
   );
 }
 
+function ListCardRow({ card, onCardClick }: { card: DeckCard; onCardClick: (card: DeckCard) => void }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      onClick={() => onCardClick(card)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '7px 4px',
+        width: '100%',
+        backgroundColor: 'transparent',
+        border: 'none',
+        borderBottom: '1px solid var(--border-subtle)',
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: 'inherit',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <div style={{ width: '36px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
+        <CardImage imageUrl={card.imageUrl} name={card.name} size="small" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+          {card.name}
+        </p>
+        {card.typeLine && (
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>
+            {card.typeLine}
+          </p>
+        )}
+      </div>
+      {card.quantity > 1 && (
+        <Badge variant="default" size="sm">{card.quantity}</Badge>
+      )}
+    </motion.button>
+  );
+}
+
 interface CategorySectionProps {
   category: string;
   cards: DeckCard[];
   expanded: boolean;
   onToggle: () => void;
   onCardClick: (card: DeckCard) => void;
+  columns: 1 | 2;
 }
 
-function CategorySection({ category, cards, expanded, onToggle, onCardClick }: CategorySectionProps) {
+function CategorySection({ category, cards, expanded, onToggle, onCardClick, columns }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
@@ -215,22 +257,34 @@ function CategorySection({ category, cards, expanded, onToggle, onCardClick }: C
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '8px',
-                padding: '8px 0 4px',
-              }}
-            >
-              {cards.map((card) => (
-                <FlippableCard
-                  key={card.scryfallId}
-                  card={card}
-                  onCardClick={onCardClick}
-                />
-              ))}
-            </div>
+            {columns === 2 ? (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '8px',
+                  padding: '8px 0 4px',
+                }}
+              >
+                {cards.map((card) => (
+                  <FlippableCard
+                    key={card.scryfallId}
+                    card={card}
+                    onCardClick={onCardClick}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '4px 0' }}>
+                {cards.map((card) => (
+                  <ListCardRow
+                    key={card.scryfallId}
+                    card={card}
+                    onCardClick={onCardClick}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -243,6 +297,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
+  const [columns, setColumns] = React.useState<1 | 2>(2);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const landCount = deck.cards
@@ -363,6 +418,26 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ManaGroup colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']} size="sm" />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
+          <span style={{ flex: 1 }} />
+          <button
+            onClick={() => setColumns(columns === 2 ? 1 : 2)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '28px',
+              height: '28px',
+              backgroundColor: 'var(--surface-1)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              WebkitTapHighlightColor: 'transparent',
+              flexShrink: 0,
+            }}
+          >
+            {columns === 2 ? <LayoutList size={14} /> : <LayoutGrid size={14} />}
+          </button>
         </div>
       </div>
 
@@ -395,6 +470,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             expanded={expandedSections[cat] !== false}
             onToggle={() => toggleSection(cat)}
             onCardClick={handleCardClick}
+            columns={columns}
           />
         ))}
       </div>
