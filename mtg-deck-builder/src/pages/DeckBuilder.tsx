@@ -32,7 +32,12 @@ export default function DeckBuilder() {
   const [importOpen, setImportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
   const [coachModelOpen, setCoachModelOpen] = React.useState(false);
-  const [coachModel, setCoachModel] = React.useState(() => localStorage.getItem(MODEL_KEY) ?? MODELS[0].id);
+  const [coachModel, setCoachModel] = React.useState(() => {
+    const stored = localStorage.getItem(MODEL_KEY);
+    if (stored && MODELS.some((m) => m.id === stored)) return stored;
+    localStorage.setItem(MODEL_KEY, MODELS[0].id);
+    return MODELS[0].id;
+  });
   const [allExpanded, setAllExpanded] = React.useState(true);
 
   const deck = decks.find((d) => d.id === id);
