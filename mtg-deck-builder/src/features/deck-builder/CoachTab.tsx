@@ -255,7 +255,7 @@ function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolea
         {isStreaming && !msg.content ? (
           <TypingDots />
         ) : (
-          <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
             {msg.content}
             {isStreaming && <span style={{ opacity: 0.4 }}>▍</span>}
           </p>
