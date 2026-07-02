@@ -171,7 +171,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <SearchTab deck={deck} autoFocusSearch />
+              <SearchTab deck={deck} />
             </motion.div>
           )}
         </AnimatePresence>
