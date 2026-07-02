@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw, LayoutGrid, LayoutList } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw, LayoutGrid, LayoutList, Square } from 'lucide-react';
+
+type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
@@ -211,10 +213,10 @@ interface CategorySectionProps {
   expanded: boolean;
   onToggle: () => void;
   onCardClick: (card: DeckCard) => void;
-  columns: 1 | 2;
+  viewMode: ViewMode;
 }
 
-function CategorySection({ category, cards, expanded, onToggle, onCardClick, columns }: CategorySectionProps) {
+function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
@@ -257,17 +259,10 @@ function CategorySection({ category, cards, expanded, onToggle, onCardClick, col
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            {columns === 2 ? (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '8px',
-                  padding: '8px 0 4px',
-                }}
-              >
+            {viewMode === 'list' ? (
+              <div style={{ padding: '4px 0' }}>
                 {cards.map((card) => (
-                  <FlippableCard
+                  <ListCardRow
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
@@ -275,9 +270,16 @@ function CategorySection({ category, cards, expanded, onToggle, onCardClick, col
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '4px 0' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
+                  gap: '8px',
+                  padding: '8px 0 4px',
+                }}
+              >
                 {cards.map((card) => (
-                  <ListCardRow
+                  <FlippableCard
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
@@ -297,7 +299,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
-  const [columns, setColumns] = React.useState<1 | 2>(2);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const landCount = deck.cards
@@ -419,25 +421,40 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
           <ManaGroup colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']} size="sm" />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
           <span style={{ flex: 1 }} />
-          <button
-            onClick={() => setColumns(columns === 2 ? 1 : 2)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '28px',
-              height: '28px',
-              backgroundColor: 'var(--surface-1)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              WebkitTapHighlightColor: 'transparent',
-              flexShrink: 0,
-            }}
-          >
-            {columns === 2 ? <LayoutList size={14} /> : <LayoutGrid size={14} />}
-          </button>
+          <div style={{
+            display: 'flex',
+            backgroundColor: 'var(--surface-1)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-sm)',
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}>
+            {([
+              { mode: '2col' as ViewMode, icon: <LayoutGrid size={13} /> },
+              { mode: '1col' as ViewMode, icon: <Square size={13} /> },
+              { mode: 'list' as ViewMode, icon: <LayoutList size={13} /> },
+            ]).map(({ mode, icon }, i) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '26px',
+                  backgroundColor: viewMode === mode ? 'var(--surface-2)' : 'transparent',
+                  border: 'none',
+                  borderLeft: i > 0 ? '1px solid var(--border-default)' : 'none',
+                  cursor: 'pointer',
+                  color: viewMode === mode ? 'var(--text-primary)' : 'var(--text-muted)',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -470,7 +487,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             expanded={expandedSections[cat] !== false}
             onToggle={() => toggleSection(cat)}
             onCardClick={handleCardClick}
-            columns={columns}
+            viewMode={viewMode}
           />
         ))}
       </div>
