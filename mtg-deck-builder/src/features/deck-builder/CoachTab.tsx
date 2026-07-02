@@ -289,6 +289,31 @@ export function CoachTab({ deck, model }: CoachTabProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Anchor input above keyboard on iOS Safari using visualViewport
+  React.useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (kh > 0) {
+        const containerTop = el.getBoundingClientRect().top;
+        el.style.height = `${vv.height + vv.offsetTop - containerTop}px`;
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+      } else {
+        el.style.height = '';
+      }
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const canSend = input.trim().length > 0 && !isLoading;
@@ -389,14 +414,14 @@ export function CoachTab({ deck, model }: CoachTabProps) {
 
   if (!apiKey) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <ApiKeySetup onSave={(key) => { localStorage.setItem(API_KEY_KEY, key); setApiKey(key); }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
         style={{
           flex: 1,
