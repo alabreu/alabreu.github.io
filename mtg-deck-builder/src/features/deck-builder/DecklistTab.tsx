@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface DecklistTabProps {
   deck: Deck;
+  forcedExpandAll?: boolean;
 }
 
 function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
@@ -237,7 +238,7 @@ function CategorySection({ category, cards, expanded, onToggle, onCardClick }: C
   );
 }
 
-export function DecklistTab({ deck }: DecklistTabProps) {
+export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -280,14 +281,20 @@ export function DecklistTab({ deck }: DecklistTabProps) {
 
   const allExpanded = sortedCategories.every((c) => expandedSections[c] !== false);
 
-  function toggleSection(cat: string) {
-    setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
-  }
-
-  function setAllExpanded(value: boolean) {
+  const setAllExpanded = React.useCallback((value: boolean) => {
     const next: Record<string, boolean> = {};
     for (const cat of sortedCategories) next[cat] = value;
     setExpandedSections(next);
+  }, [sortedCategories]);
+
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (forcedExpandAll !== undefined) setAllExpanded(forcedExpandAll);
+  }, [forcedExpandAll, setAllExpanded]);
+
+  function toggleSection(cat: string) {
+    setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
   }
 
   function handleCardClick(card: DeckCard) {
@@ -372,25 +379,6 @@ export function DecklistTab({ deck }: DecklistTabProps) {
         <StatItem icon={<MapPin size={13} />} label="Terrenos" value={landCount} />
         <div style={{ width: '1px', backgroundColor: 'var(--border-subtle)' }} />
         <StatItem icon={<Zap size={13} />} label="CMC médio" value={avgCmc} />
-      </div>
-
-      {/* Collapse / expand toggle */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-        <button
-          onClick={() => setAllExpanded(!allExpanded)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '12px',
-            color: 'var(--text-muted)',
-            padding: '4px 0',
-            fontFamily: 'inherit',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          {allExpanded ? 'Recolher tudo' : 'Expandir tudo'}
-        </button>
       </div>
 
       {/* Cards by category */}
