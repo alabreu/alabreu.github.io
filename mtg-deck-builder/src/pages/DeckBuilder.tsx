@@ -117,20 +117,10 @@ export default function DeckBuilder() {
       {/* Floating expand/collapse — only on main view */}
       {!coachOpen && !searchOpen && (
         <button
-          style={{ ...floatingBtnStyle, right: '104px' }}
+          style={{ ...floatingBtnStyle, right: '60px' }}
           onClick={() => setAllExpanded((v) => !v)}
         >
           <ChevronsUpDown size={15} />
-        </button>
-      )}
-
-      {/* Floating Coach button — hidden when any overlay is open */}
-      {!coachOpen && !searchOpen && (
-        <button
-          style={{ ...floatingBtnStyle, right: '60px' }}
-          onClick={() => setCoachOpen(true)}
-        >
-          <Bot size={16} />
         </button>
       )}
 
@@ -199,36 +189,70 @@ export default function DeckBuilder() {
         </AnimatePresence>
       </div>
 
-      {/* Floating search pill */}
+      {/* Bottom bar: search pill + coach button */}
       {!coachOpen && !searchOpen && (
-        <button
-          onClick={() => setSearchOpen(true)}
+        <div
           style={{
             position: 'fixed',
             bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
             left: '16px',
             right: '16px',
             zIndex: 50,
-            borderRadius: '999px',
-            backgroundColor: 'rgba(18, 18, 20, 0.92)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '14px 20px',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            WebkitTapHighlightColor: 'transparent',
+            gap: '8px',
           }}
         >
-          <Search size={16} color="rgba(255,255,255,0.35)" />
-          <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.35)', flex: 1, textAlign: 'left' }}>
-            Buscar cartas...
-          </span>
-        </button>
+          {/* Search pill */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            style={{
+              flex: 1,
+              borderRadius: '999px',
+              backgroundColor: 'rgba(18, 18, 20, 0.92)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '14px 20px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <Search size={16} color="rgba(255,255,255,0.35)" />
+            <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.35)', flex: 1, textAlign: 'left' }}>
+              Buscar cartas...
+            </span>
+          </button>
+
+          {/* Coach button */}
+          <button
+            onClick={() => setCoachOpen(true)}
+            style={{
+              width: '52px',
+              height: '52px',
+              flexShrink: 0,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(18, 18, 20, 0.92)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+          >
+            <Bot size={18} />
+          </button>
+        </div>
       )}
 
       {/* Deck actions bottom sheet */}
