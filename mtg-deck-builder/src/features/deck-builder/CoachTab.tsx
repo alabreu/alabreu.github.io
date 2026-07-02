@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Send, Lock, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Key, Trash2 } from 'lucide-react';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
@@ -16,222 +16,502 @@ interface Message {
   timestamp: number;
 }
 
-const PLACEHOLDER_MESSAGES: Message[] = [
-  {
-    id: '1',
-    role: 'user',
-    content: 'Quais cartas devo adicionar para melhorar meu ramp?',
-    timestamp: Date.now() - 120000,
-  },
-  {
-    id: '2',
-    role: 'assistant',
-    content:
-      'Para melhorar o ramp do seu deck Commander, recomendo considerar cartas como Sol Ring, Arcane Signet, e Cultivate. Dependendo das cores do seu comandante, há opções ainda mais poderosas disponíveis.\n\nVocê também deve considerar ter pelo menos 10 fontes de ramp no seu deck para garantir uma curva de mana consistente.',
-    timestamp: Date.now() - 115000,
-  },
-  {
-    id: '3',
-    role: 'user',
-    content: 'Como devo balancear remoção e proteção?',
-    timestamp: Date.now() - 60000,
-  },
-  {
-    id: '4',
-    role: 'assistant',
-    content:
-      'A regra geral para Commander é ter pelo menos 10 remoções e 5-7 proteções para seu comandante. Um bom equilíbrio seria:\n\n• 7-8 remoções de criaturas\n• 2-3 remoções de encantamentos/artefatos\n• 2-3 proteções (counter, hexproof, indestructible)\n\nAjuste conforme o seu grupo de jogo e o estilo do seu deck.',
-    timestamp: Date.now() - 55000,
-  },
-];
+const MODEL = 'google/gemini-2.0-flash-exp:free';
+const API_KEY_KEY = 'openrouter-api-key';
+const MESSAGES_PREFIX = 'coach-messages-';
 
-function formatTime(timestamp: number): string {
-  const d = new Date(timestamp);
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+function genId(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
-export function CoachTab({ deck }: CoachTabProps) {
-  const [inputValue, setInputValue] = React.useState('');
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
+function buildSystemPrompt(deck: Deck): string {
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+
+  const byCategory: Record<string, string[]> = {};
+  for (const card of deck.cards) {
+    if (!byCategory[card.category]) byCategory[card.category] = [];
+    byCategory[card.category].push(card.quantity > 1 ? `${card.quantity}x ${card.name}` : card.name);
+  }
+
+  const deckList = Object.entries(byCategory)
+    .map(([cat, cards]) => `${cat} (${cards.length}):\n${cards.map((c) => `  - ${c}`).join('\n')}`)
+    .join('\n\n');
+
+  return `Você é um Coach especialista em Magic: The Gathering, focado no formato Commander/EDH.
+
+Você domina:
+- Regras oficiais do Magic e interações complexas
+- Estratégia e sinergias do formato Commander (100 cartas, uma cópia por carta, sem básicas)
+- Staples e meta atual do Commander
+- Curva de mana, ramp, compra de cartas, remoção, win conditions
+- Análise de decks e sugestões de melhoria com foco em custo-benefício
+
+Deck atual do usuário:
+Nome: ${deck.name}
+Comandante: ${deck.commanderName ?? 'Não definido'}
+Identidade de cores: ${deck.colorIdentity.length > 0 ? deck.colorIdentity.join('') : 'Incolor'}
+Total: ${totalCards} cartas
+
+${deckList}
+
+Regras de resposta:
+- Sempre em português brasileiro
+- Seja direto e objetivo; use bullet points para listas
+- Ao sugerir cartas, explique brevemente a sinergia e indique se há alternativas budget
+- Considere sempre a identidade de cores do comandante
+- Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione`;
+}
+
+function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
+  const [value, setValue] = React.useState('');
 
   return (
     <div
       style={{
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
-        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 24px',
+        gap: '24px',
+        textAlign: 'center',
       }}
     >
-      {/* "Coming soon" overlay */}
-      <div
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 20,
-          backgroundColor: 'rgba(15, 15, 15, 0.85)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          width: '64px',
+          height: '64px',
+          borderRadius: 'var(--radius-xl)',
+          backgroundColor: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-border)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '16px',
-          padding: '32px',
-          textAlign: 'center',
         }}
       >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        <Key size={28} style={{ color: 'var(--accent)' }} />
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+      >
+        <p
           style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: 'var(--radius-xl)',
-            backgroundColor: 'var(--accent-subtle)',
-            border: '1px solid var(--accent-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            margin: 0,
+            letterSpacing: '-0.02em',
           }}
         >
-          <Lock size={28} style={{ color: 'var(--accent)' }} />
-        </motion.div>
-        <motion.div
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          Configurar Coach IA
+        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
+          Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo e nunca é
+          enviada a terceiros.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}
+      >
+        <Input
+          placeholder="sk-or-v1-..."
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && value.trim()) onSave(value.trim());
+          }}
+          type="password"
+          fullWidth
+        />
+        <Button
+          variant="primary"
+          size="md"
+          fullWidth
+          disabled={!value.trim()}
+          onClick={() => onSave(value.trim())}
         >
-          <p
-            style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              marginBottom: '8px',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Coach IA — Em breve
-          </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5 }}>
-            Em breve você poderá pedir sugestões de cartas, análise de curva de mana e dicas para
-            otimizar seu deck Commander.
-          </p>
-        </motion.div>
+          Ativar Coach
+        </Button>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+          Crie sua chave em openrouter.ai/keys · Modelo gratuito por padrão
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div style={{ display: 'flex', gap: '4px', padding: '4px 2px', alignItems: 'center' }}>
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+          transition={{ duration: 1, repeat: Infinity, delay: i * 0.18 }}
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--accent)',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolean }) {
+  const isUser = msg.role === 'user';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+        gap: '8px',
+        alignItems: 'flex-start',
+      }}
+    >
+      <div
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          backgroundColor: isUser ? 'var(--surface-3)' : 'var(--accent-subtle)',
+          border: `1px solid ${isUser ? 'var(--border-default)' : 'var(--accent-border)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {isUser ? (
+          <User size={13} style={{ color: 'var(--text-secondary)' }} />
+        ) : (
+          <Bot size={13} style={{ color: 'var(--accent)' }} />
+        )}
       </div>
 
-      {/* Messages list (blurred background content) */}
+      <div
+        style={{
+          maxWidth: '82%',
+          padding: '10px 12px',
+          borderRadius: isUser
+            ? 'var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-lg)'
+            : 'var(--radius-sm) var(--radius-lg) var(--radius-lg) var(--radius-lg)',
+          backgroundColor: isUser ? 'var(--surface-3)' : 'var(--surface-2)',
+          border: `1px solid ${isUser ? 'var(--border-default)' : 'var(--border-subtle)'}`,
+        }}
+      >
+        {isStreaming && !msg.content ? (
+          <TypingDots />
+        ) : (
+          <p
+            style={{
+              fontSize: '13px',
+              color: 'var(--text-primary)',
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              margin: 0,
+            }}
+          >
+            {msg.content}
+            {isStreaming && <span style={{ opacity: 0.4 }}>▍</span>}
+          </p>
+        )}
+        <p
+          style={{
+            fontSize: '10px',
+            color: 'var(--text-muted)',
+            margin: '4px 0 0',
+            textAlign: isUser ? 'right' : 'left',
+          }}
+        >
+          {formatTime(msg.timestamp)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const SUGGESTIONS = [
+  'Quais são as maiores fraquezas do meu deck?',
+  'Sugira melhorias para o ramp',
+  'O meu deck está equilibrado para Commander?',
+];
+
+export function CoachTab({ deck }: CoachTabProps) {
+  const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(API_KEY_KEY) ?? '');
+  const [messages, setMessages] = React.useState<Message[]>(() => {
+    try {
+      const raw = localStorage.getItem(`${MESSAGES_PREFIX}${deck.id}`);
+      return raw ? (JSON.parse(raw) as Message[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [input, setInput] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [streamingId, setStreamingId] = React.useState<string | null>(null);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+
+  React.useEffect(() => {
+    localStorage.setItem(`${MESSAGES_PREFIX}${deck.id}`, JSON.stringify(messages));
+  }, [messages, deck.id]);
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  function saveApiKey(key: string) {
+    localStorage.setItem(API_KEY_KEY, key);
+    setApiKey(key);
+  }
+
+  async function sendMessage(content: string) {
+    if (!content.trim() || isLoading || !apiKey) return;
+
+    const userMsg: Message = { id: genId(), role: 'user', content: content.trim(), timestamp: Date.now() };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    setInput('');
+    setIsLoading(true);
+
+    const aId = genId();
+    const assistantMsg: Message = { id: aId, role: 'assistant', content: '', timestamp: Date.now() };
+    setMessages([...history, assistantMsg]);
+    setStreamingId(aId);
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'MTG Deck Builder Coach',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          stream: true,
+          messages: [
+            { role: 'system', content: buildSystemPrompt(deck) },
+            ...history.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`${res.status} — ${txt}`);
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break outer;
+          try {
+            const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
+            if (delta) {
+              accumulated += delta;
+              setMessages((prev) =>
+                prev.map((m) => (m.id === aId ? { ...m, content: accumulated } : m))
+              );
+            }
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aId
+            ? { ...m, content: `Erro ao conectar com a API:\n${msg}\n\nVerifique sua chave e tente novamente.` }
+            : m
+        )
+      );
+    } finally {
+      setIsLoading(false);
+      setStreamingId(null);
+    }
+  }
+
+  if (!apiKey) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <ApiKeySetup onSave={saveApiKey} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Messages area */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '16px',
+          padding: '12px 16px',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
         }}
       >
-        {/* Deck context header */}
+        {/* Deck context chip */}
         <div
           style={{
-            padding: '10px 12px',
+            padding: '8px 12px',
             backgroundColor: 'var(--surface-1)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-md)',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '8px',
           }}
         >
-          <Bot size={16} style={{ color: 'var(--accent)' }} />
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Analisando: <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
-            {' — '}
-            {totalCards} cartas
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <Bot size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <span
+              style={{
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
+              {deck.commanderName ? ` · ${deck.commanderName}` : ''}
+              {` · ${totalCards} cartas`}
+            </span>
+          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                flexShrink: 0,
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              title="Limpar conversa"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
 
-        {PLACEHOLDER_MESSAGES.map((msg) => (
+        {/* Empty state with suggestion chips */}
+        {messages.length === 0 && (
           <div
-            key={msg.id}
             style={{
               display: 'flex',
-              flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-              gap: '8px',
-              alignItems: 'flex-start',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '32px 0 8px',
+              textAlign: 'center',
             }}
           >
-            {/* Avatar */}
             <div
               style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                backgroundColor:
-                  msg.role === 'user' ? 'var(--surface-3)' : 'var(--accent-subtle)',
-                border: `1px solid ${msg.role === 'user' ? 'var(--border-default)' : 'var(--accent-border)'}`,
+                width: '48px',
+                height: '48px',
+                borderRadius: 'var(--radius-xl)',
+                backgroundColor: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0,
               }}
             >
-              {msg.role === 'user' ? (
-                <User size={14} style={{ color: 'var(--text-secondary)' }} />
-              ) : (
-                <Bot size={14} style={{ color: 'var(--accent)' }} />
-              )}
+              <Bot size={22} style={{ color: 'var(--accent)' }} />
             </div>
-
-            {/* Bubble */}
+            <div>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                Coach IA pronto
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                Pergunte sobre cartas, sinergias, curva de mana ou como melhorar seu deck.
+              </p>
+            </div>
             <div
               style={{
-                maxWidth: '80%',
-                padding: '10px 12px',
-                borderRadius:
-                  msg.role === 'user'
-                    ? 'var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-lg)'
-                    : 'var(--radius-sm) var(--radius-lg) var(--radius-lg) var(--radius-lg)',
-                backgroundColor:
-                  msg.role === 'user' ? 'var(--surface-3)' : 'var(--surface-2)',
-                border: `1px solid ${msg.role === 'user' ? 'var(--border-default)' : 'var(--border-subtle)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                width: '100%',
               }}
             >
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
-                  margin: 0,
-                }}
-              >
-                {msg.content}
-              </p>
-              <p
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  marginTop: '4px',
-                  textAlign: msg.role === 'user' ? 'right' : 'left',
-                }}
-              >
-                {formatTime(msg.timestamp)}
-              </p>
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => sendMessage(s)}
+                  style={{
+                    padding: '10px 14px',
+                    backgroundColor: 'var(--surface-1)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    fontSize: '13px',
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           </div>
+        )}
+
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} isStreaming={msg.id === streamingId} />
         ))}
-        <div ref={messagesEndRef} />
+
+        <div ref={bottomRef} />
       </div>
 
       {/* Input bar */}
       <div
         style={{
-          padding: '12px 16px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          padding: '10px 16px 12px',
           borderTop: '1px solid var(--border-subtle)',
           backgroundColor: 'var(--bg-elevated)',
           display: 'flex',
@@ -242,13 +522,26 @@ export function CoachTab({ deck }: CoachTabProps) {
         <div style={{ flex: 1 }}>
           <Input
             placeholder="Pergunte sobre seu deck..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            disabled
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
+            disabled={isLoading}
             size="md"
+            fullWidth
           />
         </div>
-        <Button variant="primary" size="md" disabled leftIcon={<Send size={14} />}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => sendMessage(input)}
+          disabled={!input.trim() || isLoading}
+          leftIcon={<Send size={14} />}
+        >
           Enviar
         </Button>
       </div>
