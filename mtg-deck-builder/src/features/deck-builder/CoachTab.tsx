@@ -56,9 +56,17 @@ function buildSystemPrompt(deck: Deck): string {
     byCategory[card.category].push(card.quantity > 1 ? `${card.quantity}x ${card.name}` : card.name);
   }
 
-  const deckList = Object.entries(byCategory)
-    .map(([cat, cards]) => `${cat} (${cards.length}):\n${cards.map((c) => `  - ${c}`).join('\n')}`)
-    .join('\n\n');
+  const allLines: string[] = [];
+  for (const [cat, cards] of Object.entries(byCategory)) {
+    allLines.push(`${cat} (${cards.length}):`);
+    for (const c of cards) allLines.push(`  - ${c}`);
+    allLines.push('');
+  }
+  // Keep system prompt under ~3000 chars to fit smaller free-model context windows
+  let deckList = allLines.join('\n');
+  if (deckList.length > 2800) {
+    deckList = deckList.slice(0, 2800) + '\n  ... (lista truncada)';
+  }
 
   return `Você é um Coach especialista em Magic: The Gathering, focado no formato Commander/EDH.
 
@@ -419,22 +427,48 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
+      let lineBuffer = '';
+      let isThinking = false;
 
       outer: while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
+
+        // Accumulate into lineBuffer so lines split across chunks are handled correctly
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop() ?? '';
+
+        for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           if (data === '[DONE]') break outer;
           try {
-            const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
-            if (delta) {
-              accumulated += delta;
+            const parsed = JSON.parse(data);
+            const delta = parsed?.choices?.[0]?.delta;
+            if (!delta) continue;
+
+            // Reasoning models (DeepSeek R1, QwQ) emit reasoning_content before content
+            if (delta.reasoning_content && !accumulated) {
+              if (!isThinking) {
+                isThinking = true;
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === aId ? { ...m, content: '\u{1F9E0} Pensando...' } : m))
+                );
+              }
+              continue;
+            }
+
+            if (delta.content) {
+              if (isThinking) {
+                isThinking = false;
+                accumulated = '';
+              }
+              accumulated += delta.content;
               setMessages((prev) => prev.map((m) => (m.id === aId ? { ...m, content: accumulated } : m)));
             }
           } catch {
-            // skip malformed SSE line
+            // skip malformed SSE chunk
           }
         }
       }
