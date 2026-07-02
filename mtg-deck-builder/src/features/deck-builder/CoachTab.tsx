@@ -333,7 +333,26 @@ export function CoachTab({ deck, model }: CoachTabProps) {
         }),
       });
 
-      if (!res.ok) throw new Error(`${res.status} — ${await res.text()}`);
+      if (!res.ok) {
+        let friendly: string;
+        try {
+          const json = await res.json();
+          const raw: string = json?.error?.metadata?.raw ?? '';
+          if (res.status === 429) {
+            const seconds = raw.match(/"Retry-After":"(\d+)"/)?.[1];
+            friendly = `Modelo sobrecarregado — aguarde${seconds ? ` ${seconds}s` : ' alguns segundos'} e tente novamente.`;
+          } else if (res.status === 401 || res.status === 403) {
+            friendly = 'Chave de API inválida. Verifique no menu ···.';
+          } else if (res.status === 404) {
+            friendly = 'Modelo indisponível. Escolha outro no menu ···.';
+          } else {
+            friendly = json?.error?.message ?? `Erro ${res.status}`;
+          }
+        } catch {
+          friendly = `Erro ${res.status}`;
+        }
+        throw new Error(friendly);
+      }
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -360,9 +379,7 @@ export function CoachTab({ deck, model }: CoachTabProps) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === aId ? { ...m, content: `Erro ao conectar com a API:\n${msg}\n\nVerifique sua chave e tente novamente.` } : m
-        )
+        prev.map((m) => (m.id === aId ? { ...m, content: msg } : m))
       );
     } finally {
       setIsLoading(false);
