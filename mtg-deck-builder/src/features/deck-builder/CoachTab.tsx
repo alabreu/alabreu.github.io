@@ -427,16 +427,15 @@ export function CoachTab({ deck, model }: CoachTabProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Claude-style pill input */}
-      <div style={{ padding: '10px 16px 16px', backgroundColor: 'var(--bg-elevated)' }}>
+      {/* Input bar */}
+      <div style={{ padding: '10px 16px 16px' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             padding: '6px 6px 6px 16px',
-            backgroundColor: 'var(--surface-1)',
             border: `1px solid ${inputFocused ? 'var(--border-strong)' : 'var(--border-default)'}`,
-            borderRadius: '999px',
+            borderRadius: 'var(--radius-lg)',
             boxShadow: inputFocused ? '0 0 0 3px var(--accent-subtle)' : 'none',
             transition: 'border-color 0.15s, box-shadow 0.15s',
           }}
