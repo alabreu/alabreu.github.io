@@ -433,7 +433,7 @@ export function CoachTab({ deck, model }: CoachTabProps) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: '6px 6px 6px 16px',
+            padding: '10px 10px 10px 18px',
             border: `1px solid ${inputFocused ? 'var(--border-strong)' : 'var(--border-default)'}`,
             borderRadius: 'var(--radius-lg)',
             boxShadow: inputFocused ? '0 0 0 3px var(--accent-subtle)' : 'none',
@@ -453,10 +453,9 @@ export function CoachTab({ deck, model }: CoachTabProps) {
               background: 'none',
               border: 'none',
               outline: 'none',
-              fontSize: '15px',
+              fontSize: '16px',
               color: 'var(--text-primary)',
               fontFamily: 'inherit',
-              height: '34px',
               minWidth: 0,
               cursor: isLoading ? 'not-allowed' : 'text',
             }}
@@ -465,8 +464,8 @@ export function CoachTab({ deck, model }: CoachTabProps) {
             onClick={() => sendMessage(input)}
             disabled={!canSend}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '38px',
+              height: '38px',
               borderRadius: '50%',
               backgroundColor: canSend ? 'var(--accent)' : 'var(--surface-2)',
               border: 'none',
@@ -479,7 +478,7 @@ export function CoachTab({ deck, model }: CoachTabProps) {
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <ArrowUp size={16} color={canSend ? '#0f0f0f' : 'var(--text-muted)'} />
+            <ArrowUp size={18} color={canSend ? '#0f0f0f' : 'var(--text-muted)'} />
           </button>
         </div>
       </div>
