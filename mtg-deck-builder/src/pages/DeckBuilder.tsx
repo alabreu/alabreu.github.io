@@ -208,10 +208,10 @@ export default function DeckBuilder() {
           {coachOpen && (
             <motion.div
               key="coach"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 350, damping: 35, mass: 0.8 }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32, mass: 0.9 }}
               style={{
                 position: 'absolute',
                 inset: 0,
