@@ -188,7 +188,25 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            const categories = (d.categories ?? []).filter((c) => c !== name);
+            const DEFAULT_ORDER = [
+              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
+              'Remoção', 'Proteção', 'Wincons', 'Outros',
+            ];
+            // Resolve the full explicit category list; if never set, derive it from cards
+            const present = [...new Set(d.cards.map((c) => c.category))];
+            const existingCats =
+              d.categories && d.categories.length > 0
+                ? d.categories
+                : [
+                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
+                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
+                  ];
+
+            const hasCardsToMove = d.cards.some((c) => c.category === name);
+            let categories = existingCats.filter((c) => c !== name);
+            if (hasCardsToMove && !categories.includes('Outros')) {
+              categories = [...categories, 'Outros'];
+            }
             const cards = d.cards.map((c) =>
               c.category === name ? { ...c, category: 'Outros' } : c
             );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GripVertical, Trash2, Plus } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
@@ -153,6 +153,7 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [activeY, setActiveY] = React.useState(0);
   const [newName, setNewName] = React.useState('');
+  const [pendingDelete, setPendingDelete] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -160,6 +161,7 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
       setActiveIndex(null);
       setActiveY(0);
       setNewName('');
+      setPendingDelete(null);
     }
   }, [isOpen]);
 
@@ -192,9 +194,19 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
     setActiveY(0);
   }
 
-  function handleDelete(name: string) {
-    deleteCategory(deck.id, name);
-    setLocalCats((prev) => prev.filter((c) => c !== name));
+  function handleDeleteRequest(name: string) {
+    setPendingDelete(name);
+  }
+
+  function handleDeleteConfirm() {
+    if (!pendingDelete) return;
+    deleteCategory(deck.id, pendingDelete);
+    setLocalCats((prev) => prev.filter((c) => c !== pendingDelete));
+    setPendingDelete(null);
+  }
+
+  function handleDeleteCancel() {
+    setPendingDelete(null);
   }
 
   function handleAdd() {
@@ -208,6 +220,7 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
   const canAdd = newName.trim().length > 0 && !localCats.includes(newName.trim());
 
   return (
+    <>
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Gerenciar seções" maxHeight="85vh">
       <div style={{ padding: '4px 20px 32px' }}>
         {/* Draggable list */}
@@ -224,7 +237,7 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
               onDragStart={handleDragStart}
               onDrag={handleDrag}
               onDragEnd={handleDragEnd}
-              onDelete={handleDelete}
+              onDelete={handleDeleteRequest}
             />
           ))}
         </div>
@@ -250,6 +263,78 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
           </Button>
         </div>
       </div>
+
     </BottomSheet>
+
+    {/* Confirmation dialog — rendered outside BottomSheet to avoid transform clipping */}
+    <AnimatePresence>
+      {pendingDelete && (
+        <>
+          <motion.div
+            key="confirm-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={handleDeleteCancel}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.45)',
+              zIndex: 60,
+            }}
+          />
+          <motion.div
+            key="confirm-sheet"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.8 }}
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: 'var(--bg-elevated)',
+              borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+              border: '1px solid var(--border-default)',
+              borderBottom: 'none',
+              boxShadow: 'var(--shadow-xl)',
+              padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 0px))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              zIndex: 61,
+            }}
+          >
+            <div>
+              <p style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                Apagar seção?
+              </p>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                {pendingDelete && cardCount[pendingDelete] > 0
+                  ? `As ${cardCount[pendingDelete]} carta${cardCount[pendingDelete] !== 1 ? 's' : ''} de "${pendingDelete}" serão movidas para "Outros".`
+                  : `A seção "${pendingDelete}" será removida.`}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button variant="secondary" size="md" onClick={handleDeleteCancel} style={{ flex: 1 }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleDeleteConfirm}
+                style={{ flex: 1, backgroundColor: 'var(--error)', color: '#fff' }}
+              >
+                <Trash2 size={14} />
+                Apagar
+              </Button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
