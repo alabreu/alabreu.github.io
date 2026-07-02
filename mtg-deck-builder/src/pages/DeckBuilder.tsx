@@ -484,6 +484,31 @@ export default function DeckBuilder() {
               setCoachModelOpen(false);
             }}
           />
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '16px 0 12px' }} />
+          <button
+            onClick={() => {
+              localStorage.removeItem(`${MESSAGES_PREFIX}${deck.id}`);
+              setCoachModelOpen(false);
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 12px',
+              backgroundColor: 'transparent',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              color: 'var(--text-secondary)',
+              fontSize: '13px',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <Trash2 size={14} />
+            Limpar histórico do Coach
+          </button>
         </div>
       </BottomSheet>
 
