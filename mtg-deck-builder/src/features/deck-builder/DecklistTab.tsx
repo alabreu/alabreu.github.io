@@ -430,8 +430,8 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             flexShrink: 0,
           }}>
             {([
-              { mode: '2col' as ViewMode, icon: <LayoutGrid size={13} /> },
               { mode: '1col' as ViewMode, icon: <Square size={13} /> },
+              { mode: '2col' as ViewMode, icon: <LayoutGrid size={13} /> },
               { mode: 'list' as ViewMode, icon: <LayoutList size={13} /> },
             ]).map(({ mode, icon }, i) => (
               <button
