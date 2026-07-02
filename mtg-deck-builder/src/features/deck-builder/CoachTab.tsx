@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, Key, Trash2, Check } from 'lucide-react';
+import { ArrowUp, Bot, User, Key, Check } from 'lucide-react';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
@@ -285,11 +285,13 @@ export function CoachTab({ deck, model }: CoachTabProps) {
     }
   });
   const [input, setInput] = React.useState('');
+  const [inputFocused, setInputFocused] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const canSend = input.trim().length > 0 && !isLoading;
 
   React.useEffect(() => {
     localStorage.setItem(`${MESSAGES_PREFIX}${deck.id}`, JSON.stringify(messages));
@@ -388,40 +390,6 @@ export function CoachTab({ deck, model }: CoachTabProps) {
           gap: '12px',
         }}
       >
-        {/* Deck context chip */}
-        <div
-          style={{
-            padding: '8px 12px',
-            backgroundColor: 'var(--surface-1)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <Bot size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-          <span style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
-            {deck.commanderName ? ` · ${deck.commanderName}` : ''}
-            {` · ${totalCards} cartas`}
-          </span>
-          {messages.length > 0 && (
-            <button
-              onClick={() => setMessages([])}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--text-muted)', padding: '2px',
-                display: 'flex', alignItems: 'center', flexShrink: 0,
-                WebkitTapHighlightColor: 'transparent',
-              }}
-              title="Limpar conversa"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-        </div>
-
         {/* Empty state */}
         {messages.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '32px 0 8px', textAlign: 'center' }}>
@@ -459,22 +427,62 @@ export function CoachTab({ deck, model }: CoachTabProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input bar */}
-      <div style={{ padding: '10px 16px 12px', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-elevated)', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1 }}>
-          <Input
+      {/* Claude-style pill input */}
+      <div style={{ padding: '10px 16px 16px', backgroundColor: 'var(--bg-elevated)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '6px 6px 6px 16px',
+            backgroundColor: 'var(--surface-1)',
+            border: `1px solid ${inputFocused ? 'var(--border-strong)' : 'var(--border-default)'}`,
+            borderRadius: '999px',
+            boxShadow: inputFocused ? '0 0 0 3px var(--accent-subtle)' : 'none',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}
+        >
+          <input
             placeholder="Pergunte sobre seu deck..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
             disabled={isLoading}
-            size="md"
-            fullWidth
+            style={{
+              flex: 1,
+              background: 'none',
+              border: 'none',
+              outline: 'none',
+              fontSize: '15px',
+              color: 'var(--text-primary)',
+              fontFamily: 'inherit',
+              height: '34px',
+              minWidth: 0,
+              cursor: isLoading ? 'not-allowed' : 'text',
+            }}
           />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={!canSend}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: canSend ? 'var(--accent)' : 'var(--surface-2)',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: canSend ? 'pointer' : 'default',
+              flexShrink: 0,
+              transition: 'background-color 0.15s',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <ArrowUp size={16} color={canSend ? '#0f0f0f' : 'var(--text-muted)'} />
+          </button>
         </div>
-        <Button variant="primary" size="md" onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} leftIcon={<Send size={14} />}>
-          Enviar
-        </Button>
       </div>
     </div>
   );
