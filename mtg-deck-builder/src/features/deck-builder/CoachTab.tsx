@@ -25,6 +25,7 @@ export const MODEL_KEY = 'openrouter-model';
 interface CoachTabProps {
   deck: Deck;
   model: string;
+  onKeyboardChange?: (open: boolean) => void;
 }
 
 interface Message {
@@ -274,7 +275,7 @@ const SUGGESTIONS = [
   'O meu deck está equilibrado para Commander?',
 ];
 
-export function CoachTab({ deck, model }: CoachTabProps) {
+export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
   const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(API_KEY_KEY) ?? '');
   const [messages, setMessages] = React.useState<Message[]>(() => {
     try {
@@ -289,29 +290,65 @@ export function CoachTab({ deck, model }: CoachTabProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputBarRef = React.useRef<HTMLDivElement>(null);
+  const messagesRef = React.useRef<HTMLDivElement>(null);
+  // Keep a stable ref to the callback so the effect doesn't re-run on every render
+  const onKeyboardChangeRef = React.useRef(onKeyboardChange);
+  React.useEffect(() => { onKeyboardChangeRef.current = onKeyboardChange; }, [onKeyboardChange]);
 
-  // Anchor input above keyboard on iOS Safari using visualViewport
+  // On iOS Safari, pin the input bar to the top of the keyboard using position:fixed.
+  // Fixed elements are positioned relative to the visual viewport on iOS, so bottom:0
+  // naturally places the bar just above the keyboard as it slides up.
   React.useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
+    let wasOpen = false;
+
+    const reset = () => {
+      const el = inputBarRef.current;
+      if (el) {
+        el.style.position = '';
+        el.style.bottom = '';
+        el.style.left = '';
+        el.style.right = '';
+        el.style.zIndex = '';
+        el.style.backgroundColor = '';
+      }
+      if (messagesRef.current) messagesRef.current.style.paddingBottom = '';
+    };
+
     const update = () => {
-      const el = containerRef.current;
-      if (!el) return;
       const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      if (kh > 0) {
-        const containerTop = el.getBoundingClientRect().top;
-        el.style.height = `${vv.height + vv.offsetTop - containerTop}px`;
-        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+      const isOpen = kh > 50;
+      if (isOpen !== wasOpen) {
+        wasOpen = isOpen;
+        onKeyboardChangeRef.current?.(isOpen);
+      }
+      const el = inputBarRef.current;
+      if (!el) return;
+      if (isOpen) {
+        el.style.position = 'fixed';
+        el.style.bottom = '0px';
+        el.style.left = '0px';
+        el.style.right = '0px';
+        el.style.zIndex = '200';
+        el.style.backgroundColor = 'var(--bg-base)';
+        if (messagesRef.current) {
+          messagesRef.current.style.paddingBottom = `${el.offsetHeight}px`;
+        }
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       } else {
-        el.style.height = '';
+        reset();
       }
     };
+
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
     return () => {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
+      reset();
+      onKeyboardChangeRef.current?.(false);
     };
   }, []);
 
@@ -414,15 +451,16 @@ export function CoachTab({ deck, model }: CoachTabProps) {
 
   if (!apiKey) {
     return (
-      <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <ApiKeySetup onSave={(key) => { localStorage.setItem(API_KEY_KEY, key); setApiKey(key); }} />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
+        ref={messagesRef}
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -470,7 +508,7 @@ export function CoachTab({ deck, model }: CoachTabProps) {
       </div>
 
       {/* Input bar */}
-      <div style={{ padding: '10px 16px 16px' }}>
+      <div ref={inputBarRef} style={{ padding: '10px 16px 16px' }}>
         <div
           style={{
             display: 'flex',

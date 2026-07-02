@@ -39,6 +39,7 @@ export default function DeckBuilder() {
     return MODELS[0].id;
   });
   const [allExpanded, setAllExpanded] = React.useState(true);
+  const [isKeyboardOpen, setIsKeyboardOpen] = React.useState(false);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -186,7 +187,7 @@ export default function DeckBuilder() {
           >
             {activeTab === 0 && <DecklistTab deck={deck} forcedExpandAll={allExpanded} />}
             {activeTab === 1 && <SearchTab deck={deck} />}
-            {activeTab === 2 && <CoachTab deck={deck} model={coachModel} />}
+            {activeTab === 2 && <CoachTab deck={deck} model={coachModel} onKeyboardChange={setIsKeyboardOpen} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -205,7 +206,7 @@ export default function DeckBuilder() {
           WebkitBackdropFilter: 'blur(28px)',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
-          display: 'flex',
+          display: isKeyboardOpen ? 'none' : 'flex',
           padding: '4px',
         }}
       >
