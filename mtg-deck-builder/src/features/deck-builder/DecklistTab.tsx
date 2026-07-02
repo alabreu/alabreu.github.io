@@ -263,35 +263,39 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
         ).toFixed(2)
       : '0.00';
 
-  const grouped = groupCardsByCategory(deck.cards);
   const DEFAULT_ORDER = [
     'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
     'Remoção', 'Proteção', 'Wincons', 'Outros',
   ];
-  const knownCategories = deck.categories && deck.categories.length > 0 ? deck.categories : null;
-  const sortedCategories = knownCategories
-    ? [
-        ...knownCategories.filter((c) => grouped[c]),
-        ...Object.keys(grouped).filter((c) => !knownCategories.includes(c)),
-      ]
-    : [
-        ...DEFAULT_ORDER.filter((c) => grouped[c]),
-        ...Object.keys(grouped).filter((c) => !DEFAULT_ORDER.includes(c)),
-      ];
+
+  const sortedCategories = React.useMemo(() => {
+    const grouped = groupCardsByCategory(deck.cards);
+    const known = deck.categories && deck.categories.length > 0 ? deck.categories : null;
+    return known
+      ? [
+          ...known.filter((c) => grouped[c]),
+          ...Object.keys(grouped).filter((c) => !known.includes(c)),
+        ]
+      : [
+          ...DEFAULT_ORDER.filter((c) => grouped[c]),
+          ...Object.keys(grouped).filter((c) => !DEFAULT_ORDER.includes(c)),
+        ];
+  }, [deck.cards, deck.categories]);
+
+  const grouped = React.useMemo(() => groupCardsByCategory(deck.cards), [deck.cards]);
 
   const allExpanded = sortedCategories.every((c) => expandedSections[c] !== false);
-
-  const setAllExpanded = React.useCallback((value: boolean) => {
-    const next: Record<string, boolean> = {};
-    for (const cat of sortedCategories) next[cat] = value;
-    setExpandedSections(next);
-  }, [sortedCategories]);
 
   const isFirstRender = React.useRef(true);
   React.useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    if (forcedExpandAll !== undefined) setAllExpanded(forcedExpandAll);
-  }, [forcedExpandAll, setAllExpanded]);
+    if (forcedExpandAll === undefined) return;
+    setExpandedSections(() => {
+      const next: Record<string, boolean> = {};
+      for (const cat of sortedCategories) next[cat] = forcedExpandAll;
+      return next;
+    });
+  }, [forcedExpandAll, sortedCategories]);
 
   function toggleSection(cat: string) {
     setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
