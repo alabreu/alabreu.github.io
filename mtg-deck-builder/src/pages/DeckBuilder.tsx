@@ -8,7 +8,7 @@ import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
-import { CoachTab, MODELS, ModelPicker, MODEL_KEY } from '../features/deck-builder/CoachTab';
+import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../features/deck-builder/CoachTab';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 
@@ -293,6 +293,54 @@ export default function DeckBuilder() {
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {MODELS.find((m) => m.id === coachModel)?.label ?? 'Gemini 2.0 Flash'}
+              </p>
+            </div>
+          </button>
+
+          {/* Clear coach history */}
+          <button
+            onClick={() => {
+              localStorage.removeItem(`${MESSAGES_PREFIX}${deck.id}`);
+              setMenuOpen(false);
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Trash2 size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Limpar histórico do Coach
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Apaga a conversa deste deck
               </p>
             </div>
           </button>

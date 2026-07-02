@@ -35,7 +35,7 @@ interface Message {
 }
 
 const API_KEY_KEY = 'openrouter-api-key';
-const MESSAGES_PREFIX = 'coach-messages-';
+export const MESSAGES_PREFIX = 'coach-messages-';
 
 function genId(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
