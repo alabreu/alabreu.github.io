@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList } from 'lucide-react';
+import { ArrowLeft, List, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
@@ -31,6 +31,7 @@ export default function DeckBuilder() {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
+  const [allExpanded, setAllExpanded] = React.useState(true);
 
   const deck = decks.find((d) => d.id === id);
 
@@ -134,6 +135,16 @@ export default function DeckBuilder() {
         <ArrowLeft size={17} />
       </button>
 
+      {/* Floating expand/collapse button — only on Decklist tab */}
+      {activeTab === 0 && (
+        <button
+          style={{ ...floatingBtnStyle, right: '60px' }}
+          onClick={() => setAllExpanded((v) => !v)}
+        >
+          <ChevronsUpDown size={15} />
+        </button>
+      )}
+
       {/* Floating menu button */}
       <button style={{ ...floatingBtnStyle, right: '16px' }} onClick={() => setMenuOpen(true)}>
         <MoreHorizontal size={17} />
@@ -166,7 +177,7 @@ export default function DeckBuilder() {
               paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
             }}
           >
-            {activeTab === 0 && <DecklistTab deck={deck} />}
+            {activeTab === 0 && <DecklistTab deck={deck} forcedExpandAll={allExpanded} />}
             {activeTab === 1 && <SearchTab deck={deck} />}
             {activeTab === 2 && <CoachTab deck={deck} />}
           </motion.div>
