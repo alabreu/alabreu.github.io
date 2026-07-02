@@ -303,54 +303,6 @@ export default function DeckBuilder() {
             </div>
           </button>
 
-          {/* Clear coach history */}
-          <button
-            onClick={() => {
-              localStorage.removeItem(`${MESSAGES_PREFIX}${deck.id}`);
-              setMenuOpen(false);
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Trash2 size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Limpar histórico do Coach
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Apaga a conversa deste deck
-              </p>
-            </div>
-          </button>
-
           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
 
           {/* Manage sections */}
