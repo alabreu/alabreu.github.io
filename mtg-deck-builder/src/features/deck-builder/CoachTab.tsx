@@ -1,13 +1,30 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, Key, Trash2, ChevronDown, Check } from 'lucide-react';
+import { Send, Bot, User, Key, Trash2, Check } from 'lucide-react';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
-import { BottomSheet } from '../../design-system/components/BottomSheet';
+
+export interface ModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  note?: string;
+}
+
+export const MODELS: ModelOption[] = [
+  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash', provider: 'Google', note: 'Rápido e capaz' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Muito capaz' },
+  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Raciocínio avançado' },
+  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Raciocínio passo a passo' },
+  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Leve e rápido' },
+];
+
+export const MODEL_KEY = 'openrouter-model';
 
 interface CoachTabProps {
   deck: Deck;
+  model: string;
 }
 
 interface Message {
@@ -17,23 +34,7 @@ interface Message {
   timestamp: number;
 }
 
-interface ModelOption {
-  id: string;
-  label: string;
-  provider: string;
-  note?: string;
-}
-
-const MODELS: ModelOption[] = [
-  { id: 'google/gemini-2.0-flash-exp:free', label: 'Gemini 2.0 Flash', provider: 'Google', note: 'Rápido e capaz' },
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Muito capaz' },
-  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Raciocínio avançado' },
-  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Raciocínio passo a passo' },
-  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Leve e rápido' },
-];
-
 const API_KEY_KEY = 'openrouter-api-key';
-const MODEL_KEY = 'openrouter-model';
 const MESSAGES_PREFIX = 'coach-messages-';
 
 function genId(): string {
@@ -83,8 +84,7 @@ Regras de resposta:
 - Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione`;
 }
 
-// --- Model picker ---
-function ModelPicker({
+export function ModelPicker({
   selected,
   onChange,
 }: {
@@ -115,14 +115,7 @@ function ModelPicker({
             }}
           >
             <div style={{ flex: 1 }}>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: active ? 'var(--accent)' : 'var(--text-primary)',
-                }}
-              >
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
                 {m.label}
               </p>
               <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -140,114 +133,79 @@ function ModelPicker({
   );
 }
 
-// --- API key + model setup ---
-function ApiKeySetup({
-  model,
-  onModelChange,
-  onSave,
-}: {
-  model: string;
-  onModelChange: (id: string) => void;
-  onSave: (key: string) => void;
-}) {
+function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
   const [value, setValue] = React.useState('');
 
   return (
     <div
       style={{
         flex: 1,
-        overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '32px 24px',
         gap: '24px',
+        textAlign: 'center',
       }}
     >
-      {/* Icon + title */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center' }}>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: 'var(--radius-xl)',
-            backgroundColor: 'var(--accent-subtle)',
-            border: '1px solid var(--accent-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Key size={28} style={{ color: 'var(--accent)' }} />
-        </motion.div>
-        <motion.div
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-            Configurar Coach IA
-          </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-            Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo.
-          </p>
-        </motion.div>
-      </div>
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: 'var(--radius-xl)',
+          backgroundColor: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Key size={28} style={{ color: 'var(--accent)' }} />
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+      >
+        <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+          Configurar Coach IA
+        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
+          Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo.
+        </p>
+      </motion.div>
 
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.12 }}
-        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}
       >
-        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
-          API Key
-        </p>
         <Input
           placeholder="sk-or-v1-..."
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && value.trim()) onSave(value.trim());
-          }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && value.trim()) onSave(value.trim()); }}
           type="password"
           fullWidth
         />
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-          Crie sua chave em openrouter.ai/keys
-        </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.16 }}
-        style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
-      >
-        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', margin: 0 }}>
-          Modelo — todos gratuitos
-        </p>
-        <ModelPicker selected={model} onChange={onModelChange} />
-      </motion.div>
-
-      <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-        <Button
-          variant="primary"
-          size="md"
-          fullWidth
-          disabled={!value.trim()}
-          onClick={() => onSave(value.trim())}
-        >
+        <Button variant="primary" size="md" fullWidth disabled={!value.trim()} onClick={() => onSave(value.trim())}>
           Ativar Coach
         </Button>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+          Crie sua chave em openrouter.ai/keys · Modelo configurável no menu ···
+        </p>
       </motion.div>
     </div>
   );
 }
 
-// --- Typing dots ---
 function TypingDots() {
   return (
     <div style={{ display: 'flex', gap: '4px', padding: '4px 2px', alignItems: 'center' }}>
@@ -263,7 +221,6 @@ function TypingDots() {
   );
 }
 
-// --- Message bubble ---
 function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolean }) {
   const isUser = msg.role === 'user';
   return (
@@ -317,10 +274,8 @@ const SUGGESTIONS = [
   'O meu deck está equilibrado para Commander?',
 ];
 
-// --- Main component ---
-export function CoachTab({ deck }: CoachTabProps) {
+export function CoachTab({ deck, model }: CoachTabProps) {
   const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(API_KEY_KEY) ?? '');
-  const [model, setModel] = React.useState(() => localStorage.getItem(MODEL_KEY) ?? MODELS[0].id);
   const [messages, setMessages] = React.useState<Message[]>(() => {
     try {
       const raw = localStorage.getItem(`${MESSAGES_PREFIX}${deck.id}`);
@@ -332,11 +287,9 @@ export function CoachTab({ deck }: CoachTabProps) {
   const [input, setInput] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
-  const [modelSheetOpen, setModelSheetOpen] = React.useState(false);
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
-  const currentModel = MODELS.find((m) => m.id === model) ?? MODELS[0];
 
   React.useEffect(() => {
     localStorage.setItem(`${MESSAGES_PREFIX}${deck.id}`, JSON.stringify(messages));
@@ -345,17 +298,6 @@ export function CoachTab({ deck }: CoachTabProps) {
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  function saveApiKey(key: string) {
-    localStorage.setItem(API_KEY_KEY, key);
-    setApiKey(key);
-  }
-
-  function changeModel(id: string) {
-    localStorage.setItem(MODEL_KEY, id);
-    setModel(id);
-    setModelSheetOpen(false);
-  }
 
   async function sendMessage(content: string) {
     if (!content.trim() || isLoading || !apiKey) return;
@@ -389,9 +331,7 @@ export function CoachTab({ deck }: CoachTabProps) {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`${res.status} — ${await res.text()}`);
-      }
+      if (!res.ok) throw new Error(`${res.status} — ${await res.text()}`);
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -431,14 +371,13 @@ export function CoachTab({ deck }: CoachTabProps) {
   if (!apiKey) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ApiKeySetup model={model} onModelChange={changeModel} onSave={saveApiKey} />
+        <ApiKeySetup onSave={(key) => { localStorage.setItem(API_KEY_KEY, key); setApiKey(key); }} />
       </div>
     );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Messages area */}
       <div
         style={{
           flex: 1,
@@ -449,7 +388,7 @@ export function CoachTab({ deck }: CoachTabProps) {
           gap: '12px',
         }}
       >
-        {/* Context + model chip */}
+        {/* Deck context chip */}
         <div
           style={{
             padding: '8px 12px',
@@ -462,59 +401,18 @@ export function CoachTab({ deck }: CoachTabProps) {
           }}
         >
           <Bot size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-          <span
-            style={{
-              flex: 1,
-              fontSize: '12px',
-              color: 'var(--text-muted)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <span style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             <strong style={{ color: 'var(--text-secondary)' }}>{deck.name}</strong>
             {deck.commanderName ? ` · ${deck.commanderName}` : ''}
             {` · ${totalCards} cartas`}
           </span>
-
-          {/* Model selector button */}
-          <button
-            onClick={() => setModelSheetOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px',
-              padding: '3px 7px',
-              backgroundColor: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              borderRadius: '999px',
-              cursor: 'pointer',
-              color: 'var(--accent)',
-              fontSize: '11px',
-              fontWeight: 500,
-              fontFamily: 'inherit',
-              flexShrink: 0,
-              WebkitTapHighlightColor: 'transparent',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {currentModel.label}
-            <ChevronDown size={11} />
-          </button>
-
-          {/* Clear history */}
           {messages.length > 0 && (
             <button
               onClick={() => setMessages([])}
               style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                flexShrink: 0,
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-muted)', padding: '2px',
+                display: 'flex', alignItems: 'center', flexShrink: 0,
                 WebkitTapHighlightColor: 'transparent',
               }}
               title="Limpar conversa"
@@ -526,34 +424,12 @@ export function CoachTab({ deck }: CoachTabProps) {
 
         {/* Empty state */}
         {messages.length === 0 && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '32px 0 8px',
-              textAlign: 'center',
-            }}
-          >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: 'var(--radius-xl)',
-                backgroundColor: 'var(--accent-subtle)',
-                border: '1px solid var(--accent-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '32px 0 8px', textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Bot size={22} style={{ color: 'var(--accent)' }} />
             </div>
             <div>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                Coach IA pronto
-              </p>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Coach IA pronto</p>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
                 Pergunte sobre cartas, sinergias, curva de mana ou como melhorar seu deck.
               </p>
@@ -564,16 +440,10 @@ export function CoachTab({ deck }: CoachTabProps) {
                   key={s}
                   onClick={() => sendMessage(s)}
                   style={{
-                    padding: '10px 14px',
-                    backgroundColor: 'var(--surface-1)',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-md)',
-                    cursor: 'pointer',
-                    color: 'var(--text-secondary)',
-                    fontSize: '13px',
-                    textAlign: 'left',
-                    fontFamily: 'inherit',
-                    WebkitTapHighlightColor: 'transparent',
+                    padding: '10px 14px', backgroundColor: 'var(--surface-1)',
+                    border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '13px',
+                    textAlign: 'left', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent',
                   }}
                 >
                   {s}
@@ -590,52 +460,22 @@ export function CoachTab({ deck }: CoachTabProps) {
       </div>
 
       {/* Input bar */}
-      <div
-        style={{
-          padding: '10px 16px 12px',
-          borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-elevated)',
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'flex-end',
-        }}
-      >
+      <div style={{ padding: '10px 16px 12px', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-elevated)', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
         <div style={{ flex: 1 }}>
           <Input
             placeholder="Pergunte sobre seu deck..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage(input);
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
             disabled={isLoading}
             size="md"
             fullWidth
           />
         </div>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => sendMessage(input)}
-          disabled={!input.trim() || isLoading}
-          leftIcon={<Send size={14} />}
-        >
+        <Button variant="primary" size="md" onClick={() => sendMessage(input)} disabled={!input.trim() || isLoading} leftIcon={<Send size={14} />}>
           Enviar
         </Button>
       </div>
-
-      {/* Model picker bottom sheet */}
-      <BottomSheet isOpen={modelSheetOpen} onClose={() => setModelSheetOpen(false)} title="Escolher modelo">
-        <div style={{ padding: '8px 20px 32px' }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-            Todos os modelos abaixo são gratuitos via OpenRouter.
-          </p>
-          <ModelPicker selected={model} onChange={changeModel} />
-        </div>
-      </BottomSheet>
     </div>
   );
 }
