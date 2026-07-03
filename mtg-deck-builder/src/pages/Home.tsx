@@ -14,6 +14,11 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
   const navigate = useNavigate();
   const [showDelete, setShowDelete] = React.useState(false);
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  // Only show art if the commander card still exists in the deck
+  const commanderArtUrl =
+    deck.commanderArtUrl && deck.cards.some((c) => c.scryfallId === deck.commanderId)
+      ? deck.commanderArtUrl
+      : null;
 
   return (
     <motion.div
@@ -33,10 +38,10 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
       onClick={() => navigate(`/deck/${deck.id}`)}
     >
       {/* Background art */}
-      {deck.commanderArtUrl ? (
+      {commanderArtUrl ? (
         <>
           <img
-            src={deck.commanderArtUrl}
+            src={commanderArtUrl}
             alt={deck.commanderName ?? ''}
             style={{
               position: 'absolute',
@@ -128,9 +133,9 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
             style={{
               fontSize: '14px',
               fontWeight: 700,
-              color: deck.commanderArtUrl ? '#fff' : 'var(--text-primary)',
+              color: commanderArtUrl ? '#fff' : 'var(--text-primary)',
               letterSpacing: '-0.02em',
-              textShadow: deck.commanderArtUrl ? '0 1px 4px rgba(0,0,0,0.8)' : 'none',
+              textShadow: commanderArtUrl ? '0 1px 4px rgba(0,0,0,0.8)' : 'none',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -142,7 +147,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
           </h3>
           <ChevronRight
             size={14}
-            style={{ color: deck.commanderArtUrl ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)', flexShrink: 0 }}
+            style={{ color: commanderArtUrl ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)', flexShrink: 0 }}
           />
         </div>
 
@@ -154,7 +159,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
           <span
             style={{
               fontSize: '11px',
-              color: deck.commanderArtUrl ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)',
+              color: commanderArtUrl ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)',
             }}
           >
             {totalCards} cartas
