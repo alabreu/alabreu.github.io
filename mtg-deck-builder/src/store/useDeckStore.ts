@@ -85,15 +85,25 @@ export const useDeckStore = create<DeckStore>()(
             if (d.id !== deckId) return d;
             const existing = d.cards.find((c) => c.scryfallId === scryfallId);
             if (!existing) return d;
-            const updatedCards =
-              existing.quantity > 1
-                ? d.cards.map((c) =>
-                    c.scryfallId === scryfallId
-                      ? { ...c, quantity: c.quantity - 1 }
-                      : c
-                  )
-                : d.cards.filter((c) => c.scryfallId !== scryfallId);
-            return { ...d, cards: updatedCards, updatedAt: Date.now() };
+            const removingFully = existing.quantity <= 1;
+            const updatedCards = removingFully
+              ? d.cards.filter((c) => c.scryfallId !== scryfallId)
+              : d.cards.map((c) =>
+                  c.scryfallId === scryfallId
+                    ? { ...c, quantity: c.quantity - 1 }
+                    : c
+                );
+            return {
+              ...d,
+              cards: updatedCards,
+              ...(removingFully && scryfallId === d.commanderId
+                ? { commanderId: null, commanderName: null, commanderArtUrl: null }
+                : {}),
+              ...(removingFully && scryfallId === d.partnerId
+                ? { partnerId: null, partnerName: null, partnerArtUrl: null }
+                : {}),
+              updatedAt: Date.now(),
+            };
           }),
         }));
       },
