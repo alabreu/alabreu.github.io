@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+		<title>Abreu Alexandre</title>
+		<meta name="description" content="Web Portfolio of Alexandre Oliveira Abreu" />
+		<meta name="keywords" content="portfolio, portfólio, web portfolio, design, design gráfico, graphic design, desenho industrial, alexandre abreu, illustração" />
+		<meta name="author" content="Alexandre Abreu" />
+		<link rel="shortcut icon" href="favicon.ico"> 
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<link rel="stylesheet" type="text/css" href="css/component.css" />
+		<link href='http://fonts.googleapis.com/css?family=Raleway:500,700,300' rel='stylesheet' type='text/css'>
+		<script src="js/modernizr.custom.js"></script>
+	</head>
+
+	<body>
+		<div id="top" class="container">
+
+			<div class="main">
+
+				<div id="home">
+
+					<div class="header">
+						<a class="cvLink mediumUp" href="cv.html">CURRÍCULO <strong>&rarr;</strong></a>
+						<img src="images/AAlogo2.png">
+					</div>
+
+					<div class="homeMenu mediumUp">
+						<a href="illustration.html" class="homeCovers cover1">
+							<div class="homeTitles"><h1>ILUSTRAÇÃO</br>DIGITAL</h1></div>
+						</a>
+
+						<a href="publishing.html" class="homeCovers cover2">
+							<div class="homeTitles"><h1>PUBLICAÇÃO</h1></div>
+						</a>
+
+						<a href="visualID.html" class="homeCovers cover3">
+							<div class="homeTitles"><h1>IDENTIDADE</br>VISUAL</h1></div>
+						</a>
+
+						<a href="drawing.html" class="homeCovers cover4">
+							<div class="homeTitles"><h1>DESENHO</h1></div>
+						</a>
+
+						<a href="others.html" class="homeCovers cover5">
+							<div class="homeTitles"><h1>OUTROS</h1></div>
+						</a>
+
+						<a href="cv.html" class="homeCovers smallOnly">
+							<div class="cover6"><h1>CURRÍCULO</h1></div>
+						</a>
+					</div>
+
+					<div class="smallHomeMenu smallOnly">
+						<a href="illustration.html">ILUSTRAÇÃO DIGITAL</a>
+						<a href="publishing.html">PUBLICAÇÃO</a>
+						<a href="visualID.html">IDENTIDADE VISUAL</a>
+						<a href="drawing.html">DESENHO</a>
+						<a href="others.html">OUTROS</a>
+						<a href="cv.html" class="smallHomeMenuCv">CURRÍCULO</a>
+					</div>
+
+
+				</div> <!-- /home -->
+			</div> <!-- /main -->
+		</div><!-- /container -->
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="js/grid.js"></script>
+
+	    <script>
+	        $(document).ready(function() {
+
+	            $("body").css("display", "none");
+	            $("body").fadeIn(1000);
+	         
+	            $("a.transition").click(function(event){
+	                event.preventDefault();
+	                linkLocation = this.href;
+	                $("body").fadeOut(1000, redirectPage);      
+	            });
+	                 
+	            function redirectPage() {
+	                window.location = linkLocation;
+	            }
+	        });
+	    </script>
+
+	    <script>
+		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		  ga('create', 'UA-61317767-1', 'auto');
+		  ga('send', 'pageview');
+		</script>
+
+	</body>
+</html>
