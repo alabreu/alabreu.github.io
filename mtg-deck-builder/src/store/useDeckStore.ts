@@ -10,6 +10,8 @@ type DeckStore = {
   addCard: (deckId: string, card: DeckCard) => void;
   removeCard: (deckId: string, scryfallId: string) => void;
   setCommander: (deckId: string, card: DeckCard) => void;
+  setPartner: (deckId: string, card: DeckCard) => void;
+  removePartner: (deckId: string) => void;
   updateCardCategory: (deckId: string, scryfallId: string, category: string) => void;
   importCards: (deckId: string, cards: DeckCard[]) => void;
   reorderCategories: (deckId: string, categories: string[]) => void;
@@ -111,6 +113,60 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
+            // Move old partner to 'Outros' if clearing it
+            let cards = d.cards;
+            if (d.partnerId && d.partnerId !== card.scryfallId) {
+              cards = cards.map((c) =>
+                c.scryfallId === d.partnerId ? { ...c, category: 'Outros' } : c
+              );
+            }
+            cards = cards.find((c) => c.scryfallId === card.scryfallId)
+              ? cards.map((c) =>
+                  c.scryfallId === card.scryfallId
+                    ? { ...c, category: 'Comandante' }
+                    : c
+                )
+              : [...cards, { ...card, quantity: 1, category: 'Comandante' }];
+            return {
+              ...d,
+              commanderId: card.scryfallId,
+              commanderName: card.name,
+              commanderArtUrl: card.artCropUrl,
+              partnerId: null,
+              partnerName: null,
+              partnerArtUrl: null,
+              colorIdentity,
+              cards,
+              updatedAt: Date.now(),
+            };
+          }),
+        }));
+      },
+
+      setPartner: (deckId: string, card: DeckCard) => {
+        const partnerColors = card.colorIdentity?.length
+          ? card.colorIdentity
+          : parseColorIdentity(
+              card.manaCost
+                ? card.manaCost
+                    .replace(/[^WUBRGC]/g, '')
+                    .split('')
+                    .filter((c, i, arr) => arr.indexOf(c) === i)
+                : []
+            );
+
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const ORDER: ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
+            const merged = ORDER.filter(
+              (c) => d.colorIdentity.includes(c) || partnerColors.includes(c)
+            );
+            const colorIdentity: ManaColor[] =
+              merged.length > 0
+                ? merged
+                : [...new Set([...d.colorIdentity, ...partnerColors])];
+
             const cards = d.cards.find((c) => c.scryfallId === card.scryfallId)
               ? d.cards.map((c) =>
                   c.scryfallId === card.scryfallId
@@ -120,10 +176,42 @@ export const useDeckStore = create<DeckStore>()(
               : [...d.cards, { ...card, quantity: 1, category: 'Comandante' }];
             return {
               ...d,
-              commanderId: card.scryfallId,
-              commanderName: card.name,
-              commanderArtUrl: card.artCropUrl,
+              partnerId: card.scryfallId,
+              partnerName: card.name,
+              partnerArtUrl: card.artCropUrl,
               colorIdentity,
+              cards,
+              updatedAt: Date.now(),
+            };
+          }),
+        }));
+      },
+
+      removePartner: (deckId: string) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId || !d.partnerId) return d;
+            const cards = d.cards.map((c) =>
+              c.scryfallId === d.partnerId ? { ...c, category: 'Outros' } : c
+            );
+            const commander = cards.find((c) => c.scryfallId === d.commanderId);
+            const commanderColors: ManaColor[] =
+              commander?.colorIdentity && commander.colorIdentity.length > 0
+                ? commander.colorIdentity
+                : parseColorIdentity(
+                    commander?.manaCost
+                      ? commander.manaCost
+                          .replace(/[^WUBRGC]/g, '')
+                          .split('')
+                          .filter((c, i, arr) => arr.indexOf(c) === i)
+                      : []
+                  );
+            return {
+              ...d,
+              partnerId: null,
+              partnerName: null,
+              partnerArtUrl: null,
+              colorIdentity: commanderColors,
               cards,
               updatedAt: Date.now(),
             };

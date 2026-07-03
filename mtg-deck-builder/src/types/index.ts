@@ -6,6 +6,9 @@ export type Deck = {
   commanderId: string | null;
   commanderName: string | null;
   commanderArtUrl: string | null;
+  partnerId?: string | null;
+  partnerName?: string | null;
+  partnerArtUrl?: string | null;
   colorIdentity: ManaColor[];
   cards: DeckCard[];
   categories?: string[];
@@ -25,6 +28,7 @@ export type DeckCard = {
   typeLine: string | null;
   cmc: number;
   colorIdentity?: ManaColor[];
+  keywords?: string[];
 };
 
 export type ScryfallCard = {
@@ -61,6 +65,7 @@ export type ScryfallCard = {
       border_crop: string;
     };
   }>;
+  keywords?: string[];
   legalities: {
     commander: string;
   };

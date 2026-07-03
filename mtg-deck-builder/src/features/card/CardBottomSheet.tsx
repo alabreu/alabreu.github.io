@@ -5,9 +5,41 @@ import { Button } from '../../design-system/components/Button';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaSymbol } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
-import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor } from '../../types';
+import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
-import { Crown, Trash2, Plus, ChevronDown, RefreshCw } from 'lucide-react';
+import { Crown, Trash2, Plus, ChevronDown, RefreshCw, Users, UserMinus } from 'lucide-react';
+
+function canBePartnerWith(
+  card: ScryfallCard,
+  existingCard: DeckCard | null | undefined,
+  commanderDeckCard: DeckCard | null
+): boolean {
+  if (!commanderDeckCard) return false;
+  const cardKw = card.keywords ?? existingCard?.keywords ?? [];
+  const cardType = card.type_line ?? '';
+  const cmdKw = commanderDeckCard.keywords ?? [];
+  const cmdType = commanderDeckCard.typeLine ?? '';
+  const cmdName = commanderDeckCard.name;
+  const cardName = card.name;
+
+  if (cardKw.includes('Partner') && cmdKw.includes('Partner')) return true;
+
+  const cardPW = cardKw.find((k) => k.startsWith('Partner with '));
+  if (cardPW && cardPW.slice('Partner with '.length) === cmdName) return true;
+
+  const cmdPW = cmdKw.find((k) => k.startsWith('Partner with '));
+  if (cmdPW && cmdPW.slice('Partner with '.length) === cardName) return true;
+
+  if (cardKw.includes('Friends forever') && cmdKw.includes('Friends forever')) return true;
+
+  if (cardKw.includes("Doctor's companion") && cmdType.includes('Doctor')) return true;
+  if (cmdKw.includes("Doctor's companion") && cardType.includes('Doctor')) return true;
+
+  if (cardType.includes('Background') && cmdKw.includes('Choose a Background')) return true;
+  if (cardKw.includes('Choose a Background') && cmdType.includes('Background')) return true;
+
+  return false;
+}
 
 interface CardBottomSheetProps {
   isOpen: boolean;
@@ -15,6 +47,7 @@ interface CardBottomSheetProps {
   card: ScryfallCard | null;
   deckId: string;
   existingCard?: DeckCard | null;
+  deck?: Deck | null;
 }
 
 function parseManaSymbols(manaCost: string | null): ManaColor[] {
@@ -49,8 +82,9 @@ export function CardBottomSheet({
   card,
   deckId,
   existingCard,
+  deck,
 }: CardBottomSheetProps) {
-  const { addCard, removeCard, setCommander, updateCardCategory } = useDeckStore();
+  const { addCard, removeCard, setCommander, setPartner, removePartner, updateCardCategory } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
   const [flipped, setFlipped] = React.useState(false);
 
@@ -90,6 +124,20 @@ export function CardBottomSheet({
   const canBeCommander = isLegendaryCreatureOrPlaneswalker(card.type_line ?? '');
   const manaColors = parseManaSymbols(card.mana_cost);
 
+  const isCommander = !!deck?.commanderId && deck.commanderId === card.id;
+  const isPartner = !!deck?.partnerId && deck.partnerId === card.id;
+  const commanderDeckCard = deck?.commanderId
+    ? (deck.cards.find((c) => c.scryfallId === deck!.commanderId) ?? null)
+    : null;
+  const showPartnerButton =
+    !isCommander &&
+    !isPartner &&
+    canBeCommander &&
+    !!deck?.commanderId &&
+    canBePartnerWith(card, existingCard, commanderDeckCard);
+
+  const validColors: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
+
   function toDeckCard(): DeckCard {
     return {
       scryfallId: card!.id,
@@ -101,6 +149,10 @@ export function CardBottomSheet({
       manaCost: card!.mana_cost,
       typeLine: card!.type_line,
       cmc: card!.cmc,
+      colorIdentity: (card!.color_identity ?? []).filter(
+        (c): c is ManaColor => validColors.includes(c as ManaColor)
+      ),
+      keywords: card!.keywords ?? existingCard?.keywords ?? [],
     };
   }
 
@@ -115,6 +167,16 @@ export function CardBottomSheet({
 
   function handleSetCommander() {
     setCommander(deckId, { ...toDeckCard(), category: 'Comandante' });
+    onClose();
+  }
+
+  function handleSetPartner() {
+    setPartner(deckId, { ...toDeckCard(), category: 'Comandante' });
+    onClose();
+  }
+
+  function handleRemovePartner() {
+    removePartner(deckId);
     onClose();
   }
 
@@ -359,7 +421,37 @@ export function CardBottomSheet({
 
         {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '8px' }}>
-          {canBeCommander && (
+          {isCommander && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              backgroundColor: 'rgba(234,179,8,0.08)',
+              border: '1px solid rgba(234,179,8,0.25)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
+            }}>
+              <Crown size={13} style={{ color: '#eab308', flexShrink: 0 }} />
+              Comandante deste deck
+            </div>
+          )}
+
+          {isPartner && (
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              leftIcon={<UserMinus size={15} />}
+              onClick={handleRemovePartner}
+              style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+            >
+              Remover Parceiro
+            </Button>
+          )}
+
+          {!isCommander && canBeCommander && (
             <Button
               variant="secondary"
               size="md"
@@ -368,6 +460,18 @@ export function CardBottomSheet({
               onClick={handleSetCommander}
             >
               Definir como Comandante
+            </Button>
+          )}
+
+          {showPartnerButton && (
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              leftIcon={<Users size={15} />}
+              onClick={handleSetPartner}
+            >
+              Definir como Parceiro
             </Button>
           )}
 

@@ -8,7 +8,7 @@ import { ManaSymbol } from '../../design-system/components/ManaSymbol';
 import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
-import { ScryfallCard, ManaColor, Deck } from '../../types';
+import { ScryfallCard, ManaColor, Deck, DeckCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 
 const MANA_COLORS: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
@@ -134,18 +134,15 @@ export function SearchTab({ deck }: SearchTabProps) {
     triggerSearch(searchText, selectedColors, val, cmcMin, cmcMax);
   }
 
-  function handleQuickAdd(card: ScryfallCard, e: React.MouseEvent) {
-    e.stopPropagation();
+  const validColors = ['W', 'U', 'B', 'R', 'G', 'C'];
+
+  function scryfallToDeckCard(card: ScryfallCard, category: string): DeckCard {
     const imageUrl =
       card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
     const artCropUrl =
       card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || null;
     const backImageUrl = card.card_faces?.[1]?.image_uris?.normal ?? null;
-
-    let category = 'Outros';
-    if (card.type_line?.includes('Land')) category = 'Terrenos';
-
-    addCard(deck.id, {
+    return {
       scryfallId: card.id,
       name: card.name,
       quantity: 1,
@@ -156,7 +153,17 @@ export function SearchTab({ deck }: SearchTabProps) {
       manaCost: card.mana_cost,
       typeLine: card.type_line,
       cmc: card.cmc,
-    });
+      colorIdentity: (card.color_identity ?? []).filter(
+        (c): c is ManaColor => validColors.includes(c)
+      ),
+      keywords: card.keywords ?? [],
+    };
+  }
+
+  function handleQuickAdd(card: ScryfallCard, e: React.MouseEvent) {
+    e.stopPropagation();
+    const category = card.type_line?.includes('Land') ? 'Terrenos' : 'Outros';
+    addCard(deck.id, scryfallToDeckCard(card, category));
   }
 
   function handleQuickRemove(card: ScryfallCard, e: React.MouseEvent) {
@@ -530,6 +537,7 @@ export function SearchTab({ deck }: SearchTabProps) {
             ? deck.cards.find((c) => c.scryfallId === selectedCard.id) ?? null
             : null
         }
+        deck={deck}
       />
     </div>
   );
