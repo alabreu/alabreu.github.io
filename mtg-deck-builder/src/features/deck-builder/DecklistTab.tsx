@@ -413,38 +413,6 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
 
   return (
     <div style={{ padding: '12px 16px' }}>
-      {/* Commander / Partner art banner */}
-      {deck.commanderArtUrl && (
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', height: '100px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <img
-              src={deck.commanderArtUrl}
-              alt={deck.commanderName ?? ''}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }}
-            />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.72) 100%)' }}>
-              <span style={{ position: 'absolute', bottom: '6px', left: '8px', fontSize: '10px', fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
-                {deck.commanderName}
-              </span>
-            </div>
-          </div>
-          {deck.partnerArtUrl && (
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-              <img
-                src={deck.partnerArtUrl}
-                alt={deck.partnerName ?? ''}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.72) 100%)' }}>
-                <span style={{ position: 'absolute', bottom: '6px', left: '8px', fontSize: '10px', fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
-                  {deck.partnerName}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Deck title */}
       <div style={{ marginBottom: '16px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: '0 0 4px' }}>
