@@ -16,7 +16,9 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   // Only show art if the commander card still exists in the deck
   const commanderArtUrl =
-    deck.commanderArtUrl && deck.cards.some((c) => c.scryfallId === deck.commanderId)
+    deck.commanderId &&
+    deck.commanderArtUrl &&
+    deck.cards.some((c) => c.scryfallId === deck.commanderId)
       ? deck.commanderArtUrl
       : null;
 
