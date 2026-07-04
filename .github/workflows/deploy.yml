@@ -45,6 +45,7 @@ jobs:
             --exclude='*.tar' \
             . _site/
           cp -r mtg-deck-builder/dist/* _site/mtg-deck-builder/
+          touch _site/.nojekyll
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
