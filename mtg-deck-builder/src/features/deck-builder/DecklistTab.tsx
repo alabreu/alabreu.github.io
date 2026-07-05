@@ -329,9 +329,11 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const sortedCategories = React.useMemo(() => {
     const grouped = groupCardsByCategory(deck.cards);
     const known = deck.categories && deck.categories.length > 0 ? deck.categories : null;
+    // With an explicit list, show every managed section (even empty ones)
+    // so newly created sections are visible immediately
     return known
       ? [
-          ...known.filter((c) => grouped[c]),
+          ...known,
           ...Object.keys(grouped).filter((c) => !known.includes(c)),
         ]
       : [
@@ -484,7 +486,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
           <CategorySection
             key={cat}
             category={cat}
-            cards={grouped[cat]}
+            cards={grouped[cat] ?? []}
             expanded={expandedSections[cat] !== false}
             onToggle={() => toggleSection(cat)}
             onCardClick={handleCardClick}

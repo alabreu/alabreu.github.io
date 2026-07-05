@@ -306,7 +306,20 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            const existing = d.categories ?? [];
+            const DEFAULT_ORDER = [
+              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
+              'Remoção', 'Proteção', 'Wincons', 'Outros',
+            ];
+            // Materialize the full current list so default section order
+            // is preserved the first time a custom category is added
+            const present = [...new Set(d.cards.map((c) => c.category))];
+            const existing =
+              d.categories && d.categories.length > 0
+                ? d.categories
+                : [
+                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
+                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
+                  ];
             if (existing.includes(name)) return d;
             return { ...d, categories: [...existing, name], updatedAt: Date.now() };
           }),

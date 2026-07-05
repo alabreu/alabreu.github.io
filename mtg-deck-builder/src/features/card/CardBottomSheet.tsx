@@ -239,6 +239,16 @@ export function CardBottomSheet({
     card.card_faces?.map((f) => f.oracle_text).join('\n---\n') ||
     null;
 
+  // Deck's managed sections (falls back to defaults); always include the
+  // current selection so the select never shows a phantom value
+  const baseCategories: string[] =
+    deck?.categories && deck.categories.length > 0
+      ? deck.categories
+      : [...DEFAULT_CATEGORIES];
+  const categoryOptions = baseCategories.includes(selectedCategory)
+    ? baseCategories
+    : [...baseCategories, selectedCategory];
+
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={card.name} maxHeight="92vh">
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -445,7 +455,7 @@ export function CardBottomSheet({
                 outline: 'none',
               }}
             >
-              {DEFAULT_CATEGORIES.map((cat) => (
+              {categoryOptions.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
