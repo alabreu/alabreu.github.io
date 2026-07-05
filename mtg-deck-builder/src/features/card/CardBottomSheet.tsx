@@ -7,7 +7,7 @@ import { ManaSymbol, ManaCost } from '../../design-system/components/ManaSymbol'
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
-import { Crown, Trash2, Plus, ChevronDown, RefreshCw, Users, UserMinus } from 'lucide-react';
+import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus } from 'lucide-react';
 
 function canBePartnerWith(
   card: ScryfallCard,
@@ -497,26 +497,24 @@ export function CardBottomSheet({
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button
+              variant="danger"
+              size="md"
+              leftIcon={<Minus size={15} />}
+              onClick={handleRemove}
+              disabled={!isInDeck}
+              style={{ flex: 1 }}
+            >
+              Remover
+            </Button>
+            <Button
               variant="primary"
               size="md"
-              fullWidth
               leftIcon={<Plus size={15} />}
               onClick={handleAdd}
+              style={{ flex: 1 }}
             >
-              {isInDeck ? `Adicionar (${quantity}x)` : 'Adicionar ao Deck'}
+              {isInDeck ? `Adicionar (${quantity}x)` : 'Adicionar'}
             </Button>
-
-            {isInDeck && (
-              <Button
-                variant="danger"
-                size="md"
-                leftIcon={<Trash2 size={15} />}
-                onClick={handleRemove}
-                style={{ flexShrink: 0 }}
-              >
-                {quantity > 1 ? `${quantity}x` : 'Remover'}
-              </Button>
-            )}
           </div>
         </div>
       </div>
