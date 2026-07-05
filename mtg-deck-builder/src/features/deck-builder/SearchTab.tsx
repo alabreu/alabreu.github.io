@@ -48,17 +48,34 @@ interface SearchTabProps {
   deck: Deck;
 }
 
-// Same ordering as the Scryfall site (name A–Z), so a search started there
-// can be resumed here with the same sequence of results
-async function searchScryfall(query: string): Promise<ScryfallCard[]> {
-  const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=name&unique=cards`;
+// Scryfall site parity: same ordering (name A–Z) and same page size (60),
+// so a search started there can be resumed here on the same page
+const PAGE_SIZE = 60;
+
+type SearchPage = {
+  cards: ScryfallCard[];
+  nextPage: string | null;
+  totalCards: number;
+};
+
+async function fetchScryfallPage(url: string): Promise<SearchPage> {
   const res = await fetch(url);
   if (!res.ok) {
-    if (res.status === 404) return [];
+    if (res.status === 404) return { cards: [], nextPage: null, totalCards: 0 };
     throw new Error(`Scryfall API error: ${res.status}`);
   }
   const data = await res.json();
-  return data.data as ScryfallCard[];
+  return {
+    cards: (data.data ?? []) as ScryfallCard[],
+    nextPage: data.has_more && data.next_page ? String(data.next_page) : null,
+    totalCards: typeof data.total_cards === 'number' ? data.total_cards : (data.data ?? []).length,
+  };
+}
+
+function searchScryfall(query: string): Promise<SearchPage> {
+  return fetchScryfallPage(
+    `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=name&unique=cards`
+  );
 }
 
 /* ---------- Filter sheet building blocks ---------- */
@@ -225,6 +242,10 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [searchText, setSearchText] = React.useState('');
   const [filters, setFilters] = React.useState<SearchFilters>(EMPTY_FILTERS);
   const [results, setResults] = React.useState<ScryfallCard[]>([]);
+  const [nextPageUrl, setNextPageUrl] = React.useState<string | null>(null);
+  const [totalCards, setTotalCards] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [hasSearched, setHasSearched] = React.useState(false);
@@ -246,6 +267,7 @@ export function SearchTab({ deck }: SearchTabProps) {
   }, []);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultsScrollRef = React.useRef<HTMLDivElement>(null);
 
   const deckCardMap = React.useMemo(() => {
     const map: Record<string, number> = {};
@@ -259,6 +281,9 @@ export function SearchTab({ deck }: SearchTabProps) {
     // Nothing typed and no filters touched: reset instead of searching everything
     if (!text.trim() && !hasActiveFilters(f)) {
       setResults([]);
+      setNextPageUrl(null);
+      setTotalCards(0);
+      setPage(1);
       setHasSearched(false);
       setIsLoading(false);
       setError(null);
@@ -271,16 +296,52 @@ export function SearchTab({ deck }: SearchTabProps) {
       setError(null);
       try {
         const data = await searchScryfall(query);
-        setResults(data);
+        setResults(data.cards);
+        setNextPageUrl(data.nextPage);
+        setTotalCards(data.totalCards);
+        setPage(1);
         setHasSearched(true);
-        if (text.trim() && data.length > 0) rememberSearch(text.trim());
+        if (text.trim() && data.cards.length > 0) rememberSearch(text.trim());
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erro ao buscar cartas');
         setResults([]);
+        setNextPageUrl(null);
+        setTotalCards(0);
+        setPage(1);
       } finally {
         setIsLoading(false);
       }
     }, 300);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalCards / PAGE_SIZE));
+  const pageCards = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  async function goToPage(n: number) {
+    if (n < 1 || n > totalPages || loadingMore) return;
+    // Fetch additional API pages (175 cards each) until the requested
+    // display page (60 cards, same as scryfall.com) is covered
+    const needed = Math.min(n * PAGE_SIZE, totalCards);
+    if (results.length < needed && nextPageUrl) {
+      setLoadingMore(true);
+      try {
+        let acc = results;
+        let next: string | null = nextPageUrl;
+        while (acc.length < needed && next) {
+          const r: SearchPage = await fetchScryfallPage(next);
+          acc = [...acc, ...r.cards];
+          next = r.nextPage;
+        }
+        setResults(acc);
+        setNextPageUrl(next);
+      } catch {
+        setLoadingMore(false);
+        return;
+      }
+      setLoadingMore(false);
+    }
+    setPage(n);
+    resultsScrollRef.current?.scrollTo({ top: 0 });
   }
 
   function rememberSearch(term: string) {
@@ -629,7 +690,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       </BottomSheet>
 
       {/* Results */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 16px 12px' }}>
+      <div ref={resultsScrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 16px 12px' }}>
         {isLoading && (
           <div
             style={{
@@ -803,7 +864,7 @@ export function SearchTab({ deck }: SearchTabProps) {
               gap: '12px',
             }}
           >
-            {results.map((card, i) => {
+            {pageCards.map((card, i) => {
               const qty = deckCardMap[card.id] ?? 0;
               const imageUrl =
                 card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
@@ -867,6 +928,42 @@ export function SearchTab({ deck }: SearchTabProps) {
               );
             })}
           </motion.div>
+        )}
+
+        {/* Pagination — same 60-card pages as scryfall.com */}
+        {!isLoading && !error && results.length > 0 && totalPages > 1 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              padding: '16px 0 8px',
+            }}
+          >
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1 || loadingMore}
+            >
+              ← Anterior
+            </Button>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+              Página {page} de {totalPages}
+              <br />
+              {totalCards} cartas
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages}
+              isLoading={loadingMore}
+            >
+              Próxima →
+            </Button>
+          </div>
         )}
       </div>
 
