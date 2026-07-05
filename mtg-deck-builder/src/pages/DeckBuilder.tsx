@@ -10,7 +10,7 @@ import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../features/deck-builder/CoachTab';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
-import { EdhrecSheet } from '../features/deck-builder/EdhrecSheet';
+import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
@@ -133,7 +133,7 @@ export default function DeckBuilder() {
           onClick={() => setEdhrecOpen(true)}
           aria-label="Sugestões do EDHREC"
         >
-          <Sparkles size={15} />
+          <EdhrecIcon size={17} />
         </button>
       )}
 

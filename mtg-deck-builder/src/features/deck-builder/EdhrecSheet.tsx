@@ -20,6 +20,21 @@ const MAX_CARDS_PER_LIST = 60;
 
 type ViewMode = '1col' | '2col';
 
+/** EDHREC favicon with a Sparkles fallback if it can't load. */
+export function EdhrecIcon({ size = 16 }: { size?: number }) {
+  const [errored, setErrored] = React.useState(false);
+  if (errored) return <Sparkles size={size - 1} />;
+  return (
+    <img
+      src="https://edhrec.com/favicon.ico"
+      alt="EDHREC"
+      draggable={false}
+      onError={() => setErrored(true)}
+      style={{ width: size, height: size, display: 'block', borderRadius: '3px', userSelect: 'none' }}
+    />
+  );
+}
+
 export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const { addCard, removeCard } = useDeckStore();
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
