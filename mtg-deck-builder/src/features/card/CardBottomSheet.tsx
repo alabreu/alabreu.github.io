@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Badge } from '../../design-system/components/Badge';
-import { ManaSymbol, ManaCost } from '../../design-system/components/ManaSymbol';
+import { ManaSymbol, ManaCost, SymbolText } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
@@ -355,7 +355,7 @@ export function CardBottomSheet({
                   whiteSpace: 'pre-wrap',
                 }}
               >
-                {oracleText}
+                <SymbolText text={oracleText} />
               </p>
             </div>
           )}

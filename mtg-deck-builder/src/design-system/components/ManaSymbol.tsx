@@ -112,6 +112,41 @@ export function ManaCost({ cost, size = 'sm', gap = 3 }: ManaCostProps) {
   );
 }
 
+interface SymbolTextProps {
+  text: string;
+  symbolSize?: number;
+}
+
+/** Renders text with inline {W}/{2}/{T}... tokens replaced by Scryfall symbol images. */
+export function SymbolText({ text, symbolSize = 14 }: SymbolTextProps) {
+  const parts = text.split(/(\{[^}]+\})/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const match = part.match(/^\{([^}]+)\}$/);
+        if (!match) return <React.Fragment key={i}>{part}</React.Fragment>;
+        const symbol = match[1].replace('/', '').toUpperCase();
+        return (
+          <img
+            key={i}
+            src={`https://svgs.scryfall.io/card-symbols/${encodeURIComponent(symbol)}.svg`}
+            alt={part}
+            draggable={false}
+            style={{
+              display: 'inline-block',
+              width: `${symbolSize}px`,
+              height: `${symbolSize}px`,
+              verticalAlign: '-2px',
+              margin: '0 1px',
+              userSelect: 'none',
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 interface ManaGroupProps {
   colors: ManaColor[];
   size?: 'sm' | 'md' | 'lg';
