@@ -8,6 +8,8 @@ interface BottomSheetProps {
   children: React.ReactNode;
   title?: string;
   maxHeight?: string;
+  /** Optional element rendered in the header row, before the close button */
+  headerAction?: React.ReactNode;
 }
 
 export function BottomSheet({
@@ -16,6 +18,7 @@ export function BottomSheet({
   children,
   title,
   maxHeight = '90vh',
+  headerAction,
 }: BottomSheetProps) {
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const startY = React.useRef<number | null>(null);
@@ -158,24 +161,27 @@ export function BottomSheet({
                   >
                     {title}
                   </span>
-                  <button
-                    onClick={onClose}
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'var(--surface-2)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 'var(--radius-full)',
-                      color: 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <X size={14} />
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    {headerAction}
+                    <button
+                      onClick={onClose}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'var(--surface-2)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-full)',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

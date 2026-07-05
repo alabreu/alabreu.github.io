@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal } from 'lucide-react';
+import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal, CircleHelp } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
@@ -8,6 +8,7 @@ import { ManaSymbol } from '../../design-system/components/ManaSymbol';
 import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
+import { SyntaxHelpSheet } from './SyntaxHelpSheet';
 import { ScryfallCard, ManaColor, Deck, DeckCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import {
@@ -224,6 +225,7 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [selectedCard, setSelectedCard] = React.useState<ScryfallCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
+  const [syntaxHelpOpen, setSyntaxHelpOpen] = React.useState(false);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -332,7 +334,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       {/* Search bar */}
       <div
         style={{
-          padding: '12px 16px 4px',
+          padding: '12px 16px',
           display: 'flex',
           gap: '8px',
           alignItems: 'center',
@@ -399,17 +401,34 @@ export function SearchTab({ deck }: SearchTabProps) {
         </button>
       </div>
 
-      {/* Syntax hint */}
-      <p style={{ padding: '0 16px 8px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.01em' }}>
-        Suporta sintaxe Scryfall: <span style={{ fontFamily: 'monospace' }}>t:dragon o:"draw a card" mv&lt;=3 is:commander</span>
-      </p>
-
       {/* Advanced filters bottom sheet */}
       <BottomSheet
         isOpen={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
         title="Busca avançada"
         maxHeight="88vh"
+        headerAction={
+          <button
+            onClick={() => setSyntaxHelpOpen(true)}
+            aria-label="Manual da sintaxe de busca"
+            style={{
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--surface-2)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-full)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <CircleHelp size={14} />
+          </button>
+        }
       >
         <div style={{ padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px', overflowX: 'hidden' }}>
           {/* Oracle text */}
@@ -755,6 +774,9 @@ export function SearchTab({ deck }: SearchTabProps) {
           </motion.div>
         )}
       </div>
+
+      {/* Scryfall syntax manual */}
+      <SyntaxHelpSheet isOpen={syntaxHelpOpen} onClose={() => setSyntaxHelpOpen(false)} />
 
       {/* Card detail bottom sheet */}
       <CardBottomSheet
