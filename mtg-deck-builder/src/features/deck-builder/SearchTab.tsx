@@ -13,7 +13,7 @@ import { ScryfallCard, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import { CardActionsOverlay } from '../card/CardActionsOverlay';
-import { getUsdBrlRate, usdToBrlLabel } from '../../lib/usdBrl';
+import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
 import {
   SearchFilters,
   EMPTY_FILTERS,
@@ -722,9 +722,21 @@ export function SearchTab({ deck }: SearchTabProps) {
                       {card.name}
                     </span>
                     {usdToBrlLabel(card.prices?.usd, usdBrlRate) && (
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                      <a
+                        href={ligaMagicUrl(card.name)}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: 'var(--accent)',
+                          textDecoration: 'none',
+                          flexShrink: 0,
+                        }}
+                      >
                         {usdToBrlLabel(card.prices?.usd, usdBrlRate)}
-                      </span>
+                      </a>
                     )}
                   </div>
                 </motion.div>

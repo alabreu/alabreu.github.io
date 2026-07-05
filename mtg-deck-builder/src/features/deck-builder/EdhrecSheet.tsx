@@ -7,7 +7,7 @@ import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import { CardActionsOverlay } from '../card/CardActionsOverlay';
-import { getUsdBrlRate, usdToBrlLabel } from '../../lib/usdBrl';
+import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
 import { Deck, ScryfallCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { EdhrecList, fetchEdhrecLists, hydrateCards, translateHeader } from './edhrec';
@@ -308,9 +308,21 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                             )}
                           </div>
                           {brl && (
-                            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                            <a
+                              href={ligaMagicUrl(card.name)}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: 'var(--accent)',
+                                textDecoration: 'none',
+                                flexShrink: 0,
+                              }}
+                            >
                               {brl}
-                            </span>
+                            </a>
                           )}
                         </div>
                       </div>
