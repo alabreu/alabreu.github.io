@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import NewDeck from './pages/NewDeck';
 import DeckBuilder from './pages/DeckBuilder';
 import DesignSystem from './pages/DesignSystem';
+import { UpdateToast } from './components/UpdateToast';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/deck/:id" element={<DeckBuilder />} />
         <Route path="/design" element={<DesignSystem />} />
       </Routes>
+      <UpdateToast />
     </BrowserRouter>
   );
 }

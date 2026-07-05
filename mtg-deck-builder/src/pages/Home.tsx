@@ -519,6 +519,24 @@ export default function Home() {
             <MenuArrow size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           </button>
 
+          {/* Build version — helps confirm which deploy is running */}
+          <p
+            style={{
+              margin: '12px 20px 0',
+              fontSize: '11px',
+              color: 'var(--text-muted)',
+              textAlign: 'center',
+              letterSpacing: '0.02em',
+            }}
+          >
+            Versão {__BUILD_SHA__} ·{' '}
+            {new Date(__BUILD_TIME__).toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
         </div>
       </BottomSheet>
 
