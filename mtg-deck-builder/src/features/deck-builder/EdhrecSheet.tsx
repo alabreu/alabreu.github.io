@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, AlertCircle, Sparkles, Square, LayoutGrid } from 'lucide-react';
+import { AlertCircle, Sparkles, Square, LayoutGrid } from 'lucide-react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
+import { CardActionsOverlay } from '../card/CardActionsOverlay';
+import { getUsdBrlRate, usdToBrlLabel } from '../../lib/usdBrl';
 import { Deck, ScryfallCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { EdhrecList, fetchEdhrecLists, hydrateCards, translateHeader } from './edhrec';
@@ -38,6 +40,18 @@ export function EdhrecIcon({ size = 16 }: { size?: number }) {
 export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const { addCard, removeCard } = useDeckStore();
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
+  const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    getUsdBrlRate().then((rate) => {
+      if (!cancelled) setUsdBrlRate(rate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const [lists, setLists] = React.useState<EdhrecList[] | null>(null);
   const [listsError, setListsError] = React.useState<string | null>(null);
@@ -255,19 +269,34 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                       card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
                     const synergy = synergyByName[card.name];
 
+                    const brl = usdToBrlLabel(card.prices?.usd, usdBrlRate);
+
                     return (
                       <div key={card.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                        <CardImage
-                          imageUrl={imageUrl}
-                          name={card.name}
-                          size="normal"
-                          onClick={() => {
-                            setSelectedCard(card);
-                            setCardSheetOpen(true);
-                          }}
-                          showQuantityBadge={qty > 0 ? qty : undefined}
-                        />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingBottom: '2px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <CardImage
+                            imageUrl={imageUrl}
+                            name={card.name}
+                            size="normal"
+                            onClick={() => {
+                              setSelectedCard(card);
+                              setCardSheetOpen(true);
+                            }}
+                            showQuantityBadge={qty > 0 ? qty : undefined}
+                          />
+                          <CardActionsOverlay
+                            qty={qty}
+                            onAdd={(e) => {
+                              e.stopPropagation();
+                              addCard(deck.id, scryfallToDeckCard(card, defaultCategoryFor(card)));
+                            }}
+                            onRemove={(e) => {
+                              e.stopPropagation();
+                              removeCard(deck.id, card.id);
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingBottom: '2px' }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
                               {card.name}
@@ -278,30 +307,11 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                               </p>
                             )}
                           </div>
-                          <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                            {qty > 0 && (
-                              <button
-                                onClick={() => removeCard(deck.id, card.id)}
-                                style={{
-                                  width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  backgroundColor: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.25)',
-                                  borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--error)',
-                                }}
-                              >
-                                <Minus size={11} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => addCard(deck.id, scryfallToDeckCard(card, defaultCategoryFor(card)))}
-                              style={{
-                                width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)',
-                                borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--accent)',
-                              }}
-                            >
-                              <Plus size={11} />
-                            </button>
-                          </div>
+                          {brl && (
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                              {brl}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );

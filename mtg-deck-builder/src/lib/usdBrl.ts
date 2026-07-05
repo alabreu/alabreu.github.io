@@ -44,6 +44,14 @@ export function formatBrl(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
+/** "R$ 13,50" from a Scryfall usd string and a rate, or null when unavailable. */
+export function usdToBrlLabel(usd: string | null | undefined, rate: number | null): string | null {
+  if (!usd || rate === null) return null;
+  const value = parseFloat(usd);
+  if (!isFinite(value)) return null;
+  return formatBrl(value * rate);
+}
+
 /** LigaMagic card page URL (front face name for DFCs). */
 export function ligaMagicUrl(cardName: string): string {
   const front = cardName.split(' // ')[0];

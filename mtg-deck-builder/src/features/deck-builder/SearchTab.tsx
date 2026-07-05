@@ -12,6 +12,8 @@ import { SyntaxHelpSheet } from './SyntaxHelpSheet';
 import { ScryfallCard, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
+import { CardActionsOverlay } from '../card/CardActionsOverlay';
+import { getUsdBrlRate, usdToBrlLabel } from '../../lib/usdBrl';
 import {
   SearchFilters,
   EMPTY_FILTERS,
@@ -227,6 +229,17 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = React.useState(false);
+  const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getUsdBrlRate().then((rate) => {
+      if (!cancelled) setUsdBrlRate(rate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -687,9 +700,14 @@ export function SearchTab({ deck }: SearchTabProps) {
                       onClick={() => handleCardClick(card)}
                       showQuantityBadge={qty > 0 ? qty : undefined}
                     />
+                    <CardActionsOverlay
+                      qty={qty}
+                      onAdd={(e) => handleQuickAdd(card, e)}
+                      onRemove={(e) => handleQuickRemove(card, e)}
+                    />
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingBottom: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingBottom: '2px' }}>
                     <span
                       style={{
                         flex: 1,
@@ -703,44 +721,11 @@ export function SearchTab({ deck }: SearchTabProps) {
                     >
                       {card.name}
                     </span>
-                    <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                      {qty > 0 && (
-                        <button
-                          onClick={(e) => handleQuickRemove(card, e)}
-                          style={{
-                            width: '22px',
-                            height: '22px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(248,113,113,0.12)',
-                            border: '1px solid rgba(248,113,113,0.25)',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            color: 'var(--error)',
-                          }}
-                        >
-                          <Minus size={11} />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => handleQuickAdd(card, e)}
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'var(--accent-subtle)',
-                          border: '1px solid var(--accent-border)',
-                          borderRadius: 'var(--radius-sm)',
-                          cursor: 'pointer',
-                          color: 'var(--accent)',
-                        }}
-                      >
-                        <Plus size={11} />
-                      </button>
-                    </div>
+                    {usdToBrlLabel(card.prices?.usd, usdBrlRate) && (
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                        {usdToBrlLabel(card.prices?.usd, usdBrlRate)}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               );
