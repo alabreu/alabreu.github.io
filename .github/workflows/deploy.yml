@@ -1,8 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [master]
+  schedule:
+    # Hourly deploy — avoids the GitHub Pages ~10 builds/hour throttle
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
