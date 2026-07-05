@@ -9,6 +9,7 @@ type DeckStore = {
   updateDeck: (id: string, updates: Partial<Omit<Deck, 'id' | 'createdAt'>>) => void;
   addCard: (deckId: string, card: DeckCard) => void;
   removeCard: (deckId: string, scryfallId: string) => void;
+  setCardQuantity: (deckId: string, scryfallId: string, quantity: number) => void;
   setCommander: (deckId: string, card: DeckCard) => void;
   setPartner: (deckId: string, card: DeckCard) => void;
   removePartner: (deckId: string) => void;
@@ -102,6 +103,36 @@ export const useDeckStore = create<DeckStore>()(
               ...(removingFully && scryfallId === d.partnerId
                 ? { partnerId: null, partnerName: null, partnerArtUrl: null }
                 : {}),
+              updatedAt: Date.now(),
+            };
+          }),
+        }));
+      },
+
+      setCardQuantity: (deckId: string, scryfallId: string, quantity: number) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const existing = d.cards.find((c) => c.scryfallId === scryfallId);
+            if (!existing) return d;
+            if (quantity <= 0) {
+              return {
+                ...d,
+                cards: d.cards.filter((c) => c.scryfallId !== scryfallId),
+                ...(scryfallId === d.commanderId
+                  ? { commanderId: null, commanderName: null, commanderArtUrl: null }
+                  : {}),
+                ...(scryfallId === d.partnerId
+                  ? { partnerId: null, partnerName: null, partnerArtUrl: null }
+                  : {}),
+                updatedAt: Date.now(),
+              };
+            }
+            return {
+              ...d,
+              cards: d.cards.map((c) =>
+                c.scryfallId === scryfallId ? { ...c, quantity } : c
+              ),
               updatedAt: Date.now(),
             };
           }),

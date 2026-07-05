@@ -84,10 +84,11 @@ export function CardBottomSheet({
   existingCard,
   deck,
 }: CardBottomSheetProps) {
-  const { addCard, removeCard, setCommander, setPartner, removePartner, updateCardCategory } = useDeckStore();
+  const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
   const [flipped, setFlipped] = React.useState(false);
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
+  const [qtyInput, setQtyInput] = React.useState('0');
 
   // Cards opened from the decklist only carry the slim stored data (no set,
   // rarity, oracle text). Fetch the full card from Scryfall to fill it in.
@@ -107,6 +108,11 @@ export function CardBottomSheet({
   }, [isOpen, cardProp?.id, cardProp?.set_name]);
 
   const card = fetchedCard && cardProp && fetchedCard.id === cardProp.id ? fetchedCard : cardProp;
+
+  // Keep the quantity field in sync with the deck (button presses, reopen, etc.)
+  React.useEffect(() => {
+    setQtyInput(String(existingCard?.quantity ?? 0));
+  }, [existingCard?.quantity, cardProp?.id]);
 
   React.useEffect(() => {
     setFlipped(false);
@@ -183,6 +189,26 @@ export function CardBottomSheet({
   function handleRemove() {
     removeCard(deckId, card!.id);
     if (quantity <= 1) onClose();
+  }
+
+  function commitQuantity(q: number) {
+    if (q === quantity) return;
+    if (isInDeck) {
+      setCardQuantity(deckId, card!.id, q);
+    } else if (q > 0) {
+      addCard(deckId, { ...toDeckCard(), category: selectedCategory });
+      if (q > 1) setCardQuantity(deckId, card!.id, q);
+    }
+  }
+
+  function handleQtyChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 3);
+    setQtyInput(val);
+    if (val !== '') commitQuantity(parseInt(val, 10));
+  }
+
+  function handleQtyBlur() {
+    if (!/^\d+$/.test(qtyInput)) setQtyInput(String(quantity));
   }
 
   function handleSetCommander() {
@@ -496,6 +522,27 @@ export function CardBottomSheet({
           )}
 
           <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              value={qtyInput}
+              onChange={handleQtyChange}
+              onBlur={handleQtyBlur}
+              inputMode="numeric"
+              aria-label="Quantidade"
+              style={{
+                width: '56px',
+                height: '36px',
+                flexShrink: 0,
+                textAlign: 'center',
+                fontSize: '16px',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                outline: 'none',
+              }}
+            />
             <Button
               variant="danger"
               size="md"
@@ -513,7 +560,7 @@ export function CardBottomSheet({
               onClick={handleAdd}
               style={{ flex: 1 }}
             >
-              {isInDeck ? `Adicionar (${quantity}x)` : 'Adicionar'}
+              Adicionar
             </Button>
           </div>
         </div>
