@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, AlertCircle, Sparkles } from 'lucide-react';
+import { Plus, Minus, AlertCircle, Sparkles, Square, LayoutGrid } from 'lucide-react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
@@ -18,8 +18,11 @@ interface Props {
 
 const MAX_CARDS_PER_LIST = 60;
 
+type ViewMode = '1col' | '2col';
+
 export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const { addCard, removeCard } = useDeckStore();
+  const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
 
   const [lists, setLists] = React.useState<EdhrecList[] | null>(null);
   const [listsError, setListsError] = React.useState<string | null>(null);
@@ -103,7 +106,49 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
 
   return (
     <>
-      <BottomSheet isOpen={isOpen} onClose={onClose} title="Sugestões do EDHREC" maxHeight="92vh">
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Sugestões do EDHREC"
+        maxHeight="92vh"
+        headerAction={
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: 'var(--surface-1)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
+          >
+            {([
+              { mode: '1col' as ViewMode, icon: <Square size={13} /> },
+              { mode: '2col' as ViewMode, icon: <LayoutGrid size={13} /> },
+            ]).map(({ mode, icon }, i) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '26px',
+                  backgroundColor: viewMode === mode ? 'var(--surface-2)' : 'transparent',
+                  border: 'none',
+                  borderLeft: i > 0 ? '1px solid var(--border-default)' : 'none',
+                  cursor: 'pointer',
+                  color: viewMode === mode ? 'var(--text-primary)' : 'var(--text-muted)',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        }
+      >
         {!deck.commanderName ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '48px 24px', textAlign: 'center' }}>
             <Sparkles size={32} style={{ color: 'var(--text-muted)' }} />
@@ -183,7 +228,11 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
+                    gap: '12px',
+                  }}
                 >
                   {cards.map((card) => {
                     const qty = deckCardMap[card.id] ?? 0;
