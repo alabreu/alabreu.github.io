@@ -7,7 +7,8 @@ import { ManaSymbol, ManaCost, SymbolText } from '../../design-system/components
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
-import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus } from 'lucide-react';
+import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
+import { getUsdBrlRate, formatBrl, ligaMagicUrl } from '../../lib/usdBrl';
 
 function canBePartnerWith(
   card: ScryfallCard,
@@ -89,6 +90,18 @@ export function CardBottomSheet({
   const [flipped, setFlipped] = React.useState(false);
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
   const [qtyInput, setQtyInput] = React.useState('0');
+  const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    getUsdBrlRate().then((rate) => {
+      if (!cancelled) setUsdBrlRate(rate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   // Cards opened from the decklist only carry the slim stored data (no set,
   // rarity, oracle text). Fetch the full card from Scryfall to fill it in.
@@ -144,6 +157,8 @@ export function CardBottomSheet({
     existingCard?.backImageUrl ||
     card.card_faces?.[1]?.image_uris?.normal ||
     (isDfc ? `https://cards.scryfall.io/normal/back/${card.id[0]}/${card.id[1]}/${card.id}.jpg` : null);
+
+  const usdPrice = card.prices?.usd ? parseFloat(card.prices.usd) : null;
 
   const isInDeck = !!existingCard;
   const quantity = existingCard?.quantity ?? 0;
@@ -414,6 +429,44 @@ export function CardBottomSheet({
               </span>
             </div>
           )}
+
+          {/* Price — Scryfall USD + BRL estimate linking to LigaMagic */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              Preço
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {usdPrice !== null && (
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  US$ {usdPrice.toFixed(2)}
+                </span>
+              )}
+              <a
+                href={ligaMagicUrl(card.name)}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: 'var(--accent)',
+                  textDecoration: 'none',
+                }}
+              >
+                {usdPrice !== null && usdBrlRate !== null
+                  ? `≈ ${formatBrl(usdPrice * usdBrlRate)} · LigaMagic`
+                  : 'Ver na LigaMagic'}
+                <ExternalLink size={12} />
+              </a>
+            </div>
+            {usdPrice !== null && usdBrlRate !== null && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                Estimativa pela cotação do dia (fonte: TCGplayer via Scryfall)
+              </span>
+            )}
+          </div>
 
           {/* Legality */}
           {card.legalities.commander !== 'legal' && (

@@ -66,6 +66,11 @@ export type ScryfallCard = {
     };
   }>;
   keywords?: string[];
+  prices?: {
+    usd: string | null;
+    usd_foil?: string | null;
+    eur?: string | null;
+  };
   legalities: {
     commander: string;
   };
