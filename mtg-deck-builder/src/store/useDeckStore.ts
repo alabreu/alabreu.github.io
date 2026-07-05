@@ -18,6 +18,7 @@ type DeckStore = {
   reorderCategories: (deckId: string, categories: string[]) => void;
   addCategory: (deckId: string, name: string) => void;
   deleteCategory: (deckId: string, name: string) => void;
+  groupLandsIntoSection: (deckId: string, sectionName: string) => void;
 };
 
 function generateId(): string {
@@ -351,6 +352,43 @@ export const useDeckStore = create<DeckStore>()(
             }
             const cards = d.cards.map((c) =>
               c.category === name ? { ...c, category: 'Outros' } : c
+            );
+            return { ...d, categories, cards, updatedAt: Date.now() };
+          }),
+        }));
+      },
+      groupLandsIntoSection: (deckId: string, sectionName: string) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const isLand = (typeLine: string | null) =>
+              !!typeLine && typeLine.includes('Land');
+            const hasLands = d.cards.some(
+              (c) => isLand(c.typeLine) && c.category !== 'Comandante' && c.category !== sectionName
+            );
+
+            const DEFAULT_ORDER = [
+              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
+              'Remoção', 'Proteção', 'Wincons', 'Outros',
+            ];
+            const present = [...new Set(d.cards.map((c) => c.category))];
+            const existing =
+              d.categories && d.categories.length > 0
+                ? d.categories
+                : [
+                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
+                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
+                  ];
+            const categories = existing.includes(sectionName)
+              ? existing
+              : [...existing, sectionName];
+
+            if (!hasLands && existing.includes(sectionName)) return d;
+
+            const cards = d.cards.map((c) =>
+              isLand(c.typeLine) && c.category !== 'Comandante'
+                ? { ...c, category: sectionName }
+                : c
             );
             return { ...d, categories, cards, updatedAt: Date.now() };
           }),

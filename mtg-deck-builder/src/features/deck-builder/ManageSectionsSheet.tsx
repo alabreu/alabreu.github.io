@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, Trash2, Plus } from 'lucide-react';
+import { GripVertical, Trash2, Plus, Mountain } from 'lucide-react';
 import { useDrag } from '@use-gesture/react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
@@ -148,7 +148,7 @@ interface Props {
 }
 
 export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
-  const { reorderCategories, addCategory, deleteCategory } = useDeckStore();
+  const { reorderCategories, addCategory, deleteCategory, groupLandsIntoSection } = useDeckStore();
   const [localCats, setLocalCats] = React.useState<string[]>([]);
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [activeY, setActiveY] = React.useState(0);
@@ -219,6 +219,24 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
 
   const canAdd = newName.trim().length > 0 && !localCats.includes(newName.trim());
 
+  const looseLandCount = React.useMemo(
+    () =>
+      deck.cards
+        .filter(
+          (c) =>
+            c.typeLine?.includes('Land') &&
+            c.category !== 'Comandante' &&
+            c.category !== 'Lands'
+        )
+        .reduce((s, c) => s + c.quantity, 0),
+    [deck.cards]
+  );
+
+  function handleGroupLands() {
+    groupLandsIntoSection(deck.id, 'Lands');
+    setLocalCats((prev) => (prev.includes('Lands') ? prev : [...prev, 'Lands']));
+  }
+
   return (
     <>
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Gerenciar seções" maxHeight="85vh">
@@ -240,6 +258,22 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
               onDelete={handleDeleteRequest}
             />
           ))}
+        </div>
+
+        {/* Auto-group lands */}
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginBottom: '16px' }}>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            leftIcon={<Mountain size={15} />}
+            onClick={handleGroupLands}
+            disabled={looseLandCount === 0}
+          >
+            {looseLandCount > 0
+              ? `Agrupar ${looseLandCount} terreno${looseLandCount !== 1 ? 's' : ''} em "Lands"`
+              : 'Terrenos já agrupados'}
+          </Button>
         </div>
 
         {/* Add new section */}
