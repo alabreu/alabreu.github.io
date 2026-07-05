@@ -18,7 +18,7 @@ interface SearchTabProps {
 }
 
 async function searchScryfall(query: string): Promise<ScryfallCard[]> {
-  const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=name&unique=cards`;
+  const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=edhrec&unique=cards`;
   const res = await fetch(url);
   if (!res.ok) {
     if (res.status === 404) return [];
@@ -26,6 +26,25 @@ async function searchScryfall(query: string): Promise<ScryfallCard[]> {
   }
   const data = await res.json();
   return data.data as ScryfallCard[];
+}
+
+/** Re-rank so exact name matches come first, then prefix matches, then the rest
+ *  (which keep the API's EDHREC-popularity order). */
+function rankResults(cards: ScryfallCard[], text: string): ScryfallCard[] {
+  const q = text.trim().toLowerCase();
+  if (!q) return cards;
+  const score = (c: ScryfallCard) => {
+    const name = c.name.toLowerCase();
+    const front = name.split(' // ')[0];
+    if (name === q || front === q) return 0;
+    if (name.startsWith(q)) return 1;
+    if (name.includes(q)) return 2;
+    return 3;
+  };
+  return cards
+    .map((c, i) => ({ c, s: score(c), i }))
+    .sort((a, b) => a.s - b.s || a.i - b.i)
+    .map((x) => x.c);
 }
 
 function buildQuery(
@@ -53,8 +72,10 @@ function buildQuery(
   if (cmcMin !== null) parts.push(`cmc>=${cmcMin}`);
   if (cmcMax !== null) parts.push(`cmc<=${cmcMax}`);
 
-  // Always limit to commander-legal by default if we have a commander identity
-  if (parts.length === 0) return 'f:commander';
+  if (parts.length === 0) parts.push('f:commander');
+
+  // Paper printings only — hides Arena/Alchemy-exclusive cards
+  parts.push('game:paper');
 
   return parts.join(' ');
 }
@@ -103,7 +124,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       setError(null);
       try {
         const data = await searchScryfall(query);
-        setResults(data);
+        setResults(rankResults(data, text));
         setHasSearched(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erro ao buscar cartas');
