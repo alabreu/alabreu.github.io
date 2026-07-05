@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal, CircleHelp } from 'lucide-react';
+import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal, CircleHelp, History } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
@@ -23,6 +23,26 @@ import {
 } from './scryfallQuery';
 
 const MANA_COLORS: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
+
+const RECENT_KEY = 'recent-searches';
+const RECENT_MAX = 10;
+
+function loadRecent(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(list: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  } catch {
+    /* storage full */
+  }
+}
 
 interface SearchTabProps {
   deck: Deck;
@@ -230,6 +250,7 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = React.useState(false);
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+  const [recent, setRecent] = React.useState<string[]>(loadRecent);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -269,6 +290,7 @@ export function SearchTab({ deck }: SearchTabProps) {
         const data = await searchScryfall(query);
         setResults(rankResults(data, text));
         setHasSearched(true);
+        if (text.trim() && data.length > 0) rememberSearch(text.trim());
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erro ao buscar cartas');
         setResults([]);
@@ -276,6 +298,40 @@ export function SearchTab({ deck }: SearchTabProps) {
         setIsLoading(false);
       }
     }, 300);
+  }
+
+  function rememberSearch(term: string) {
+    setRecent((prev) => {
+      const tl = term.toLowerCase();
+      // Consolidate partial typing: "dora" is replaced by "doran" and vice versa
+      const next = [
+        term,
+        ...prev.filter((p) => {
+          const pl = p.toLowerCase();
+          return pl !== tl && !tl.startsWith(pl) && !pl.startsWith(tl);
+        }),
+      ].slice(0, RECENT_MAX);
+      saveRecent(next);
+      return next;
+    });
+  }
+
+  function removeRecent(term: string) {
+    setRecent((prev) => {
+      const next = prev.filter((p) => p !== term);
+      saveRecent(next);
+      return next;
+    });
+  }
+
+  function clearRecent() {
+    setRecent([]);
+    saveRecent([]);
+  }
+
+  function runRecent(term: string) {
+    setSearchText(term);
+    triggerSearch(term, filters);
   }
 
   function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -645,7 +701,92 @@ export function SearchTab({ deck }: SearchTabProps) {
           </div>
         )}
 
-        {!isLoading && !hasSearched && (
+        {!isLoading && !hasSearched && recent.length > 0 && (
+          <div style={{ padding: '8px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Buscas recentes
+              </p>
+              <button
+                onClick={clearRecent}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  fontSize: '12px',
+                  fontFamily: 'inherit',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                Limpar
+              </button>
+            </div>
+            {recent.map((term) => (
+              <div
+                key={term}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  borderBottom: '1px solid var(--border-subtle)',
+                }}
+              >
+                <button
+                  onClick={() => runRecent(term)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 4px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <History size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: '14px',
+                      color: 'var(--text-primary)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {term}
+                  </span>
+                </button>
+                <button
+                  onClick={() => removeRecent(term)}
+                  aria-label={`Remover "${term}" do histórico`}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '10px 4px',
+                    display: 'flex',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && !hasSearched && recent.length === 0 && (
           <div
             style={{
               height: '100%',
