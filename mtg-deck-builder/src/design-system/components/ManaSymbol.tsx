@@ -74,6 +74,44 @@ export function ManaSymbol({ color, size = 'md', style }: ManaSymbolProps) {
   );
 }
 
+interface ManaCostProps {
+  cost: string;
+  size?: 'sm' | 'md' | 'lg';
+  gap?: number;
+}
+
+/** Renders a full mana cost string like "{2}{W/U}{B}" as Scryfall symbol images. */
+export function ManaCost({ cost, size = 'sm', gap = 3 }: ManaCostProps) {
+  const diameter = sizeConfig[size];
+  const tokens = cost.match(/\{[^}]+\}/g) ?? [];
+  if (tokens.length === 0) return null;
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: `${gap}px`, flexWrap: 'wrap' }}>
+      {tokens.map((token, i) => {
+        const symbol = token.slice(1, -1).replace('/', '').toUpperCase();
+        return (
+          <img
+            key={i}
+            src={`https://svgs.scryfall.io/card-symbols/${encodeURIComponent(symbol)}.svg`}
+            alt={token}
+            draggable={false}
+            style={{
+              display: 'inline-block',
+              width: `${diameter}px`,
+              height: `${diameter}px`,
+              borderRadius: '50%',
+              flexShrink: 0,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              userSelect: 'none',
+            }}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 interface ManaGroupProps {
   colors: ManaColor[];
   size?: 'sm' | 'md' | 'lg';

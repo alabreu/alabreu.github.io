@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Badge } from '../../design-system/components/Badge';
-import { ManaSymbol } from '../../design-system/components/ManaSymbol';
+import { ManaSymbol, ManaCost } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
@@ -284,9 +284,7 @@ export function CardBottomSheet({
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                   Custo
                 </span>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                  {card.mana_cost}
-                </span>
+                <ManaCost cost={card.mana_cost} size="sm" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
@@ -342,22 +340,24 @@ export function CardBottomSheet({
             </div>
           )}
 
-          {/* Set + rarity */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <Badge variant="default" size="sm">
-              {card.set_name}
-            </Badge>
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 500,
-                color: getRarityColor(card.rarity),
-                textTransform: 'capitalize',
-              }}
-            >
-              {card.rarity}
-            </span>
-          </div>
+          {/* Set + rarity — only when we have real Scryfall data (deck-stored cards don't keep it) */}
+          {card.set_name && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <Badge variant="default" size="sm">
+                {card.set_name}
+              </Badge>
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: getRarityColor(card.rarity),
+                  textTransform: 'capitalize',
+                }}
+              >
+                {card.rarity}
+              </span>
+            </div>
+          )}
 
           {/* Legality */}
           {card.legalities.commander !== 'legal' && (
