@@ -63,6 +63,7 @@ export function Input({
 
   const inputStyle: React.CSSProperties = {
     flex: 1,
+    minWidth: 0,
     height: config.height,
     fontSize: config.fontSize,
     color: 'var(--text-primary)',

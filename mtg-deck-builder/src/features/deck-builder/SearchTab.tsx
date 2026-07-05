@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
@@ -10,6 +10,13 @@ import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { ScryfallCard, ManaColor, Deck, DeckCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
+import {
+  SearchFilters,
+  EMPTY_FILTERS,
+  ColorMode,
+  buildScryfallQuery,
+  hasActiveFilters,
+} from './scryfallQuery';
 
 const MANA_COLORS: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
 
@@ -47,47 +54,169 @@ function rankResults(cards: ScryfallCard[], text: string): ScryfallCard[] {
     .map((x) => x.c);
 }
 
-function buildQuery(
-  text: string,
-  colors: ManaColor[],
-  type: string,
-  cmcMin: number | null,
-  cmcMax: number | null
-): string {
-  const parts: string[] = [];
+/* ---------- Filter sheet building blocks ---------- */
 
-  if (text.trim()) {
-    parts.push(text.trim());
-  }
-
-  if (colors.length > 0) {
-    const colorStr = colors.join('');
-    parts.push(`id<=${colorStr}`);
-  }
-
-  if (type.trim()) {
-    parts.push(`t:${type.trim()}`);
-  }
-
-  if (cmcMin !== null) parts.push(`cmc>=${cmcMin}`);
-  if (cmcMax !== null) parts.push(`cmc<=${cmcMax}`);
-
-  if (parts.length === 0) parts.push('f:commander');
-
-  // Paper printings only — hides Arena/Alchemy-exclusive cards
-  parts.push('game:paper');
-
-  return parts.join(' ');
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+      {children}
+    </p>
+  );
 }
+
+function ManaChips({
+  selected,
+  onToggle,
+}: {
+  selected: ManaColor[];
+  onToggle: (c: ManaColor) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+      {MANA_COLORS.map((color) => {
+        const active = selected.includes(color);
+        return (
+          <button
+            key={color}
+            onClick={() => onToggle(color)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              opacity: active ? 1 : 0.3,
+              transform: active ? 'scale(1.15)' : 'scale(1)',
+              transition: 'opacity 0.15s, transform 0.15s',
+              outline: active ? '2px solid var(--accent)' : 'none',
+              outlineOffset: '3px',
+              borderRadius: '50%',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <ManaSymbol color={color} size="lg" />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-sm)',
+        overflow: 'hidden',
+        width: '100%',
+      }}
+    >
+      {options.map((opt, i) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: '7px 4px',
+            fontSize: '12px',
+            fontWeight: 500,
+            fontFamily: 'inherit',
+            backgroundColor: value === opt.value ? 'var(--surface-2)' : 'transparent',
+            color: value === opt.value ? 'var(--text-primary)' : 'var(--text-muted)',
+            border: 'none',
+            borderLeft: i > 0 ? '1px solid var(--border-default)' : 'none',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChipRow({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: Array<{ value: string; label: string }>;
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      {options.map((opt) => {
+        const active = selected.includes(opt.value);
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onToggle(opt.value)}
+            style={{
+              padding: '7px 12px',
+              fontSize: '12px',
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              borderRadius: '999px',
+              backgroundColor: active ? 'var(--accent-subtle)' : 'var(--surface-1)',
+              color: active ? 'var(--accent)' : 'var(--text-muted)',
+              border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-default)'}`,
+              cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Two side-by-side inputs that never overflow the row. */
+function MinMaxRow({
+  minValue,
+  maxValue,
+  onMin,
+  onMax,
+}: {
+  minValue: string;
+  maxValue: string;
+  onMin: (v: string) => void;
+  onMax: (v: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Input placeholder="Mínimo" value={minValue} onChange={(e) => onMin(e.target.value)} type="number" min={0} fullWidth />
+      </div>
+      <span style={{ color: 'var(--text-muted)', fontSize: '14px', flexShrink: 0 }}>—</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Input placeholder="Máximo" value={maxValue} onChange={(e) => onMax(e.target.value)} type="number" min={0} fullWidth />
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Main component ---------- */
 
 export function SearchTab({ deck }: SearchTabProps) {
   const { addCard, removeCard } = useDeckStore();
 
   const [searchText, setSearchText] = React.useState('');
-  const [selectedColors, setSelectedColors] = React.useState<ManaColor[]>([]);
-  const [typeFilter, setTypeFilter] = React.useState('');
-  const [cmcMin, setCmcMin] = React.useState('');
-  const [cmcMax, setCmcMax] = React.useState('');
+  const [filters, setFilters] = React.useState<SearchFilters>(EMPTY_FILTERS);
   const [results, setResults] = React.useState<ScryfallCard[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -104,22 +233,20 @@ export function SearchTab({ deck }: SearchTabProps) {
     return map;
   }, [deck.cards]);
 
-  function triggerSearch(
-    text: string,
-    colors: ManaColor[],
-    type: string,
-    min: string,
-    max: string
-  ) {
+  function triggerSearch(text: string, f: SearchFilters) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // Nothing typed and no filters touched: reset instead of searching everything
+    if (!text.trim() && !hasActiveFilters(f)) {
+      setResults([]);
+      setHasSearched(false);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     debounceRef.current = setTimeout(async () => {
-      const query = buildQuery(
-        text,
-        colors,
-        type,
-        min !== '' ? Number(min) : null,
-        max !== '' ? Number(max) : null
-      );
+      const query = buildScryfallQuery(text, f);
       setIsLoading(true);
       setError(null);
       try {
@@ -138,21 +265,17 @@ export function SearchTab({ deck }: SearchTabProps) {
   function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setSearchText(val);
-    triggerSearch(val, selectedColors, typeFilter, cmcMin, cmcMax);
+    triggerSearch(val, filters);
   }
 
-  function toggleColor(color: ManaColor) {
-    const next = selectedColors.includes(color)
-      ? selectedColors.filter((c) => c !== color)
-      : [...selectedColors, color];
-    setSelectedColors(next);
-    triggerSearch(searchText, next, typeFilter, cmcMin, cmcMax);
+  function updateFilters(patch: Partial<SearchFilters>) {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    triggerSearch(searchText, next);
   }
 
-  function handleTypeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value;
-    setTypeFilter(val);
-    triggerSearch(searchText, selectedColors, val, cmcMin, cmcMax);
+  function toggleIn<T>(list: T[], item: T): T[] {
+    return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
   }
 
   const validColors = ['W', 'U', 'B', 'R', 'G', 'C'];
@@ -197,14 +320,11 @@ export function SearchTab({ deck }: SearchTabProps) {
     setSheetOpen(true);
   }
 
-  const hasActiveFilters = selectedColors.length > 0 || !!typeFilter || !!cmcMin || !!cmcMax;
+  const filtersActive = hasActiveFilters(filters);
 
   function clearFilters() {
-    setSelectedColors([]);
-    setTypeFilter('');
-    setCmcMin('');
-    setCmcMax('');
-    triggerSearch(searchText, [], '', '', '');
+    setFilters(EMPTY_FILTERS);
+    triggerSearch(searchText, EMPTY_FILTERS);
   }
 
   return (
@@ -212,15 +332,15 @@ export function SearchTab({ deck }: SearchTabProps) {
       {/* Search bar */}
       <div
         style={{
-          padding: '12px 16px',
+          padding: '12px 16px 4px',
           display: 'flex',
           gap: '8px',
           alignItems: 'center',
         }}
       >
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Input
-            placeholder="Buscar por nome, texto..."
+            placeholder="Nome ou sintaxe Scryfall..."
             value={searchText}
             onChange={handleTextChange}
             leftIcon={<Search size={15} />}
@@ -229,9 +349,9 @@ export function SearchTab({ deck }: SearchTabProps) {
                 <button
                   onClick={() => {
                     setSearchText('');
-                    triggerSearch('', selectedColors, typeFilter, cmcMin, cmcMax);
+                    triggerSearch('', filters);
                   }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)', padding: 0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)', padding: 0, pointerEvents: 'auto' }}
                 >
                   <X size={14} />
                 </button>
@@ -252,17 +372,17 @@ export function SearchTab({ deck }: SearchTabProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: hasActiveFilters ? 'var(--accent-subtle)' : 'var(--surface-1)',
-            border: `1px solid ${hasActiveFilters ? 'var(--accent-border)' : 'var(--border-default)'}`,
+            backgroundColor: filtersActive ? 'var(--accent-subtle)' : 'var(--surface-1)',
+            border: `1px solid ${filtersActive ? 'var(--accent-border)' : 'var(--border-default)'}`,
             borderRadius: 'var(--radius-md)',
             cursor: 'pointer',
-            color: hasActiveFilters ? 'var(--accent)' : 'var(--text-muted)',
+            color: filtersActive ? 'var(--accent)' : 'var(--text-muted)',
             transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
             WebkitTapHighlightColor: 'transparent',
           }}
         >
           <SlidersHorizontal size={16} />
-          {hasActiveFilters && (
+          {filtersActive && (
             <span
               style={{
                 position: 'absolute',
@@ -279,93 +399,179 @@ export function SearchTab({ deck }: SearchTabProps) {
         </button>
       </div>
 
-      {/* Filter bottom sheet */}
+      {/* Syntax hint */}
+      <p style={{ padding: '0 16px 8px', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.01em' }}>
+        Suporta sintaxe Scryfall: <span style={{ fontFamily: 'monospace' }}>t:dragon o:"draw a card" mv&lt;=3 is:commander</span>
+      </p>
+
+      {/* Advanced filters bottom sheet */}
       <BottomSheet
         isOpen={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
-        title="Filtros"
+        title="Busca avançada"
+        maxHeight="88vh"
       >
-        <div style={{ padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Color filter */}
+        <div style={{ padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px', overflowX: 'hidden' }}>
+          {/* Oracle text */}
           <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
-              Identidade de cor
-            </p>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              {MANA_COLORS.map((color) => {
-                const active = selectedColors.includes(color);
-                return (
-                  <button
-                    key={color}
-                    onClick={() => toggleColor(color)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      opacity: active ? 1 : 0.3,
-                      transform: active ? 'scale(1.15)' : 'scale(1)',
-                      transition: 'opacity 0.15s, transform 0.15s',
-                      outline: active ? '2px solid var(--accent)' : 'none',
-                      outlineOffset: '3px',
-                      borderRadius: '50%',
-                    }}
-                  >
-                    <ManaSymbol color={color} size="lg" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Type filter */}
-          <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-              Tipo
-            </p>
+            <SectionLabel>Texto da carta</SectionLabel>
             <Input
-              placeholder="Ex: Creature, Instant, Land..."
-              value={typeFilter}
-              onChange={handleTypeChange}
+              placeholder='Ex: draw "a card"'
+              value={filters.oracle}
+              onChange={(e) => updateFilters({ oracle: e.target.value })}
               fullWidth
             />
           </div>
 
-          {/* CMC filter */}
+          {/* Type line */}
           <div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-              CMC (custo convertido de mana)
-            </p>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <Input
-                placeholder="Mínimo"
-                value={cmcMin}
-                onChange={(e) => {
-                  setCmcMin(e.target.value);
-                  triggerSearch(searchText, selectedColors, typeFilter, e.target.value, cmcMax);
-                }}
-                type="number"
-                min={0}
-                fullWidth
+            <SectionLabel>Tipo</SectionLabel>
+            <Input
+              placeholder="Ex: creature dragon"
+              value={filters.types}
+              onChange={(e) => updateFilters({ types: e.target.value })}
+              fullWidth
+            />
+          </div>
+
+          {/* Colors */}
+          <div>
+            <SectionLabel>Cores</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <ManaChips
+                selected={filters.colors}
+                onToggle={(c) => updateFilters({ colors: toggleIn(filters.colors, c) })}
               />
-              <span style={{ color: 'var(--text-muted)', fontSize: '14px', flexShrink: 0 }}>—</span>
-              <Input
-                placeholder="Máximo"
-                value={cmcMax}
-                onChange={(e) => {
-                  setCmcMax(e.target.value);
-                  triggerSearch(searchText, selectedColors, typeFilter, cmcMin, e.target.value);
-                }}
-                type="number"
-                min={0}
-                fullWidth
-              />
+              {filters.colors.length > 0 && (
+                <Segmented<ColorMode>
+                  options={[
+                    { value: 'include', label: 'Contém' },
+                    { value: 'exact', label: 'Exatamente' },
+                    { value: 'atmost', label: 'No máximo' },
+                  ]}
+                  value={filters.colorMode}
+                  onChange={(v) => updateFilters({ colorMode: v })}
+                />
+              )}
             </div>
           </div>
 
+          {/* Commander color identity */}
+          <div>
+            <SectionLabel>Identidade de comandante</SectionLabel>
+            <ManaChips
+              selected={filters.identity}
+              onToggle={(c) => updateFilters({ identity: toggleIn(filters.identity, c) })}
+            />
+          </div>
+
+          {/* Mana value */}
+          <div>
+            <SectionLabel>Valor de mana (CMC)</SectionLabel>
+            <MinMaxRow
+              minValue={filters.mvMin}
+              maxValue={filters.mvMax}
+              onMin={(v) => updateFilters({ mvMin: v })}
+              onMax={(v) => updateFilters({ mvMax: v })}
+            />
+          </div>
+
+          {/* Power / Toughness */}
+          <div>
+            <SectionLabel>Poder</SectionLabel>
+            <MinMaxRow
+              minValue={filters.powMin}
+              maxValue={filters.powMax}
+              onMin={(v) => updateFilters({ powMin: v })}
+              onMax={(v) => updateFilters({ powMax: v })}
+            />
+          </div>
+          <div>
+            <SectionLabel>Resistência</SectionLabel>
+            <MinMaxRow
+              minValue={filters.touMin}
+              maxValue={filters.touMax}
+              onMin={(v) => updateFilters({ touMin: v })}
+              onMax={(v) => updateFilters({ touMax: v })}
+            />
+          </div>
+
+          {/* Rarity */}
+          <div>
+            <SectionLabel>Raridade</SectionLabel>
+            <ChipRow
+              options={[
+                { value: 'c', label: 'Comum' },
+                { value: 'u', label: 'Incomum' },
+                { value: 'r', label: 'Rara' },
+                { value: 'm', label: 'Mítica' },
+              ]}
+              selected={filters.rarities}
+              onToggle={(v) => updateFilters({ rarities: toggleIn(filters.rarities, v) })}
+            />
+          </div>
+
+          {/* Set */}
+          <div>
+            <SectionLabel>Coleção</SectionLabel>
+            <Input
+              placeholder="Código do set, ex: tdc"
+              value={filters.set}
+              onChange={(e) => updateFilters({ set: e.target.value })}
+              fullWidth
+            />
+          </div>
+
+          {/* Commander legality toggle */}
+          <button
+            onClick={() => updateFilters({ commanderLegal: !filters.commanderLegal })}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              padding: '12px 14px',
+              backgroundColor: 'var(--surface-1)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'left',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
+              Somente cartas legais em Commander
+            </span>
+            <span
+              style={{
+                width: '40px',
+                height: '24px',
+                borderRadius: '999px',
+                flexShrink: 0,
+                backgroundColor: filters.commanderLegal ? 'var(--accent)' : 'var(--surface-3)',
+                position: 'relative',
+                transition: 'background-color 0.15s',
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '3px',
+                  left: filters.commanderLegal ? '19px' : '3px',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  transition: 'left 0.15s',
+                }}
+              />
+            </span>
+          </button>
+
           {/* Actions */}
           <div style={{ display: 'flex', gap: '8px' }}>
-            {hasActiveFilters && (
+            {filtersActive && (
               <Button variant="secondary" size="md" fullWidth onClick={clearFilters}>
                 Limpar filtros
               </Button>
@@ -378,7 +584,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       </BottomSheet>
 
       {/* Results */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 12px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 16px 12px' }}>
         {isLoading && (
           <div
             style={{
@@ -407,7 +613,7 @@ export function SearchTab({ deck }: SearchTabProps) {
             <AlertCircle size={32} style={{ color: 'var(--error)' }} />
             <p style={{ color: 'var(--error)', fontSize: '14px' }}>{error}</p>
             <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              Tente usar termos de busca diferentes
+              Verifique a sintaxe da busca ou tente termos diferentes
             </p>
           </div>
         )}
@@ -428,7 +634,7 @@ export function SearchTab({ deck }: SearchTabProps) {
               Nenhuma carta encontrada
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-              Tente outros termos de busca
+              Tente outros termos ou ajuste os filtros
             </p>
           </div>
         )}
@@ -449,8 +655,10 @@ export function SearchTab({ deck }: SearchTabProps) {
             <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
               Busque cartas para seu deck
             </p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-              Use o campo acima para encontrar cartas. Filtre por cores, tipo ou custo.
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5 }}>
+              Pesquise por nome ou use a sintaxe do Scryfall — ex:{' '}
+              <span style={{ fontFamily: 'monospace' }}>t:instant id&lt;=wub mv&lt;=2</span>.
+              Toque no ícone de filtros para a busca avançada.
             </p>
           </div>
         )}
@@ -492,6 +700,7 @@ export function SearchTab({ deck }: SearchTabProps) {
                     <span
                       style={{
                         flex: 1,
+                        minWidth: 0,
                         fontSize: '11px',
                         color: 'var(--text-muted)',
                         overflow: 'hidden',
