@@ -79,7 +79,7 @@ function getRarityColor(rarity: string): string {
 export function CardBottomSheet({
   isOpen,
   onClose,
-  card,
+  card: cardProp,
   deckId,
   existingCard,
   deck,
@@ -87,6 +87,26 @@ export function CardBottomSheet({
   const { addCard, removeCard, setCommander, setPartner, removePartner, updateCardCategory } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
   const [flipped, setFlipped] = React.useState(false);
+  const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
+
+  // Cards opened from the decklist only carry the slim stored data (no set,
+  // rarity, oracle text). Fetch the full card from Scryfall to fill it in.
+  React.useEffect(() => {
+    setFetchedCard(null);
+    if (!isOpen || !cardProp || cardProp.set_name) return;
+    let cancelled = false;
+    fetch(`https://api.scryfall.com/cards/${cardProp.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setFetchedCard(data as ScryfallCard);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, cardProp?.id, cardProp?.set_name]);
+
+  const card = fetchedCard && cardProp && fetchedCard.id === cardProp.id ? fetchedCard : cardProp;
 
   React.useEffect(() => {
     setFlipped(false);
