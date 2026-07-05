@@ -10,6 +10,7 @@ import { Badge } from '../../design-system/components/Badge';
 import { Button } from '../../design-system/components/Button';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
 import { useNavigate } from 'react-router-dom';
+import { materializeCategories } from '../../store/useDeckStore';
 
 interface DecklistTabProps {
   deck: Deck;
@@ -58,7 +59,7 @@ function dfcBackUrl(id: string): string {
   return `https://cards.scryfall.io/normal/back/${id[0]}/${id[1]}/${id}.jpg`;
 }
 
-function FlippableCard({
+const FlippableCard = React.memo(function FlippableCard({
   card,
   onCardClick,
 }: {
@@ -165,9 +166,9 @@ function FlippableCard({
       )}
     </motion.div>
   );
-}
+});
 
-function ListCardRow({ card, onCardClick }: { card: DeckCard; onCardClick: (card: DeckCard) => void }) {
+const ListCardRow = React.memo(function ListCardRow({ card, onCardClick }: { card: DeckCard; onCardClick: (card: DeckCard) => void }) {
   return (
     <motion.button
       whileTap={{ scale: 0.985 }}
@@ -206,24 +207,24 @@ function ListCardRow({ card, onCardClick }: { card: DeckCard; onCardClick: (card
       )}
     </motion.button>
   );
-}
+});
 
 interface CategorySectionProps {
   category: string;
   cards: DeckCard[];
   expanded: boolean;
-  onToggle: () => void;
+  onToggle: (category: string) => void;
   onCardClick: (card: DeckCard) => void;
   viewMode: ViewMode;
 }
 
-function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
     <div style={{ marginBottom: '4px' }}>
       <button
-        onClick={onToggle}
+        onClick={() => onToggle(category)}
         style={{
           width: '100%',
           display: 'flex',
@@ -293,7 +294,7 @@ function CategorySection({ category, cards, expanded, onToggle, onCardClick, vie
       </AnimatePresence>
     </div>
   );
-}
+});
 
 export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const navigate = useNavigate();
@@ -321,26 +322,10 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
         ).toFixed(2)
       : '0.00';
 
-  const DEFAULT_ORDER = [
-    'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-    'Remoção', 'Proteção', 'Wincons', 'Outros',
-  ];
-
-  const sortedCategories = React.useMemo(() => {
-    const grouped = groupCardsByCategory(deck.cards);
-    const known = deck.categories && deck.categories.length > 0 ? deck.categories : null;
-    // With an explicit list, show every managed section (even empty ones)
-    // so newly created sections are visible immediately
-    return known
-      ? [
-          ...known,
-          ...Object.keys(grouped).filter((c) => !known.includes(c)),
-        ]
-      : [
-          ...DEFAULT_ORDER.filter((c) => grouped[c]),
-          ...Object.keys(grouped).filter((c) => !DEFAULT_ORDER.includes(c)),
-        ];
-  }, [deck.cards, deck.categories]);
+  const sortedCategories = React.useMemo(
+    () => materializeCategories(deck),
+    [deck.cards, deck.categories]
+  );
 
   const grouped = React.useMemo(() => groupCardsByCategory(deck.cards), [deck.cards]);
 
@@ -357,14 +342,14 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
     });
   }, [forcedExpandAll, sortedCategories]);
 
-  function toggleSection(cat: string) {
+  const toggleSection = React.useCallback((cat: string) => {
     setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
-  }
+  }, []);
 
-  function handleCardClick(card: DeckCard) {
+  const handleCardClick = React.useCallback((card: DeckCard) => {
     setSelectedCard(card);
     setSheetOpen(true);
-  }
+  }, []);
 
   if (deck.cards.length === 0) {
     return (
@@ -488,7 +473,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             category={cat}
             cards={grouped[cat] ?? []}
             expanded={expandedSections[cat] !== false}
-            onToggle={() => toggleSection(cat)}
+            onToggle={toggleSection}
             onCardClick={handleCardClick}
             viewMode={viewMode}
           />

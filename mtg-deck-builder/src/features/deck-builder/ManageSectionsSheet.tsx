@@ -6,25 +6,18 @@ import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { Deck } from '../../types';
-import { useDeckStore } from '../../store/useDeckStore';
+import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 
 const ITEM_H = 52;
-const DEFAULT_ORDER = [
-  'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-  'Remoção', 'Proteção', 'Wincons', 'Outros',
-];
 
 function clamp(min: number, max: number, val: number) {
   return Math.max(min, Math.min(max, val));
 }
 
 function initCategories(deck: Deck): string[] {
-  if (deck.categories && deck.categories.length > 0) return [...deck.categories];
-  const present = new Set(deck.cards.map((c) => c.category));
-  return [
-    ...DEFAULT_ORDER.filter((c) => present.has(c)),
-    ...[...present].filter((c) => !DEFAULT_ORDER.includes(c)),
-  ];
+  // Union of the saved order and every category cards actually use —
+  // heals partial lists persisted by older app versions
+  return materializeCategories(deck);
 }
 
 interface RowProps {

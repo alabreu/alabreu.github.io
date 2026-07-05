@@ -30,6 +30,28 @@ function parseColorIdentity(colors: string[]): ManaColor[] {
   return colors.filter((c): c is ManaColor => validColors.includes(c as ManaColor));
 }
 
+const DEFAULT_ORDER = [
+  'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
+  'Remoção', 'Proteção', 'Wincons', 'Outros',
+];
+
+/** Full section list for a deck: saved order (if any) plus every category
+ *  actually used by cards. Self-heals partial lists left by older versions. */
+export function materializeCategories(d: Pick<Deck, 'cards' | 'categories'>): string[] {
+  const present = [...new Set(d.cards.map((c) => c.category))];
+  const base =
+    d.categories && d.categories.length > 0
+      ? [...d.categories]
+      : DEFAULT_ORDER.filter((c) => present.includes(c));
+  for (const c of [
+    ...DEFAULT_ORDER.filter((x) => present.includes(x)),
+    ...present,
+  ]) {
+    if (!base.includes(c)) base.push(c);
+  }
+  return base;
+}
+
 export const useDeckStore = create<DeckStore>()(
   persist(
     (set, get) => ({
@@ -297,9 +319,12 @@ export const useDeckStore = create<DeckStore>()(
       },
       reorderCategories: (deckId: string, categories: string[]) => {
         set((state) => ({
-          decks: state.decks.map((d) =>
-            d.id === deckId ? { ...d, categories, updatedAt: Date.now() } : d
-          ),
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            // Never persist a list missing sections that cards actually use
+            const merged = materializeCategories({ cards: d.cards, categories });
+            return { ...d, categories: merged, updatedAt: Date.now() };
+          }),
         }));
       },
 
@@ -307,20 +332,7 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            const DEFAULT_ORDER = [
-              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-              'Remoção', 'Proteção', 'Wincons', 'Outros',
-            ];
-            // Materialize the full current list so default section order
-            // is preserved the first time a custom category is added
-            const present = [...new Set(d.cards.map((c) => c.category))];
-            const existing =
-              d.categories && d.categories.length > 0
-                ? d.categories
-                : [
-                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
-                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
-                  ];
+            const existing = materializeCategories(d);
             if (existing.includes(name)) return d;
             return { ...d, categories: [...existing, name], updatedAt: Date.now() };
           }),
@@ -331,20 +343,7 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            const DEFAULT_ORDER = [
-              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-              'Remoção', 'Proteção', 'Wincons', 'Outros',
-            ];
-            // Resolve the full explicit category list; if never set, derive it from cards
-            const present = [...new Set(d.cards.map((c) => c.category))];
-            const existingCats =
-              d.categories && d.categories.length > 0
-                ? d.categories
-                : [
-                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
-                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
-                  ];
-
+            const existingCats = materializeCategories(d);
             const hasCardsToMove = d.cards.some((c) => c.category === name);
             let categories = existingCats.filter((c) => c !== name);
             if (hasCardsToMove && !categories.includes('Outros')) {
@@ -367,18 +366,7 @@ export const useDeckStore = create<DeckStore>()(
               (c) => isLand(c.typeLine) && c.category !== 'Comandante' && c.category !== sectionName
             );
 
-            const DEFAULT_ORDER = [
-              'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-              'Remoção', 'Proteção', 'Wincons', 'Outros',
-            ];
-            const present = [...new Set(d.cards.map((c) => c.category))];
-            const existing =
-              d.categories && d.categories.length > 0
-                ? d.categories
-                : [
-                    ...DEFAULT_ORDER.filter((c) => present.includes(c)),
-                    ...present.filter((c) => !DEFAULT_ORDER.includes(c)),
-                  ];
+            const existing = materializeCategories(d);
             const categories = existing.includes(sectionName)
               ? existing
               : [...existing, sectionName];
