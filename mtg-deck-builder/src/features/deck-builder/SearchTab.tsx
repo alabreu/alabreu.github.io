@@ -48,8 +48,10 @@ interface SearchTabProps {
   deck: Deck;
 }
 
+// Same ordering as the Scryfall site (name A–Z), so a search started there
+// can be resumed here with the same sequence of results
 async function searchScryfall(query: string): Promise<ScryfallCard[]> {
-  const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=edhrec&unique=cards`;
+  const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=name&unique=cards`;
   const res = await fetch(url);
   if (!res.ok) {
     if (res.status === 404) return [];
@@ -57,25 +59,6 @@ async function searchScryfall(query: string): Promise<ScryfallCard[]> {
   }
   const data = await res.json();
   return data.data as ScryfallCard[];
-}
-
-/** Re-rank so exact name matches come first, then prefix matches, then the rest
- *  (which keep the API's EDHREC-popularity order). */
-function rankResults(cards: ScryfallCard[], text: string): ScryfallCard[] {
-  const q = text.trim().toLowerCase();
-  if (!q) return cards;
-  const score = (c: ScryfallCard) => {
-    const name = c.name.toLowerCase();
-    const front = name.split(' // ')[0];
-    if (name === q || front === q) return 0;
-    if (name.startsWith(q)) return 1;
-    if (name.includes(q)) return 2;
-    return 3;
-  };
-  return cards
-    .map((c, i) => ({ c, s: score(c), i }))
-    .sort((a, b) => a.s - b.s || a.i - b.i)
-    .map((x) => x.c);
 }
 
 /* ---------- Filter sheet building blocks ---------- */
@@ -288,7 +271,7 @@ export function SearchTab({ deck }: SearchTabProps) {
       setError(null);
       try {
         const data = await searchScryfall(query);
-        setResults(rankResults(data, text));
+        setResults(data);
         setHasSearched(true);
         if (text.trim() && data.length > 0) rememberSearch(text.trim());
       } catch (e) {
