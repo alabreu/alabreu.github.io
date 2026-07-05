@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
+import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu, Sparkles } from 'lucide-react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -10,6 +10,7 @@ import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../features/deck-builder/CoachTab';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
+import { EdhrecSheet } from '../features/deck-builder/EdhrecSheet';
 
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function DeckBuilder() {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
+  const [edhrecOpen, setEdhrecOpen] = React.useState(false);
   const [coachModelOpen, setCoachModelOpen] = React.useState(false);
   const [coachModel, setCoachModel] = React.useState(() => {
     const stored = localStorage.getItem(MODEL_KEY);
@@ -121,6 +123,17 @@ export default function DeckBuilder() {
           onClick={() => setAllExpanded((v) => !v)}
         >
           <ChevronsUpDown size={15} />
+        </button>
+      )}
+
+      {/* Floating EDHREC suggestions — only on search view */}
+      {searchOpen && (
+        <button
+          style={{ ...floatingBtnStyle, right: '60px' }}
+          onClick={() => setEdhrecOpen(true)}
+          aria-label="Sugestões do EDHREC"
+        >
+          <Sparkles size={15} />
         </button>
       )}
 
@@ -500,6 +513,13 @@ export default function DeckBuilder() {
         isOpen={importOpen}
         onClose={() => setImportOpen(false)}
         deckId={deck.id}
+      />
+
+      {/* EDHREC suggestions sheet */}
+      <EdhrecSheet
+        isOpen={edhrecOpen}
+        onClose={() => setEdhrecOpen(false)}
+        deck={deck}
       />
 
       {/* Delete confirmation modal */}

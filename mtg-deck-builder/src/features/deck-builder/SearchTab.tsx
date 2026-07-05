@@ -9,8 +9,9 @@ import { SkeletonCard } from '../../design-system/components/Skeleton';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { SyntaxHelpSheet } from './SyntaxHelpSheet';
-import { ScryfallCard, ManaColor, Deck, DeckCard } from '../../types';
+import { ScryfallCard, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
+import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import {
   SearchFilters,
   EMPTY_FILTERS,
@@ -280,36 +281,9 @@ export function SearchTab({ deck }: SearchTabProps) {
     return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
   }
 
-  const validColors = ['W', 'U', 'B', 'R', 'G', 'C'];
-
-  function scryfallToDeckCard(card: ScryfallCard, category: string): DeckCard {
-    const imageUrl =
-      card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
-    const artCropUrl =
-      card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || null;
-    const backImageUrl = card.card_faces?.[1]?.image_uris?.normal ?? null;
-    return {
-      scryfallId: card.id,
-      name: card.name,
-      quantity: 1,
-      category,
-      imageUrl,
-      artCropUrl,
-      backImageUrl,
-      manaCost: card.mana_cost,
-      typeLine: card.type_line,
-      cmc: card.cmc,
-      colorIdentity: (card.color_identity ?? []).filter(
-        (c): c is ManaColor => validColors.includes(c)
-      ),
-      keywords: card.keywords ?? [],
-    };
-  }
-
   function handleQuickAdd(card: ScryfallCard, e: React.MouseEvent) {
     e.stopPropagation();
-    const category = card.type_line?.includes('Land') ? 'Terrenos' : 'Outros';
-    addCard(deck.id, scryfallToDeckCard(card, category));
+    addCard(deck.id, scryfallToDeckCard(card, defaultCategoryFor(card)));
   }
 
   function handleQuickRemove(card: ScryfallCard, e: React.MouseEvent) {
