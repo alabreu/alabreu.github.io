@@ -143,6 +143,7 @@ export function Button({
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchEnd={() => setIsHovered(false)}
       className={className}
       aria-label={ariaLabel}
     >

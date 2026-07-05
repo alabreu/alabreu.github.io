@@ -499,7 +499,11 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
         onClose={() => setSheetOpen(false)}
         card={selectedCard ? deckCardToScryfall(selectedCard) : null}
         deckId={deck.id}
-        existingCard={selectedCard}
+        existingCard={
+          selectedCard
+            ? deck.cards.find((c) => c.scryfallId === selectedCard.scryfallId) ?? null
+            : null
+        }
         deck={deck}
       />
     </div>
