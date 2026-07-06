@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
+import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -10,6 +10,7 @@ import { SearchTab } from '../features/deck-builder/SearchTab';
 import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../features/deck-builder/CoachTab';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
+import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 
 export default function DeckBuilder() {
@@ -20,6 +21,7 @@ export default function DeckBuilder() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
   const [edhrecOpen, setEdhrecOpen] = React.useState(false);
   const [coachModelOpen, setCoachModelOpen] = React.useState(false);
@@ -412,6 +414,53 @@ export default function DeckBuilder() {
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
 
+          {/* Export cards */}
+          <button
+            onClick={() => { setMenuOpen(false); setExportOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <FileOutput size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Exportar cartas
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Copiar lista em texto
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
           {/* Delete deck */}
           <button
             onClick={() => { setMenuOpen(false); setConfirmDelete(true); }}
@@ -513,6 +562,13 @@ export default function DeckBuilder() {
         isOpen={importOpen}
         onClose={() => setImportOpen(false)}
         deckId={deck.id}
+      />
+
+      {/* Export cards sheet */}
+      <ExportDeckSheet
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        deck={deck}
       />
 
       {/* EDHREC suggestions sheet */}
