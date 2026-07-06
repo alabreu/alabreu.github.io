@@ -9,7 +9,7 @@ import { parseDecklist, fetchCardsByName } from './importUtils';
 type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; total: number }
-  | { kind: 'done'; added: number; notFound: string[] };
+  | { kind: 'done'; added: number; notFound: string[]; sections: string[] };
 
 interface ImportCardsSheetProps {
   isOpen: boolean;
@@ -35,9 +35,9 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
     if (!parsed.length) return;
     setPhase({ kind: 'loading', total: parsed.length });
     try {
-      const { toImport, notFound } = await fetchCardsByName(parsed);
+      const { toImport, notFound, sections } = await fetchCardsByName(parsed);
       importCards(deckId, toImport);
-      setPhase({ kind: 'done', added: toImport.length, notFound });
+      setPhase({ kind: 'done', added: toImport.length, notFound, sections });
     } catch {
       setPhase({ kind: 'idle' });
     }
@@ -53,7 +53,8 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
           <>
             {/* Format hint */}
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
-              Cole sua lista no formato padrão. Uma carta por linha:
+              Cole sua lista no formato padrão. Uma carta por linha; linhas com{' '}
+              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções:
             </p>
             <div
               style={{
@@ -68,9 +69,12 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 lineHeight: 1.7,
               }}
             >
+              // Terrenos<br />
+              36 Island<br />
+              <br />
+              // Ramp<br />
               1 Sol Ring<br />
-              4 Lightning Bolt<br />
-              36 Island
+              4 Lightning Bolt
             </div>
 
             {/* Textarea */}
@@ -164,6 +168,11 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 {phase.notFound.length > 0 && (
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
                     {phase.notFound.length} não {phase.notFound.length === 1 ? 'encontrada' : 'encontradas'}
+                  </p>
+                )}
+                {phase.sections.length > 0 && (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                    Distribuídas em: {phase.sections.join(', ')}
                   </p>
                 )}
               </div>

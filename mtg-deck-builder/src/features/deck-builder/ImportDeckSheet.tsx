@@ -10,7 +10,7 @@ import { parseDecklist, fetchCardsByName } from './importUtils';
 type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; total: number }
-  | { kind: 'done'; added: number; notFound: string[]; deckId: string };
+  | { kind: 'done'; added: number; notFound: string[]; deckId: string; sections: string[] };
 
 interface ImportDeckSheetProps {
   isOpen: boolean;
@@ -46,10 +46,10 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
 
     setPhase({ kind: 'loading', total: parsed.length });
     try {
-      const { toImport, notFound } = await fetchCardsByName(parsed);
+      const { toImport, notFound, sections } = await fetchCardsByName(parsed);
       const deck = createDeck(trimmedName);
       importCards(deck.id, toImport);
-      setPhase({ kind: 'done', added: toImport.length, notFound, deckId: deck.id });
+      setPhase({ kind: 'done', added: toImport.length, notFound, deckId: deck.id, sections });
     } catch {
       setPhase({ kind: 'idle' });
     }
@@ -130,7 +130,8 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
               Lista de cartas
             </label>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
-              Cole no formato padrão — uma carta por linha:
+              Cole no formato padrão — uma carta por linha; linhas com{' '}
+              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções:
             </p>
             <div
               style={{
@@ -145,9 +146,12 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
                 lineHeight: 1.7,
               }}
             >
+              // Terrenos<br />
+              36 Island<br />
+              <br />
+              // Ramp<br />
               1 Sol Ring<br />
-              4 Lightning Bolt<br />
-              36 Island
+              4 Lightning Bolt
             </div>
 
             <textarea
@@ -241,6 +245,11 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
                 {phase.notFound.length > 0 && (
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
                     {phase.notFound.length} não {phase.notFound.length === 1 ? 'encontrada' : 'encontradas'}
+                  </p>
+                )}
+                {phase.sections.length > 0 && (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                    Distribuídas em: {phase.sections.join(', ')}
                   </p>
                 )}
               </div>

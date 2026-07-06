@@ -4,14 +4,31 @@ import { scryfallToDeckCard as toDeckCard, defaultCategoryFor } from '../card/ca
 export interface ParsedLine {
   quantity: number;
   name: string;
+  /** Section this card was listed under (from a "// Section" or "# Section"
+   *  comment above it), or null when the list has no such headers. */
+  section: string | null;
+}
+
+/** True for decorative comment lines ("// ---", "# ===") that don't name a section. */
+function isDecorativeComment(text: string): boolean {
+  return text.replace(/[-=_*\s]/g, '').length === 0;
 }
 
 export function parseDecklist(text: string): ParsedLine[] {
   const result: ParsedLine[] = [];
   const seen = new Set<string>();
+  let currentSection: string | null = null;
+
   for (const raw of text.split('\n')) {
     const line = raw.trim();
-    if (!line || line.startsWith('//') || line.startsWith('#')) continue;
+    if (!line) continue;
+
+    if (line.startsWith('//') || line.startsWith('#')) {
+      const heading = line.replace(/^\/\/|^#/, '').trim();
+      if (heading && !isDecorativeComment(heading)) currentSection = heading;
+      continue;
+    }
+
     const match = line.match(/^(\d+)[xX]?\s+(.+)$/);
     if (!match) continue;
     const quantity = Math.min(99, Math.max(1, parseInt(match[1], 10)));
@@ -23,18 +40,18 @@ export function parseDecklist(text: string): ParsedLine[] {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    result.push({ quantity, name });
+    result.push({ quantity, name, section: currentSection });
   }
   return result;
 }
 
-export function scryfallToDeckCard(scryfall: ScryfallCard, quantity: number): DeckCard {
-  return toDeckCard(scryfall, defaultCategoryFor(scryfall), quantity);
+export function scryfallToDeckCard(scryfall: ScryfallCard, quantity: number, category?: string): DeckCard {
+  return toDeckCard(scryfall, category ?? defaultCategoryFor(scryfall), quantity);
 }
 
 export async function fetchCardsByName(
   parsed: ParsedLine[]
-): Promise<{ toImport: DeckCard[]; notFound: string[] }> {
+): Promise<{ toImport: DeckCard[]; notFound: string[]; sections: string[] }> {
   const identifiers = parsed.map((p) => ({ name: p.name }));
   const foundCards: ScryfallCard[] = [];
   const notFoundNames: string[] = [];
@@ -69,10 +86,13 @@ export async function fetchCardsByName(
   }
 
   const toImport: DeckCard[] = [];
-  for (const { name, quantity } of parsed) {
+  const sections: string[] = [];
+  for (const { name, quantity, section } of parsed) {
     const scryfall = byName.get(name.toLowerCase());
-    if (scryfall) toImport.push(scryfallToDeckCard(scryfall, quantity));
+    if (!scryfall) continue;
+    toImport.push(scryfallToDeckCard(scryfall, quantity, section ?? undefined));
+    if (section && !sections.includes(section)) sections.push(section);
   }
 
-  return { toImport, notFound: notFoundNames };
+  return { toImport, notFound: notFoundNames, sections };
 }

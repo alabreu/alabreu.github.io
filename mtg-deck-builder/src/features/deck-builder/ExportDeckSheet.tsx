@@ -13,9 +13,13 @@ interface Props {
 
 export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
   const [copied, setCopied] = React.useState(false);
+  const [includeSectionHeaders, setIncludeSectionHeaders] = React.useState(true);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const text = React.useMemo(() => buildDecklistText(deck), [deck]);
+  const text = React.useMemo(
+    () => buildDecklistText(deck, { includeSectionHeaders }),
+    [deck, includeSectionHeaders]
+  );
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
 
   async function handleCopy() {
@@ -42,6 +46,52 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
           {totalCards} {totalCards === 1 ? 'carta' : 'cartas'}. Toque em "Copiar tudo" ou selecione
           manualmente o trecho que quiser copiar.
         </p>
+
+        <button
+          onClick={() => setIncludeSectionHeaders((v) => !v)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '12px 14px',
+            backgroundColor: 'var(--surface-1)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
+            Incluir títulos das seções
+          </span>
+          <span
+            style={{
+              width: '40px',
+              height: '24px',
+              borderRadius: '999px',
+              flexShrink: 0,
+              backgroundColor: includeSectionHeaders ? 'var(--accent)' : 'var(--surface-3)',
+              position: 'relative',
+              transition: 'background-color 0.15s',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: '3px',
+                left: includeSectionHeaders ? '19px' : '3px',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                backgroundColor: '#fff',
+                transition: 'left 0.15s',
+              }}
+            />
+          </span>
+        </button>
 
         <textarea
           ref={textareaRef}
