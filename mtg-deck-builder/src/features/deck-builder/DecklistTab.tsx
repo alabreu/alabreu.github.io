@@ -1,15 +1,13 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, Search, RefreshCw, LayoutGrid, LayoutList, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
-import { Button } from '../../design-system/components/Button';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
-import { useNavigate } from 'react-router-dom';
 import { materializeCategories } from '../../store/useDeckStore';
 
 interface DecklistTabProps {
@@ -295,7 +293,6 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
 });
 
 export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
-  const navigate = useNavigate();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
@@ -381,17 +378,9 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             Deck vazio
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-            Adicione cartas pela aba de Busca
+            Adicione cartas pelo campo de busca abaixo
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="md"
-          leftIcon={<Search size={15} />}
-          onClick={() => navigate(`/deck/${deck.id}?tab=1`)}
-        >
-          Buscar Cartas
-        </Button>
       </div>
     );
   }
