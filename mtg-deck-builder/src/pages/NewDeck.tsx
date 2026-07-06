@@ -30,7 +30,7 @@ export default function NewDeck() {
     setIsSearching(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const q = encodeURIComponent(`is:commander ${commanderQuery.trim()}`);
+        const q = encodeURIComponent(`is:commander game:paper ${commanderQuery.trim()}`);
         const res = await fetch(
           `https://api.scryfall.com/cards/search?q=${q}&order=name&unique=cards`
         );
