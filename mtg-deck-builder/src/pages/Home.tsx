@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, Palette, FileInput, ChevronRight as MenuArrow } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -225,6 +225,8 @@ export default function Home() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const versionTapCountRef = React.useRef(0);
+  const lastVersionTapRef = React.useRef(0);
 
   return (
     <div
@@ -470,62 +472,28 @@ export default function Home() {
             </div>
           </button>
 
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Design System link */}
-          <button
-            onClick={() => { setMenuOpen(false); navigate('/design'); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-2)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Palette size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Design System
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Componentes e tokens visuais
-              </p>
-            </div>
-            <MenuArrow size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-          </button>
-
-          {/* Build version — helps confirm which deploy is running */}
+          {/* Build version — tap 5x quickly to reach the (hidden) Design System page */}
           <p
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastVersionTapRef.current > 800) versionTapCountRef.current = 0;
+              lastVersionTapRef.current = now;
+              versionTapCountRef.current += 1;
+              if (versionTapCountRef.current >= 5) {
+                versionTapCountRef.current = 0;
+                setMenuOpen(false);
+                navigate('/design');
+              }
+            }}
             style={{
               margin: '12px 20px 0',
               fontSize: '11px',
               color: 'var(--text-muted)',
               textAlign: 'center',
               letterSpacing: '0.02em',
+              cursor: 'default',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
             }}
           >
             Versão {__BUILD_SHA__} ·{' '}
