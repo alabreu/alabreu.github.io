@@ -209,6 +209,52 @@ function ChipRow({
   );
 }
 
+function PaginationBar({
+  page,
+  totalPages,
+  totalCards,
+  loadingMore,
+  onPrev,
+  onNext,
+}: {
+  page: number;
+  totalPages: number;
+  totalCards: number;
+  loadingMore: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '8px',
+        padding: '8px 0',
+      }}
+    >
+      <Button variant="secondary" size="sm" onClick={onPrev} disabled={page <= 1 || loadingMore}>
+        ← Anterior
+      </Button>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+        Página {page} de {totalPages}
+        <br />
+        {totalCards} cartas
+      </span>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onNext}
+        disabled={page >= totalPages}
+        isLoading={loadingMore}
+      >
+        Próxima →
+      </Button>
+    </div>
+  );
+}
+
 /** Two side-by-side inputs that never overflow the row. */
 function MinMaxRow({
   minValue,
@@ -872,6 +918,17 @@ export function SearchTab({ deck }: SearchTabProps) {
           </div>
         )}
 
+        {!isLoading && !error && results.length > 0 && totalPages > 1 && (
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            totalCards={totalCards}
+            loadingMore={loadingMore}
+            onPrev={() => goToPage(page - 1)}
+            onNext={() => goToPage(page + 1)}
+          />
+        )}
+
         {!isLoading && results.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -950,38 +1007,14 @@ export function SearchTab({ deck }: SearchTabProps) {
 
         {/* Pagination — same 60-card pages as scryfall.com */}
         {!isLoading && !error && results.length > 0 && totalPages > 1 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '8px',
-              padding: '16px 0 8px',
-            }}
-          >
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => goToPage(page - 1)}
-              disabled={page <= 1 || loadingMore}
-            >
-              ← Anterior
-            </Button>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
-              Página {page} de {totalPages}
-              <br />
-              {totalCards} cartas
-            </span>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => goToPage(page + 1)}
-              disabled={page >= totalPages}
-              isLoading={loadingMore}
-            >
-              Próxima →
-            </Button>
-          </div>
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            totalCards={totalCards}
+            loadingMore={loadingMore}
+            onPrev={() => goToPage(page - 1)}
+            onNext={() => goToPage(page + 1)}
+          />
         )}
 
         {pageError && (
