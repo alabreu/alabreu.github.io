@@ -18,12 +18,23 @@ Site pessoal + **MTG Commander Deck Builder** em `mtg-deck-builder/` (React + Vi
 - Sempre rodar `npm run build` antes de commitar mudanças do app.
 - Idioma da UI: português (pt-BR).
 
-## Planos pendentes
+## Coach (IA) — Supabase em andamento
 
-- **Backend/usuários (Supabase)**: quando o usuário disser **"vamos fazer o backend"**,
-  seguir `mtg-deck-builder/docs/backend-plan.md`.
+- Login por magic link + proxy do Coach (Fase 1 lite + Fase 2 de
+  `mtg-deck-builder/docs/backend-plan.md`) iniciado em 06/07/2026. Setup
+  pendente (ação do usuário) documentado em `mtg-deck-builder/docs/supabase-setup.md`.
+- `CoachTab` usa o proxy (`supabase/functions/coach-proxy`) quando
+  `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` estão definidos no build; caso
+  contrário cai no fluxo antigo (chave do OpenRouter do próprio usuário).
+- Decks na nuvem (resto da Fase 1) e Fase 3 (social) continuam para quando o
+  usuário disser **"vamos fazer o backend"** (agora referindo-se ao restante
+  do plano).
 
 ## Segurança
 
-- NUNCA commitar chaves (OpenRouter, Supabase service role). A chave do OpenRouter
-  do usuário vive só no localStorage do navegador dele.
+- NUNCA commitar a chave do OpenRouter nem a Supabase **service role key**.
+  A anon key do Supabase é pública por design (protegida por RLS/Edge Function)
+  e pode ir no bundle/repo sem problema.
+- Chave do OpenRouter: no fluxo legado (sem Supabase configurado) vive só no
+  localStorage do navegador do usuário; no fluxo novo (embutido), vive só como
+  secret da Edge Function `coach-proxy`, nunca no código.

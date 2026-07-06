@@ -1,9 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUp, Bot, User, Key, Check } from 'lucide-react';
+import { ArrowUp, Bot, User, Key, Check, Loader2 } from 'lucide-react';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
+import { supabase, supabaseConfigured } from '../../lib/supabase';
+import { useSupabaseSession } from '../../lib/useSupabaseSession';
+import { CoachLoginGate } from './CoachLoginGate';
 
 export interface ModelOption {
   id: string;
@@ -288,6 +291,10 @@ const SUGGESTIONS = [
 ];
 
 export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
+  // When Supabase is configured, the Coach runs through our proxy (magic-link
+  // login, no per-user API key). Otherwise, fall back to the legacy
+  // bring-your-own-OpenRouter-key flow.
+  const { session, loading: sessionLoading } = useSupabaseSession();
   const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(API_KEY_KEY) ?? '');
   const [messages, setMessages] = React.useState<Message[]>(() => {
     try {
@@ -388,7 +395,8 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
   React.useEffect(() => () => abortRef.current?.abort(), []);
 
   async function sendMessage(content: string) {
-    if (!content.trim() || isLoading || !apiKey) return;
+    const useProxy = supabaseConfigured;
+    if (!content.trim() || isLoading || (useProxy ? !session : !apiKey)) return;
 
     const userMsg: Message = { id: genId(), role: 'user', content: content.trim(), timestamp: Date.now() };
     const history = [...messages, userMsg];
@@ -404,39 +412,54 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
     abortRef.current = controller;
 
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'MTG Deck Builder Coach',
-        },
-        body: JSON.stringify({
-          model,
-          stream: true,
-          messages: [
-            { role: 'system', content: buildSystemPrompt(deck) },
-            ...history.map((m) => ({ role: m.role, content: m.content })),
-          ],
-        }),
-      });
+      const chatMessages = [
+        { role: 'system', content: buildSystemPrompt(deck) },
+        ...history.map((m) => ({ role: m.role, content: m.content })),
+      ];
+
+      const res = useProxy
+        ? await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coach-proxy`, {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session!.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY!,
+            },
+            body: JSON.stringify({ model, messages: chatMessages }),
+          })
+        : await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': window.location.origin,
+              'X-Title': 'MTG Deck Builder Coach',
+            },
+            body: JSON.stringify({ model, stream: true, messages: chatMessages }),
+          });
 
       if (!res.ok) {
         let friendly: string;
         try {
           const json = await res.json();
-          const raw: string = json?.error?.metadata?.raw ?? '';
-          if (res.status === 429) {
-            const seconds = raw.match(/"Retry-After":"(\d+)"/)?.[1];
-            friendly = `Modelo sobrecarregado — aguarde${seconds ? ` ${seconds}s` : ' alguns segundos'} e tente novamente.`;
-          } else if (res.status === 401 || res.status === 403) {
-            friendly = 'Chave de API inválida. Verifique no menu ···.';
-          } else if (res.status === 404) {
-            friendly = 'Modelo indisponível. Escolha outro no menu ···.';
+          if (json?.error?.code === 'rate_limited') {
+            friendly = json.error.message ?? 'Limite diário do Coach atingido. Volte amanhã.';
           } else {
-            friendly = json?.error?.message ?? `Erro ${res.status}`;
+            const raw: string = json?.error?.metadata?.raw ?? '';
+            if (res.status === 429) {
+              const seconds = raw.match(/"Retry-After":"(\d+)"/)?.[1];
+              friendly = `Modelo sobrecarregado — aguarde${seconds ? ` ${seconds}s` : ' alguns segundos'} e tente novamente.`;
+            } else if (res.status === 401 || res.status === 403) {
+              friendly = useProxy
+                ? 'Sessão expirada — saia e entre novamente no menu ···.'
+                : 'Chave de API inválida. Verifique no menu ···.';
+            } else if (res.status === 404) {
+              friendly = 'Modelo indisponível. Escolha outro no menu ···.';
+            } else {
+              friendly = json?.error?.message ?? `Erro ${res.status}`;
+            }
           }
         } catch {
           friendly = `Erro ${res.status}`;
@@ -506,7 +529,24 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
     }
   }
 
-  if (!apiKey) {
+  if (supabaseConfigured) {
+    if (sessionLoading) {
+      return (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex' }}>
+            <Loader2 size={28} style={{ color: 'var(--accent)' }} />
+          </motion.div>
+        </div>
+      );
+    }
+    if (!session) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <CoachLoginGate />
+        </div>
+      );
+    }
+  } else if (!apiKey) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <ApiKeySetup onSave={(key) => { localStorage.setItem(API_KEY_KEY, key); setApiKey(key); }} />

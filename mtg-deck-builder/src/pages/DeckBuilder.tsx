@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
+import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, LogOut } from 'lucide-react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -11,6 +11,8 @@ import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../fe
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
+import { supabase, supabaseConfigured } from '../lib/supabase';
+import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 
 export default function DeckBuilder() {
@@ -34,6 +36,7 @@ export default function DeckBuilder() {
   const [allExpanded, setAllExpanded] = React.useState(true);
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const { session } = useSupabaseSession();
 
   const deck = decks.find((d) => d.id === id);
 
@@ -547,6 +550,34 @@ export default function DeckBuilder() {
             <Trash2 size={14} />
             Limpar histórico do Coach
           </button>
+
+          {supabaseConfigured && session && (
+            <button
+              onClick={() => {
+                supabase?.auth.signOut();
+                setCoachModelOpen(false);
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 12px',
+                marginTop: '8px',
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <LogOut size={14} />
+              Sair da conta ({session.user.email})
+            </button>
+          )}
         </div>
       </BottomSheet>
 

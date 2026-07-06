@@ -34,6 +34,12 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: mtg-deck-builder
+        env:
+          # Optional: only set once the Supabase project exists (see
+          # mtg-deck-builder/docs/supabase-setup.md). Coach falls back to the
+          # bring-your-own-key flow when these are absent.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Prepare site
         run: |

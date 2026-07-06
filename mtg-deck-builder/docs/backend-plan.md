@@ -1,7 +1,14 @@
 # Plano: Backend com usuários/login (Supabase)
 
 > **Gatilho**: quando o Alexandre disser **"vamos fazer o backend"**, executar este plano.
-> Status: aguardando decisão do usuário (planejado em 05/07/2026).
+> Status: **Fase 1 (lite) + Fase 2 em andamento** (iniciado em 06/07/2026, a pedido
+> explícito do usuário para viabilizar o Coach como serviço embutido para testers).
+> Ver `docs/supabase-setup.md` para o passo a passo de configuração pendente
+> (criação do projeto Supabase, que só o usuário pode fazer).
+>
+> Escopo desta rodada: login por magic link (sem senha) + proxy do Coach com limite
+> diário por usuário. **Decks na nuvem (resto da Fase 1) e Fase 3 ficam para depois** —
+> não foram pedidos ainda.
 
 ## Contexto
 
