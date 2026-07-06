@@ -43,15 +43,14 @@ export function UpdateToast() {
     <AnimatePresence>
       {available && (
         <motion.div
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 80, opacity: 0 }}
+          initial={{ y: 80, x: '-50%', opacity: 0 }}
+          animate={{ y: 0, x: '-50%', opacity: 1 }}
+          exit={{ y: 80, x: '-50%', opacity: 0 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           style={{
             position: 'fixed',
             bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
             left: '50%',
-            transform: 'translateX(-50%)',
             zIndex: 90,
             display: 'flex',
             alignItems: 'center',

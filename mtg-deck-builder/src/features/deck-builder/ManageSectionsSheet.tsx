@@ -111,6 +111,8 @@ function DraggableRow({
         </span>
       )}
 
+      {/* The commander section is structural and cannot be deleted */}
+      {name !== 'Comandante' && (
       <button
         onClick={() => onDelete(name)}
         style={{
@@ -130,6 +132,7 @@ function DraggableRow({
       >
         <Trash2 size={13} />
       </button>
+      )}
     </motion.div>
   );
 }

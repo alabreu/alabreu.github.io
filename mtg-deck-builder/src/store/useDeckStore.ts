@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Deck, DeckCard, ManaColor } from '../types';
+import { Deck, DeckCard, ManaColor, DEFAULT_CATEGORIES } from '../types';
 
 type DeckStore = {
   decks: Deck[];
@@ -14,6 +14,11 @@ type DeckStore = {
   setPartner: (deckId: string, card: DeckCard) => void;
   removePartner: (deckId: string) => void;
   updateCardCategory: (deckId: string, scryfallId: string, category: string) => void;
+  patchCardData: (
+    deckId: string,
+    scryfallId: string,
+    patch: Partial<Omit<DeckCard, 'scryfallId' | 'quantity' | 'category'>>
+  ) => void;
   importCards: (deckId: string, cards: DeckCard[]) => void;
   reorderCategories: (deckId: string, categories: string[]) => void;
   addCategory: (deckId: string, name: string) => void;
@@ -30,10 +35,65 @@ function parseColorIdentity(colors: string[]): ManaColor[] {
   return colors.filter((c): c is ManaColor => validColors.includes(c as ManaColor));
 }
 
-const DEFAULT_ORDER = [
-  'Comandante', 'Terrenos', 'Ramp', 'Compra de Cartas',
-  'Remoção', 'Proteção', 'Wincons', 'Outros',
-];
+const DEFAULT_ORDER: string[] = [...DEFAULT_CATEGORIES];
+
+/** Color identity of a stored card, falling back to parsing its mana cost. */
+function colorIdentityOf(card: DeckCard | null | undefined): ManaColor[] {
+  if (!card) return [];
+  if (card.colorIdentity && card.colorIdentity.length > 0) return card.colorIdentity;
+  return parseColorIdentity(
+    card.manaCost
+      ? card.manaCost
+          .replace(/[^WUBRGC]/g, '')
+          .split('')
+          .filter((c, i, arr) => arr.indexOf(c) === i)
+      : []
+  );
+}
+
+/**
+ * Applies commander/partner metadata healing after a card is fully removed:
+ * clears stale references, promotes the partner if the commander left, and
+ * recomputes the deck's color identity.
+ */
+function afterCardRemoved(d: Deck, removedId: string, cards: DeckCard[]): Deck {
+  let { commanderId, commanderName, commanderArtUrl } = d;
+  let partnerId = d.partnerId ?? null;
+  let partnerName = d.partnerName ?? null;
+  let partnerArtUrl = d.partnerArtUrl ?? null;
+  let colorIdentity = d.colorIdentity;
+
+  if (removedId === d.partnerId) {
+    partnerId = partnerName = partnerArtUrl = null;
+    colorIdentity = colorIdentityOf(cards.find((c) => c.scryfallId === commanderId));
+  }
+  if (removedId === d.commanderId) {
+    if (partnerId && partnerId !== removedId) {
+      // Promote the partner to sole commander
+      commanderId = partnerId;
+      commanderName = partnerName;
+      commanderArtUrl = partnerArtUrl;
+      partnerId = partnerName = partnerArtUrl = null;
+      colorIdentity = colorIdentityOf(cards.find((c) => c.scryfallId === commanderId));
+    } else {
+      commanderId = commanderName = commanderArtUrl = null;
+      colorIdentity = [];
+    }
+  }
+
+  return {
+    ...d,
+    cards,
+    commanderId,
+    commanderName,
+    commanderArtUrl,
+    partnerId,
+    partnerName,
+    partnerArtUrl,
+    colorIdentity,
+    updatedAt: Date.now(),
+  };
+}
 
 /** Full section list for a deck: saved order (if any) plus every category
  *  actually used by cards. Self-heals partial lists left by older versions. */
@@ -109,23 +169,18 @@ export const useDeckStore = create<DeckStore>()(
             if (d.id !== deckId) return d;
             const existing = d.cards.find((c) => c.scryfallId === scryfallId);
             if (!existing) return d;
-            const removingFully = existing.quantity <= 1;
-            const updatedCards = removingFully
-              ? d.cards.filter((c) => c.scryfallId !== scryfallId)
-              : d.cards.map((c) =>
-                  c.scryfallId === scryfallId
-                    ? { ...c, quantity: c.quantity - 1 }
-                    : c
-                );
+            if (existing.quantity <= 1) {
+              return afterCardRemoved(
+                d,
+                scryfallId,
+                d.cards.filter((c) => c.scryfallId !== scryfallId)
+              );
+            }
             return {
               ...d,
-              cards: updatedCards,
-              ...(removingFully && scryfallId === d.commanderId
-                ? { commanderId: null, commanderName: null, commanderArtUrl: null }
-                : {}),
-              ...(removingFully && scryfallId === d.partnerId
-                ? { partnerId: null, partnerName: null, partnerArtUrl: null }
-                : {}),
+              cards: d.cards.map((c) =>
+                c.scryfallId === scryfallId ? { ...c, quantity: c.quantity - 1 } : c
+              ),
               updatedAt: Date.now(),
             };
           }),
@@ -139,17 +194,11 @@ export const useDeckStore = create<DeckStore>()(
             const existing = d.cards.find((c) => c.scryfallId === scryfallId);
             if (!existing) return d;
             if (quantity <= 0) {
-              return {
-                ...d,
-                cards: d.cards.filter((c) => c.scryfallId !== scryfallId),
-                ...(scryfallId === d.commanderId
-                  ? { commanderId: null, commanderName: null, commanderArtUrl: null }
-                  : {}),
-                ...(scryfallId === d.partnerId
-                  ? { partnerId: null, partnerName: null, partnerArtUrl: null }
-                  : {}),
-                updatedAt: Date.now(),
-              };
+              return afterCardRemoved(
+                d,
+                scryfallId,
+                d.cards.filter((c) => c.scryfallId !== scryfallId)
+              );
             }
             return {
               ...d,
@@ -163,27 +212,19 @@ export const useDeckStore = create<DeckStore>()(
       },
 
       setCommander: (deckId: string, card: DeckCard) => {
-        const colorIdentity = card.colorIdentity?.length
-          ? card.colorIdentity
-          : parseColorIdentity(
-              card.manaCost
-                ? card.manaCost
-                    .replace(/[^WUBRGC]/g, '')
-                    .split('')
-                    .filter((c, i, arr) => arr.indexOf(c) === i)
-                : []
-            );
+        const colorIdentity = colorIdentityOf(card);
 
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            // Move old partner to 'Outros' if clearing it
-            let cards = d.cards;
-            if (d.partnerId && d.partnerId !== card.scryfallId) {
-              cards = cards.map((c) =>
-                c.scryfallId === d.partnerId ? { ...c, category: 'Outros' } : c
-              );
-            }
+            // Demote the previous commander and partner to 'Outros'
+            let cards = d.cards.map((c) => {
+              const isOldCommander =
+                c.scryfallId === d.commanderId && c.scryfallId !== card.scryfallId;
+              const isOldPartner =
+                c.scryfallId === d.partnerId && c.scryfallId !== card.scryfallId;
+              return isOldCommander || isOldPartner ? { ...c, category: 'Outros' } : c;
+            });
             cards = cards.find((c) => c.scryfallId === card.scryfallId)
               ? cards.map((c) =>
                   c.scryfallId === card.scryfallId
@@ -208,16 +249,7 @@ export const useDeckStore = create<DeckStore>()(
       },
 
       setPartner: (deckId: string, card: DeckCard) => {
-        const partnerColors = card.colorIdentity?.length
-          ? card.colorIdentity
-          : parseColorIdentity(
-              card.manaCost
-                ? card.manaCost
-                    .replace(/[^WUBRGC]/g, '')
-                    .split('')
-                    .filter((c, i, arr) => arr.indexOf(c) === i)
-                : []
-            );
+        const partnerColors = colorIdentityOf(card);
 
         set((state) => ({
           decks: state.decks.map((d) => {
@@ -258,18 +290,9 @@ export const useDeckStore = create<DeckStore>()(
             const cards = d.cards.map((c) =>
               c.scryfallId === d.partnerId ? { ...c, category: 'Outros' } : c
             );
-            const commander = cards.find((c) => c.scryfallId === d.commanderId);
-            const commanderColors: ManaColor[] =
-              commander?.colorIdentity && commander.colorIdentity.length > 0
-                ? commander.colorIdentity
-                : parseColorIdentity(
-                    commander?.manaCost
-                      ? commander.manaCost
-                          .replace(/[^WUBRGC]/g, '')
-                          .split('')
-                          .filter((c, i, arr) => arr.indexOf(c) === i)
-                      : []
-                  );
+            const commanderColors = colorIdentityOf(
+              cards.find((c) => c.scryfallId === d.commanderId)
+            );
             return {
               ...d,
               partnerId: null,
@@ -278,6 +301,21 @@ export const useDeckStore = create<DeckStore>()(
               colorIdentity: commanderColors,
               cards,
               updatedAt: Date.now(),
+            };
+          }),
+        }));
+      },
+
+      patchCardData: (deckId, scryfallId, patch) => {
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            if (!d.cards.some((c) => c.scryfallId === scryfallId)) return d;
+            return {
+              ...d,
+              cards: d.cards.map((c) =>
+                c.scryfallId === scryfallId ? { ...c, ...patch } : c
+              ),
             };
           }),
         }));
@@ -340,6 +378,9 @@ export const useDeckStore = create<DeckStore>()(
       },
 
       deleteCategory: (deckId: string, name: string) => {
+        // The commander section is structural — deleting it would orphan the
+        // commander card while commanderId still points at it
+        if (name === 'Comandante') return;
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu, Sparkles } from 'lucide-react';
+import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, LayoutList, ChevronsUpDown, Cpu } from 'lucide-react';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';

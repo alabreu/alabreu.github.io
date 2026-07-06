@@ -59,11 +59,15 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const [activeHeader, setActiveHeader] = React.useState<string | null>(null);
   const [hydrated, setHydrated] = React.useState<Record<string, ScryfallCard[]>>({});
   const [hydrating, setHydrating] = React.useState(false);
+  const [hydrateFailedKey, setHydrateFailedKey] = React.useState<string | null>(null);
   const [selectedCard, setSelectedCard] = React.useState<ScryfallCard | null>(null);
   const [cardSheetOpen, setCardSheetOpen] = React.useState(false);
 
   const listsCache = React.useRef<Record<string, EdhrecList[]>>({});
   const cacheKey = `${deck.commanderName ?? ''}|${deck.partnerName ?? ''}`;
+  // Hydration cache is keyed per commander+list so switching commanders never
+  // shows the previous commander's cards under the new one's categories
+  const hydKey = (header: string) => `${cacheKey}|${header}`;
 
   const deckCardMap = React.useMemo(() => {
     const map: Record<string, number> = {};
@@ -74,9 +78,15 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   // Load recommendation lists when opened
   React.useEffect(() => {
     if (!isOpen || !deck.commanderName) return;
+    const applyLists = (data: EdhrecList[]) => {
+      setLists(data);
+      // Keep the current chip only if it exists for this commander
+      setActiveHeader((prev) =>
+        prev && data.some((l) => l.header === prev) ? prev : data[0]?.header ?? null
+      );
+    };
     if (listsCache.current[cacheKey]) {
-      setLists(listsCache.current[cacheKey]);
-      setActiveHeader((prev) => prev ?? listsCache.current[cacheKey][0]?.header ?? null);
+      applyLists(listsCache.current[cacheKey]);
       return;
     }
     let cancelled = false;
@@ -86,8 +96,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
       .then((data) => {
         if (cancelled) return;
         listsCache.current[cacheKey] = data;
-        setLists(data);
-        setActiveHeader(data[0]?.header ?? null);
+        applyLists(data);
       })
       .catch((e) => {
         if (!cancelled) setListsError(e instanceof Error ? e.message : 'Erro ao consultar o EDHREC');
@@ -102,17 +111,22 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
 
   // Hydrate the active list via Scryfall
   React.useEffect(() => {
-    if (!lists || !activeHeader || hydrated[activeHeader]) return;
+    if (!lists || !activeHeader) return;
+    const key = hydKey(activeHeader);
+    if (hydrated[key] || hydrateFailedKey === key) return;
     const list = lists.find((l) => l.header === activeHeader);
     if (!list) return;
     let cancelled = false;
     setHydrating(true);
     hydrateCards(list.cards.slice(0, MAX_CARDS_PER_LIST).map((c) => c.name))
       .then((cards) => {
-        if (!cancelled) setHydrated((prev) => ({ ...prev, [activeHeader]: cards }));
+        // Store under the captured key even if the user switched chips — the
+        // data stays correct and the fetch isn't wasted
+        setHydrated((prev) => ({ ...prev, [key]: cards }));
       })
       .catch(() => {
-        if (!cancelled) setHydrated((prev) => ({ ...prev, [activeHeader]: [] }));
+        // Don't cache failures: allow retry instead of a session-long empty list
+        if (!cancelled) setHydrateFailedKey(key);
       })
       .finally(() => {
         if (!cancelled) setHydrating(false);
@@ -120,7 +134,8 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lists, activeHeader, hydrated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lists, activeHeader, hydrated, hydrateFailedKey, cacheKey]);
 
   const activeList = lists?.find((l) => l.header === activeHeader) ?? null;
   const synergyByName = React.useMemo(() => {
@@ -131,7 +146,12 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
     return map;
   }, [activeList]);
 
-  const cards = activeHeader ? hydrated[activeHeader] : undefined;
+  // EDHREC uses front-face names; Scryfall returns 'Front // Back' for DFCs
+  const synergyFor = (name: string): number | undefined =>
+    synergyByName[name] ?? synergyByName[name.split(' // ')[0]];
+
+  const cards = activeHeader ? hydrated[hydKey(activeHeader)] : undefined;
+  const hydrateFailed = activeHeader ? hydrateFailedKey === hydKey(activeHeader) : false;
 
   return (
     <>
@@ -247,10 +267,29 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                 </div>
               )}
 
-              {!loadingLists && !hydrating && cards && cards.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '32px 16px' }}>
-                  Não foi possível carregar as cartas desta categoria.
-                </p>
+              {!loadingLists && !hydrating && hydrateFailed && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '32px 16px' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center' }}>
+                    Não foi possível carregar as cartas desta categoria.
+                  </p>
+                  <button
+                    onClick={() => setHydrateFailedKey(null)}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      fontFamily: 'inherit',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'var(--surface-2)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-default)',
+                      cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
               )}
 
               {!loadingLists && !hydrating && cards && cards.length > 0 && (
@@ -267,7 +306,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                     const qty = deckCardMap[card.id] ?? 0;
                     const imageUrl =
                       card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
-                    const synergy = synergyByName[card.name];
+                    const synergy = synergyFor(card.name);
 
                     const brl = usdToBrlLabel(card.prices?.usd, usdBrlRate);
 

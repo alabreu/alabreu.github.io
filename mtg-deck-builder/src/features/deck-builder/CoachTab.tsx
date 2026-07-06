@@ -79,8 +79,12 @@ Você domina:
 
 Deck atual do usuário:
 Nome: ${deck.name}
-Comandante: ${deck.commanderName ?? 'Não definido'}
-Identidade de cores: ${deck.colorIdentity.length > 0 ? deck.colorIdentity.join('') : 'Incolor'}
+${
+  deck.partnerName
+    ? `Comandantes (dupla/partner): ${deck.commanderName} e ${deck.partnerName}`
+    : `Comandante: ${deck.commanderName ?? 'Não definido'}`
+}
+Identidade de cores: ${(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity.join('') : 'Incolor'}
 Total: ${totalCards} cartas
 
 ${deckList}
@@ -364,12 +368,24 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
   const canSend = input.trim().length > 0 && !isLoading;
 
   React.useEffect(() => {
+    // Persisting the whole history per streamed token janks the main thread;
+    // save only when no stream is running (i.e., once per completed reply)
+    if (streamingId) return;
     localStorage.setItem(`${MESSAGES_PREFIX}${deck.id}`, JSON.stringify(messages));
-  }, [messages, deck.id]);
+  }, [messages, deck.id, streamingId]);
 
+  const lastScrollRef = React.useRef(0);
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const streaming = streamingId !== null;
+    const now = Date.now();
+    if (streaming && now - lastScrollRef.current < 400) return; // throttle during stream
+    lastScrollRef.current = now;
+    bottomRef.current?.scrollIntoView({ behavior: streaming ? 'auto' : 'smooth' });
+  }, [messages, streamingId]);
+
+  // Cancel any in-flight stream when leaving the Coach
+  const abortRef = React.useRef<AbortController | null>(null);
+  React.useEffect(() => () => abortRef.current?.abort(), []);
 
   async function sendMessage(content: string) {
     if (!content.trim() || isLoading || !apiKey) return;
@@ -384,9 +400,13 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
     setMessages([...history, { id: aId, role: 'assistant', content: '', timestamp: Date.now() }]);
     setStreamingId(aId);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
@@ -473,13 +493,16 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
         }
       }
     } catch (err) {
+      if (controller.signal.aborted) return; // unmounted/navigated away
       const msg = err instanceof Error ? err.message : String(err);
       setMessages((prev) =>
         prev.map((m) => (m.id === aId ? { ...m, content: msg } : m))
       );
     } finally {
-      setIsLoading(false);
-      setStreamingId(null);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+        setStreamingId(null);
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Plus, Minus, AlertCircle, SlidersHorizontal, CircleHelp, History } from 'lucide-react';
+import { Search, X, AlertCircle, SlidersHorizontal, CircleHelp, History } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
@@ -268,6 +268,11 @@ export function SearchTab({ deck }: SearchTabProps) {
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsScrollRef = React.useRef<HTMLDivElement>(null);
+  // Monotonic id per search intent: any async result carrying an older id is
+  // discarded, so slow responses can't overwrite newer ones
+  const searchSeqRef = React.useRef(0);
+  const loadingMoreRef = React.useRef(false);
+  const [pageError, setPageError] = React.useState(false);
 
   const deckCardMap = React.useMemo(() => {
     const map: Record<string, number> = {};
@@ -280,6 +285,7 @@ export function SearchTab({ deck }: SearchTabProps) {
 
     // Nothing typed and no filters touched: reset instead of searching everything
     if (!text.trim() && !hasActiveFilters(f)) {
+      searchSeqRef.current++; // invalidate any in-flight response
       setResults([]);
       setNextPageUrl(null);
       setTotalCards(0);
@@ -287,15 +293,19 @@ export function SearchTab({ deck }: SearchTabProps) {
       setHasSearched(false);
       setIsLoading(false);
       setError(null);
+      setPageError(false);
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
+      const seq = ++searchSeqRef.current;
       const query = buildScryfallQuery(text, f);
       setIsLoading(true);
       setError(null);
+      setPageError(false);
       try {
         const data = await searchScryfall(query);
+        if (seq !== searchSeqRef.current) return; // a newer search superseded this one
         setResults(data.cards);
         setNextPageUrl(data.nextPage);
         setTotalCards(data.totalCards);
@@ -303,13 +313,14 @@ export function SearchTab({ deck }: SearchTabProps) {
         setHasSearched(true);
         if (text.trim() && data.cards.length > 0) rememberSearch(text.trim());
       } catch (e) {
+        if (seq !== searchSeqRef.current) return;
         setError(e instanceof Error ? e.message : 'Erro ao buscar cartas');
         setResults([]);
         setNextPageUrl(null);
         setTotalCards(0);
         setPage(1);
       } finally {
-        setIsLoading(false);
+        if (seq === searchSeqRef.current) setIsLoading(false);
       }
     }, 300);
   }
@@ -318,28 +329,35 @@ export function SearchTab({ deck }: SearchTabProps) {
   const pageCards = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function goToPage(n: number) {
-    if (n < 1 || n > totalPages || loadingMore) return;
+    if (n < 1 || n > totalPages || loadingMoreRef.current) return;
+    const seq = searchSeqRef.current;
     // Fetch additional API pages (175 cards each) until the requested
     // display page (60 cards, same as scryfall.com) is covered
     const needed = Math.min(n * PAGE_SIZE, totalCards);
     if (results.length < needed && nextPageUrl) {
+      loadingMoreRef.current = true;
       setLoadingMore(true);
+      setPageError(false);
       try {
         let acc = results;
         let next: string | null = nextPageUrl;
         while (acc.length < needed && next) {
           const r: SearchPage = await fetchScryfallPage(next);
+          if (seq !== searchSeqRef.current) return; // search changed mid-pagination
           acc = [...acc, ...r.cards];
           next = r.nextPage;
         }
         setResults(acc);
         setNextPageUrl(next);
       } catch {
-        setLoadingMore(false);
+        if (seq === searchSeqRef.current) setPageError(true);
         return;
+      } finally {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
       }
-      setLoadingMore(false);
     }
+    if (seq !== searchSeqRef.current) return;
     setPage(n);
     resultsScrollRef.current?.scrollTo({ top: 0 });
   }
@@ -964,6 +982,12 @@ export function SearchTab({ deck }: SearchTabProps) {
               Próxima →
             </Button>
           </div>
+        )}
+
+        {pageError && (
+          <p style={{ fontSize: '12px', color: 'var(--error)', textAlign: 'center', padding: '0 0 12px' }}>
+            Falha ao carregar mais resultados. Toque em "Próxima" para tentar novamente.
+          </p>
         )}
       </div>
 

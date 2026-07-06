@@ -7,7 +7,6 @@ import { Deck } from '../types';
 import { Button } from '../design-system/components/Button';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
-import { Badge } from '../design-system/components/Badge';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 
 function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => void }) {
@@ -155,7 +154,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <ManaGroup
-            colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']}
+            colors={(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity : ['C']}
             size="sm"
           />
           <span

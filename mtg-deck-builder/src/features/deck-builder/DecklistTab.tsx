@@ -55,10 +55,6 @@ function deckCardToScryfall(card: DeckCard): ScryfallCard {
   };
 }
 
-function dfcBackUrl(id: string): string {
-  return `https://cards.scryfall.io/normal/back/${id[0]}/${id[1]}/${id}.jpg`;
-}
-
 const FlippableCard = React.memo(function FlippableCard({
   card,
   onCardClick,
@@ -67,8 +63,10 @@ const FlippableCard = React.memo(function FlippableCard({
   onCardClick: (card: DeckCard) => void;
 }) {
   const [flipped, setFlipped] = React.useState(false);
-  const isDfc = card.name.includes(' // ');
-  const backImageUrl = card.backImageUrl || (isDfc ? dfcBackUrl(card.scryfallId) : null);
+  // Only real double-faced cards have a stored back image; split/adventure
+  // cards have ' // ' names but a single face
+  const backImageUrl = card.backImageUrl || null;
+  const isDfc = Boolean(backImageUrl);
 
   return (
     <motion.div
@@ -406,7 +404,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
           {deck.name}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ManaGroup colors={deck.colorIdentity.length > 0 ? deck.colorIdentity : ['C']} size="sm" />
+          <ManaGroup colors={(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity : ['C']} size="sm" />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
           <span style={{ flex: 1 }} />
           <div style={{

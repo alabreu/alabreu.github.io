@@ -1,4 +1,5 @@
-import { DeckCard, ManaColor, ScryfallCard } from '../../types';
+import { DeckCard, ScryfallCard } from '../../types';
+import { scryfallToDeckCard as toDeckCard, defaultCategoryFor } from '../card/cardUtils';
 
 export interface ParsedLine {
   quantity: number;
@@ -28,25 +29,7 @@ export function parseDecklist(text: string): ParsedLine[] {
 }
 
 export function scryfallToDeckCard(scryfall: ScryfallCard, quantity: number): DeckCard {
-  const face0 = scryfall.card_faces?.[0];
-  const face1 = scryfall.card_faces?.[1];
-  const validColors = ['W', 'U', 'B', 'R', 'G', 'C'];
-  const typeLine = scryfall.type_line ?? face0?.type_line ?? '';
-  return {
-    scryfallId: scryfall.id,
-    name: scryfall.name,
-    quantity,
-    category: typeLine.includes('Land') ? 'Terrenos' : 'Outros',
-    imageUrl: (scryfall.image_uris ?? face0?.image_uris)?.normal ?? null,
-    artCropUrl: (scryfall.image_uris ?? face0?.image_uris)?.art_crop ?? null,
-    backImageUrl: face1?.image_uris?.normal ?? null,
-    manaCost: scryfall.mana_cost ?? face0?.mana_cost ?? null,
-    typeLine,
-    cmc: scryfall.cmc,
-    colorIdentity: scryfall.color_identity.filter(
-      (c): c is ManaColor => validColors.includes(c)
-    ),
-  };
+  return toDeckCard(scryfall, defaultCategoryFor(scryfall), quantity);
 }
 
 export async function fetchCardsByName(

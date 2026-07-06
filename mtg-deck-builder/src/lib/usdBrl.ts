@@ -15,11 +15,22 @@ function readCache(): CachedRate | null {
   return null;
 }
 
-/** USD→BRL rate from AwesomeAPI, cached for 12h (stale cache used as fallback). */
-export async function getUsdBrlRate(): Promise<number | null> {
-  const cached = readCache();
-  if (cached && Date.now() - cached.ts < TTL_MS) return cached.rate;
+let inFlight: Promise<number | null> | null = null;
 
+/** USD→BRL rate from AwesomeAPI, cached for 12h (stale cache used as fallback).
+ *  Concurrent callers share a single in-flight request. */
+export function getUsdBrlRate(): Promise<number | null> {
+  const cached = readCache();
+  if (cached && Date.now() - cached.ts < TTL_MS) return Promise.resolve(cached.rate);
+  if (!inFlight) {
+    inFlight = fetchRate(cached).finally(() => {
+      inFlight = null;
+    });
+  }
+  return inFlight;
+}
+
+async function fetchRate(cached: CachedRate | null): Promise<number | null> {
   try {
     const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
     if (res.ok) {

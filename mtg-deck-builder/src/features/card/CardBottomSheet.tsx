@@ -6,7 +6,8 @@ import { Badge } from '../../design-system/components/Badge';
 import { ManaSymbol, ManaCost, SymbolText } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
-import { useDeckStore } from '../../store/useDeckStore';
+import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
+import { scryfallToDeckCard, canBeCommanderCard } from './cardUtils';
 import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
 import { getUsdBrlRate, formatBrl, ligaMagicUrl } from '../../lib/usdBrl';
 
@@ -57,13 +58,6 @@ function parseManaSymbols(manaCost: string | null): ManaColor[] {
   return matches.map((m) => m[1] as ManaColor);
 }
 
-function isLegendaryCreatureOrPlaneswalker(typeLine: string): boolean {
-  return (
-    (typeLine.includes('Legendary') && typeLine.includes('Creature')) ||
-    typeLine.includes('Planeswalker')
-  );
-}
-
 function getRarityColor(rarity: string): string {
   switch (rarity.toLowerCase()) {
     case 'mythic':
@@ -85,7 +79,7 @@ export function CardBottomSheet({
   existingCard,
   deck,
 }: CardBottomSheetProps) {
-  const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory } = useDeckStore();
+  const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory, patchCardData } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
   const [flipped, setFlipped] = React.useState(false);
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
@@ -112,12 +106,25 @@ export function CardBottomSheet({
     fetch(`https://api.scryfall.com/cards/${cardProp.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (!cancelled && data) setFetchedCard(data as ScryfallCard);
+        if (cancelled || !data) return;
+        const full = data as ScryfallCard;
+        setFetchedCard(full);
+        // Backfill fields older builds didn't store (keywords, colorIdentity,
+        // backImageUrl) so features like partner detection heal over time
+        if (existingCard) {
+          const fresh = scryfallToDeckCard(full, existingCard.category);
+          patchCardData(deckId, full.id, {
+            keywords: fresh.keywords,
+            colorIdentity: fresh.colorIdentity,
+            backImageUrl: fresh.backImageUrl,
+          });
+        }
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, cardProp?.id, cardProp?.set_name]);
 
   const card = fetchedCard && cardProp && fetchedCard.id === cardProp.id ? fetchedCard : cardProp;
@@ -152,17 +159,17 @@ export function CardBottomSheet({
     card.card_faces?.[0]?.image_uris?.art_crop ||
     null;
 
-  const isDfc = card.name.includes(' // ') || Boolean(existingCard?.backImageUrl);
+  // A real back face exists only when there's a second face with its own image
+  // (split/adventure/aftermath cards have ' // ' names but a single image)
   const backImageUrl =
-    existingCard?.backImageUrl ||
-    card.card_faces?.[1]?.image_uris?.normal ||
-    (isDfc ? `https://cards.scryfall.io/normal/back/${card.id[0]}/${card.id[1]}/${card.id}.jpg` : null);
+    existingCard?.backImageUrl || card.card_faces?.[1]?.image_uris?.normal || null;
+  const isDfc = Boolean(backImageUrl);
 
   const usdPrice = card.prices?.usd ? parseFloat(card.prices.usd) : null;
 
   const isInDeck = !!existingCard;
   const quantity = existingCard?.quantity ?? 0;
-  const canBeCommander = isLegendaryCreatureOrPlaneswalker(card.type_line ?? '');
+  const canBeCommander = canBeCommanderCard(card);
   const manaColors = parseManaSymbols(card.mana_cost);
 
   const isCommander = !!deck?.commanderId && deck.commanderId === card.id;
@@ -177,24 +184,14 @@ export function CardBottomSheet({
     !!deck?.commanderId &&
     canBePartnerWith(card, existingCard, commanderDeckCard);
 
-  const validColors: ManaColor[] = ['W', 'U', 'B', 'R', 'G', 'C'];
-
   function toDeckCard(): DeckCard {
-    return {
-      scryfallId: card!.id,
-      name: card!.name,
-      quantity: 1,
-      category: selectedCategory,
-      imageUrl,
-      artCropUrl,
-      manaCost: card!.mana_cost,
-      typeLine: card!.type_line,
-      cmc: card!.cmc,
-      colorIdentity: (card!.color_identity ?? []).filter(
-        (c): c is ManaColor => validColors.includes(c as ManaColor)
-      ),
-      keywords: card!.keywords ?? existingCard?.keywords ?? [],
-    };
+    const built = scryfallToDeckCard(card!, selectedCategory);
+    // Fake cards built from stored deck data lack keywords on the Scryfall
+    // shape; keep whatever the stored card already knew
+    if (built.keywords!.length === 0 && existingCard?.keywords?.length) {
+      built.keywords = existingCard.keywords;
+    }
+    return built;
   }
 
   function handleAdd() {
@@ -254,12 +251,11 @@ export function CardBottomSheet({
     card.card_faces?.map((f) => f.oracle_text).join('\n---\n') ||
     null;
 
-  // Deck's managed sections (falls back to defaults); always include the
-  // current selection so the select never shows a phantom value
+  // Deck's managed sections (self-healed union with categories cards use);
+  // always include the current selection so the select never shows a phantom value
+  const materialized = deck ? materializeCategories(deck) : [];
   const baseCategories: string[] =
-    deck?.categories && deck.categories.length > 0
-      ? deck.categories
-      : [...DEFAULT_CATEGORIES];
+    materialized.length > 0 ? materialized : [...DEFAULT_CATEGORIES];
   const categoryOptions = baseCategories.includes(selectedCategory)
     ? baseCategories
     : [...baseCategories, selectedCategory];
