@@ -350,13 +350,16 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
     return (
       <div
         style={{
+          height: '100%',
+          minHeight: '70vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '16px',
-          padding: '60px 24px',
+          padding: '24px',
           textAlign: 'center',
+          boxSizing: 'border-box',
         }}
       >
         <div
