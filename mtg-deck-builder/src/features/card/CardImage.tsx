@@ -23,10 +23,6 @@ export function CardImage({
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
 
-  const widths = { small: 120, normal: 200, large: 280 };
-  const width = widths[size];
-  const height = Math.round(width / aspectRatio);
-
   if (!imageUrl || error) {
     return (
       <div
@@ -67,6 +63,7 @@ export function CardImage({
       style={{
         position: 'relative',
         width: '100%',
+        aspectRatio: `${aspectRatio}`,
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}
@@ -75,9 +72,9 @@ export function CardImage({
       {!loaded && (
         <Skeleton
           width="100%"
-          height={`${height}px`}
+          height="100%"
           borderRadius="var(--radius-md)"
-          style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}
+          style={{ position: 'absolute', inset: 0, zIndex: 1 }}
         />
       )}
       <img
@@ -86,8 +83,11 @@ export function CardImage({
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
         style={{
+          position: 'absolute',
+          inset: 0,
           width: '100%',
-          maxWidth: '100%',
+          height: '100%',
+          objectFit: 'cover',
           display: 'block',
           borderRadius: '4.8%',
           boxShadow: 'var(--shadow-md)',
