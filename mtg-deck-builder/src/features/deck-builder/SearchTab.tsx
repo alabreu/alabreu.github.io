@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, AlertCircle, SlidersHorizontal, CircleHelp, History } from 'lucide-react';
+import { Search, X, AlertCircle, SlidersHorizontal, CircleHelp, History, Square, LayoutGrid } from 'lucide-react';
 import { Input } from '../../design-system/components/Input';
 import { Button } from '../../design-system/components/Button';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
@@ -209,6 +209,50 @@ function ChipRow({
   );
 }
 
+type ViewMode = '1col' | '2col';
+
+function ViewModeToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+        flexShrink: 0,
+        height: '38px',
+      }}
+    >
+      {([
+        { mode: '1col' as ViewMode, icon: <Square size={14} /> },
+        { mode: '2col' as ViewMode, icon: <LayoutGrid size={14} /> },
+      ]).map(({ mode, icon }, i) => (
+        <button
+          key={mode}
+          onClick={() => onChange(mode)}
+          aria-label={mode === '1col' ? 'Visualização em 1 coluna' : 'Visualização em 2 colunas'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '100%',
+            backgroundColor: value === mode ? 'var(--surface-2)' : 'transparent',
+            border: 'none',
+            borderLeft: i > 0 ? '1px solid var(--border-default)' : 'none',
+            cursor: 'pointer',
+            color: value === mode ? 'var(--text-primary)' : 'var(--text-muted)',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {icon}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function PaginationBar({
   page,
   totalPages,
@@ -300,6 +344,7 @@ export function SearchTab({ deck }: SearchTabProps) {
   const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = React.useState(false);
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
   const [recent, setRecent] = React.useState<string[]>(loadRecent);
 
   React.useEffect(() => {
@@ -513,6 +558,8 @@ export function SearchTab({ deck }: SearchTabProps) {
             fullWidth
           />
         </div>
+
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
 
         {/* Filter button */}
         <button
@@ -759,11 +806,11 @@ export function SearchTab({ deck }: SearchTabProps) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
+              gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
               gap: '12px',
             }}
           >
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: viewMode === '2col' ? 6 : 3 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
@@ -935,7 +982,7 @@ export function SearchTab({ deck }: SearchTabProps) {
             animate={{ opacity: 1 }}
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
+              gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
               gap: '12px',
             }}
           >
