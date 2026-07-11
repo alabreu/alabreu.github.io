@@ -55,13 +55,15 @@ export function parseDecklist(text: string): ParsedLine[] {
       continue;
     }
 
+    // A leading "N " or "Nx " sets the quantity; lines without one (e.g. a
+    // bare card name pasted from a "not found" list) default to 1 instead of
+    // being silently dropped.
     const match = line.match(/^(\d+)[xX]?\s+(.+)$/);
-    if (!match) continue;
-    const quantity = Math.min(99, Math.max(1, parseInt(match[1], 10)));
+    const quantity = match ? Math.min(99, Math.max(1, parseInt(match[1], 10))) : 1;
 
     // Moxfield-style inline tag at the end of the line, e.g. "Sol Ring [Ramp]"
     // or "Ardenn, Intrepid Archaeologist [Commander{top}]" (pin marker discarded).
-    let rest = match[2];
+    let rest = match ? match[2] : line;
     let inlineSection: string | null = null;
     const bracketMatch = rest.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
     if (bracketMatch) {
