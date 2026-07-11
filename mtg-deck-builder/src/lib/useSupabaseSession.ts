@@ -18,7 +18,25 @@ export function useSupabaseSession() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
-    return () => sub.subscription.unsubscribe();
+
+    // The magic link always opens in the device's default browser, never
+    // directly in an installed PWA (an OS limitation, not something a web
+    // app can override). If the PWA was already open in the background,
+    // catch the newly-created session as soon as it's brought back to the
+    // foreground, instead of waiting for the next full reload.
+    function handleVisible() {
+      if (document.visibilityState === 'visible') {
+        supabase!.auth.getSession().then(({ data }) => setSession(data.session));
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisible);
+    window.addEventListener('focus', handleVisible);
+
+    return () => {
+      sub.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisible);
+      window.removeEventListener('focus', handleVisible);
+    };
   }, []);
 
   return { session, loading };
