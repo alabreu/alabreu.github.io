@@ -54,7 +54,9 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
             {/* Format hint */}
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
               Cole sua lista no formato padrão. Uma carta por linha; linhas com{' '}
-              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções:
+              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções.
+              Tags no final da linha, como <span style={{ fontFamily: 'monospace' }}>[Ramp]</span>{' '}
+              (formato Moxfield), também são reconhecidas:
             </p>
             <div
               style={{
@@ -74,7 +76,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               <br />
               // Ramp<br />
               1 Sol Ring<br />
-              4 Lightning Bolt
+              4 Lightning Bolt [Removal]
             </div>
 
             {/* Textarea */}

@@ -131,7 +131,9 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
             </label>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
               Cole no formato padrão — uma carta por linha; linhas com{' '}
-              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções:
+              <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções.
+              Tags no final da linha, como <span style={{ fontFamily: 'monospace' }}>[Ramp]</span>{' '}
+              (formato Moxfield), também são reconhecidas:
             </p>
             <div
               style={{
@@ -151,7 +153,7 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
               <br />
               // Ramp<br />
               1 Sol Ring<br />
-              4 Lightning Bolt
+              4 Lightning Bolt [Removal]
             </div>
 
             <textarea

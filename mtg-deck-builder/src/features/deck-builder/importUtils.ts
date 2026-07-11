@@ -14,6 +14,32 @@ function isDecorativeComment(text: string): boolean {
   return text.replace(/[-=_*\s]/g, '').length === 0;
 }
 
+/** Normalizes common English section names (Moxfield/Archidekt exports) to our pt-BR defaults. */
+const CATEGORY_ALIASES: Record<string, string> = {
+  commander: 'Comandante',
+  commanders: 'Comandante',
+  land: 'Terrenos',
+  lands: 'Terrenos',
+  ramp: 'Ramp',
+  'mana ramp': 'Ramp',
+  draw: 'Compra de Cartas',
+  'card draw': 'Compra de Cartas',
+  carddraw: 'Compra de Cartas',
+  removal: 'Remoção',
+  'spot removal': 'Remoção',
+  protection: 'Proteção',
+  wincon: 'Wincons',
+  wincons: 'Wincons',
+  finisher: 'Wincons',
+  finishers: 'Wincons',
+  'win condition': 'Wincons',
+  'win conditions': 'Wincons',
+};
+
+function normalizeSectionName(name: string): string {
+  return CATEGORY_ALIASES[name.toLowerCase()] ?? name;
+}
+
 export function parseDecklist(text: string): ParsedLine[] {
   const result: ParsedLine[] = [];
   const seen = new Set<string>();
@@ -25,14 +51,26 @@ export function parseDecklist(text: string): ParsedLine[] {
 
     if (line.startsWith('//') || line.startsWith('#')) {
       const heading = line.replace(/^\/\/|^#/, '').trim();
-      if (heading && !isDecorativeComment(heading)) currentSection = heading;
+      if (heading && !isDecorativeComment(heading)) currentSection = normalizeSectionName(heading);
       continue;
     }
 
     const match = line.match(/^(\d+)[xX]?\s+(.+)$/);
     if (!match) continue;
     const quantity = Math.min(99, Math.max(1, parseInt(match[1], 10)));
-    const name = match[2]
+
+    // Moxfield-style inline tag at the end of the line, e.g. "Sol Ring [Ramp]"
+    // or "Ardenn, Intrepid Archaeologist [Commander{top}]" (pin marker discarded).
+    let rest = match[2];
+    let inlineSection: string | null = null;
+    const bracketMatch = rest.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+    if (bracketMatch) {
+      rest = bracketMatch[1];
+      const tag = bracketMatch[2].replace(/\{[^}]*\}/g, '').trim();
+      if (tag) inlineSection = normalizeSectionName(tag);
+    }
+
+    const name = rest
       .replace(/\s+\([A-Z0-9]{2,6}\)\s+\d+.*/, '')
       .replace(/\s+\*.*$/, '')
       .trim();
@@ -40,7 +78,7 @@ export function parseDecklist(text: string): ParsedLine[] {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    result.push({ quantity, name, section: currentSection });
+    result.push({ quantity, name, section: inlineSection ?? currentSection });
   }
   return result;
 }
