@@ -8,6 +8,8 @@ interface CardImageProps {
   style?: React.CSSProperties;
   onClick?: () => void;
   showQuantityBadge?: number;
+  /** Highlights the card with a yellow ring, e.g. to flag it's already in the deck. */
+  highlightInDeck?: boolean;
 }
 
 const aspectRatio = 63 / 88; // standard MTG card ratio
@@ -19,9 +21,11 @@ export function CardImage({
   style,
   onClick,
   showQuantityBadge,
+  highlightInDeck,
 }: CardImageProps) {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
+  const inDeck = Boolean(highlightInDeck);
 
   if (!imageUrl || error) {
     return (
@@ -31,7 +35,7 @@ export function CardImage({
           width: '100%',
           aspectRatio: `${aspectRatio}`,
           backgroundColor: 'var(--surface-2)',
-          border: '1px solid var(--border-default)',
+          border: inDeck ? '2px solid var(--accent)' : '1px solid var(--border-default)',
           borderRadius: 'var(--radius-md)',
           display: 'flex',
           flexDirection: 'column',
@@ -64,6 +68,8 @@ export function CardImage({
         position: 'relative',
         width: '100%',
         aspectRatio: `${aspectRatio}`,
+        borderRadius: '4.8%',
+        boxShadow: inDeck ? '0 0 0 2px var(--accent)' : undefined,
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}

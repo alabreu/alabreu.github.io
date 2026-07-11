@@ -322,6 +322,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                               setCardSheetOpen(true);
                             }}
                             showQuantityBadge={qty > 0 ? qty : undefined}
+                            highlightInDeck={qty > 0}
                           />
                           <CardActionsOverlay
                             qty={qty}

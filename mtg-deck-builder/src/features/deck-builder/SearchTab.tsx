@@ -1006,6 +1006,7 @@ export function SearchTab({ deck }: SearchTabProps) {
                       size="normal"
                       onClick={() => handleCardClick(card)}
                       showQuantityBadge={qty > 0 ? qty : undefined}
+                      highlightInDeck={qty > 0}
                     />
                     <CardActionsOverlay
                       qty={qty}
