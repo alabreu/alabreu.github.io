@@ -20,6 +20,7 @@ type DeckStore = {
     patch: Partial<Omit<DeckCard, 'scryfallId' | 'quantity' | 'category'>>
   ) => void;
   importCards: (deckId: string, cards: DeckCard[]) => void;
+  healDeck: (deckId: string) => void;
   reorderCategories: (deckId: string, categories: string[]) => void;
   addCategory: (deckId: string, name: string) => void;
   deleteCategory: (deckId: string, name: string) => void;
@@ -84,6 +85,66 @@ function afterCardRemoved(d: Deck, removedId: string, cards: DeckCard[]): Deck {
   return {
     ...d,
     cards,
+    commanderId,
+    commanderName,
+    commanderArtUrl,
+    partnerId,
+    partnerName,
+    partnerArtUrl,
+    colorIdentity,
+    updatedAt: Date.now(),
+  };
+}
+
+/** Merges a second color set into a base identity, in WUBRG order. */
+function mergeColorIdentity(base: ManaColor[], extra: ManaColor[]): ManaColor[] {
+  const ORDER: ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
+  const merged = ORDER.filter((c) => base.includes(c) || extra.includes(c));
+  return merged.length > 0 ? merged : [...new Set([...base, ...extra])];
+}
+
+/**
+ * Self-heals commander/partner bookkeeping for decks that have cards tagged
+ * "Comandante" (e.g. from a decklist import with a "// Comandante" header or
+ * "[Commander]" inline tag) but whose commanderId/partnerId fields were never
+ * wired up to match — the import flow only stores the category, not the
+ * dedicated commander/partner metadata. Never overrides an already-registered
+ * commander; only fills in what's missing.
+ */
+export function healCommanderPair(d: Deck): Deck {
+  const commanderCards = d.cards.filter((c) => c.category === 'Comandante');
+  if (commanderCards.length === 0) return d;
+
+  let commanderId = d.commanderId;
+  let commanderName = d.commanderName;
+  let commanderArtUrl = d.commanderArtUrl;
+  let partnerId = d.partnerId ?? null;
+  let partnerName = d.partnerName ?? null;
+  let partnerArtUrl = d.partnerArtUrl ?? null;
+  let colorIdentity = d.colorIdentity;
+  let changed = false;
+
+  if (!commanderId) {
+    const first = commanderCards[0];
+    commanderId = first.scryfallId;
+    commanderName = first.name;
+    commanderArtUrl = first.artCropUrl;
+    colorIdentity = colorIdentityOf(first);
+    changed = true;
+  }
+
+  const second = commanderCards.find((c) => c.scryfallId !== commanderId);
+  if (second && partnerId !== second.scryfallId) {
+    partnerId = second.scryfallId;
+    partnerName = second.name;
+    partnerArtUrl = second.artCropUrl;
+    colorIdentity = mergeColorIdentity(colorIdentity, colorIdentityOf(second));
+    changed = true;
+  }
+
+  if (!changed) return d;
+  return {
+    ...d,
     commanderId,
     commanderName,
     commanderArtUrl,
@@ -254,14 +315,7 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            const ORDER: ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
-            const merged = ORDER.filter(
-              (c) => d.colorIdentity.includes(c) || partnerColors.includes(c)
-            );
-            const colorIdentity: ManaColor[] =
-              merged.length > 0
-                ? merged
-                : [...new Set([...d.colorIdentity, ...partnerColors])];
+            const colorIdentity = mergeColorIdentity(d.colorIdentity, partnerColors);
 
             const cards = d.cards.find((c) => c.scryfallId === card.scryfallId)
               ? d.cards.map((c) =>
@@ -351,52 +405,13 @@ export const useDeckStore = create<DeckStore>()(
                 updated.push({ ...card });
               }
             }
-
-            let { commanderId, commanderName, commanderArtUrl, colorIdentity } = d;
-            let partnerId = d.partnerId ?? null;
-            let partnerName = d.partnerName ?? null;
-            let partnerArtUrl = d.partnerArtUrl ?? null;
-
-            // A brand-new deck imported with cards already tagged "Comandante"
-            // (a "// Comandante" header or a "[Commander]" inline tag) doesn't
-            // yet have commanderId/partnerId wired up — auto-detect from the
-            // tag so color identity and the "commander of this deck" badge
-            // work without an extra manual step. Never overrides an
-            // already-set commander.
-            if (!commanderId) {
-              const [first, second] = cards.filter((c) => c.category === 'Comandante');
-              if (first) {
-                commanderId = first.scryfallId;
-                commanderName = first.name;
-                commanderArtUrl = first.artCropUrl;
-                colorIdentity = colorIdentityOf(first);
-              }
-              if (second) {
-                partnerId = second.scryfallId;
-                partnerName = second.name;
-                partnerArtUrl = second.artCropUrl;
-                const partnerColors = colorIdentityOf(second);
-                const ORDER: ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
-                const merged = ORDER.filter(
-                  (c) => colorIdentity.includes(c) || partnerColors.includes(c)
-                );
-                colorIdentity = merged.length > 0 ? merged : [...new Set([...colorIdentity, ...partnerColors])];
-              }
-            }
-
-            return {
-              ...d,
-              cards: updated,
-              commanderId,
-              commanderName,
-              commanderArtUrl,
-              partnerId,
-              partnerName,
-              partnerArtUrl,
-              colorIdentity,
-              updatedAt: Date.now(),
-            };
+            return healCommanderPair({ ...d, cards: updated, updatedAt: Date.now() });
           }),
+        }));
+      },
+      healDeck: (deckId: string) => {
+        set((state) => ({
+          decks: state.decks.map((d) => (d.id === deckId ? healCommanderPair(d) : d)),
         }));
       },
       reorderCategories: (deckId: string, categories: string[]) => {

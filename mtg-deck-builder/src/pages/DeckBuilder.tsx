@@ -18,7 +18,7 @@ import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { decks, deleteDeck } = useDeckStore();
+  const { decks, deleteDeck, healDeck } = useDeckStore();
 
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
@@ -39,6 +39,13 @@ export default function DeckBuilder() {
   const { session } = useSupabaseSession();
 
   const deck = decks.find((d) => d.id === id);
+
+  // Self-heal decks whose commander/partner metadata is out of sync with
+  // their "Comandante"-tagged cards (e.g. imported before this was wired up).
+  React.useEffect(() => {
+    if (deck) healDeck(deck.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deck?.id]);
 
   if (!deck) {
     return (
