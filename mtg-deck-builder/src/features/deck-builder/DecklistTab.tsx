@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
@@ -8,7 +8,7 @@ import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
-import { materializeCategories } from '../../store/useDeckStore';
+import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 
 interface DecklistTabProps {
   deck: Deck;
@@ -293,10 +293,37 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
 });
 
 export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
+  const { updateDeck } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
+  const [editingName, setEditingName] = React.useState(false);
+  const [nameDraft, setNameDraft] = React.useState(deck.name);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
+
+  function startEditingName() {
+    setNameDraft(deck.name);
+    setEditingName(true);
+  }
+
+  function commitNameEdit() {
+    const trimmed = nameDraft.trim();
+    if (trimmed && trimmed !== deck.name) updateDeck(deck.id, { name: trimmed });
+    setEditingName(false);
+  }
+
+  function cancelNameEdit() {
+    setNameDraft(deck.name);
+    setEditingName(false);
+  }
+
+  React.useEffect(() => {
+    if (editingName) {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [editingName]);
 
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const landCount = deck.cards
@@ -392,9 +419,55 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
     <div style={{ padding: '12px 16px' }}>
       {/* Deck title */}
       <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', margin: '0 0 4px' }}>
-          {deck.name}
-        </h1>
+        {editingName ? (
+          <input
+            ref={nameInputRef}
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={commitNameEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+              if (e.key === 'Escape') cancelNameEdit();
+            }}
+            maxLength={60}
+            style={{
+              display: 'block',
+              width: '100%',
+              fontSize: '32px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.03em',
+              margin: '0 0 4px',
+              padding: 0,
+              border: 'none',
+              borderBottom: '2px solid var(--accent)',
+              backgroundColor: 'transparent',
+              fontFamily: 'inherit',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        ) : (
+          <h1
+            onClick={startEditingName}
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '8px',
+              fontSize: '32px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.03em',
+              margin: '0 0 4px',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {deck.name}
+            </span>
+            <Pencil size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          </h1>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ManaGroup colors={(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity : ['C']} size="sm" />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
