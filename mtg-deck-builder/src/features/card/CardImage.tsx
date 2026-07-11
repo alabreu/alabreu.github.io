@@ -10,6 +10,8 @@ interface CardImageProps {
   showQuantityBadge?: number;
   /** Highlights the card with a yellow ring, e.g. to flag it's already in the deck. */
   highlightInDeck?: boolean;
+  /** Highlights the card with a red ring to flag a deck-validation error. Takes precedence over highlightInDeck. */
+  highlightError?: boolean;
 }
 
 const aspectRatio = 63 / 88; // standard MTG card ratio
@@ -22,10 +24,11 @@ export function CardImage({
   onClick,
   showQuantityBadge,
   highlightInDeck,
+  highlightError,
 }: CardImageProps) {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
-  const inDeck = Boolean(highlightInDeck);
+  const ringColor = highlightError ? 'var(--error)' : highlightInDeck ? 'var(--accent)' : null;
 
   if (!imageUrl || error) {
     return (
@@ -35,7 +38,7 @@ export function CardImage({
           width: '100%',
           aspectRatio: `${aspectRatio}`,
           backgroundColor: 'var(--surface-2)',
-          border: inDeck ? '2px solid var(--accent)' : '1px solid var(--border-default)',
+          border: ringColor ? `2px solid ${ringColor}` : '1px solid var(--border-default)',
           borderRadius: 'var(--radius-md)',
           display: 'flex',
           flexDirection: 'column',
@@ -69,7 +72,6 @@ export function CardImage({
         width: '100%',
         aspectRatio: `${aspectRatio}`,
         borderRadius: '4.8%',
-        boxShadow: inDeck ? '0 0 0 2px var(--accent)' : undefined,
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}
@@ -101,6 +103,22 @@ export function CardImage({
           transition: 'opacity 0.2s ease',
         }}
       />
+      {ringColor && (
+        // A real bordered overlay, not a box-shadow: an inset box-shadow on
+        // the <img> itself paints underneath the replaced image content in
+        // Chromium and is invisible against an opaque image.
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '4.8%',
+            border: `2px solid ${ringColor}`,
+            boxSizing: 'border-box',
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+      )}
       {showQuantityBadge !== undefined && showQuantityBadge > 0 && (
         <div
           style={{

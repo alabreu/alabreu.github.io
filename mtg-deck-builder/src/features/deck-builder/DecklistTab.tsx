@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
@@ -9,6 +9,8 @@ import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
+import { validateDeck, collectErrorCardIds } from './deckValidation';
+import { DeckErrorsSheet } from './DeckErrorsSheet';
 
 interface DecklistTabProps {
   deck: Deck;
@@ -56,9 +58,11 @@ function deckCardToScryfall(card: DeckCard): ScryfallCard {
 const FlippableCard = React.memo(function FlippableCard({
   card,
   onCardClick,
+  hasError,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
+  hasError?: boolean;
 }) {
   const [flipped, setFlipped] = React.useState(false);
   // Only real double-faced cards have a stored back image; split/adventure
@@ -87,6 +91,7 @@ const FlippableCard = React.memo(function FlippableCard({
               size="normal"
               onClick={() => onCardClick(card)}
               showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
+              highlightError={hasError}
             />
           </div>
           {/* Back face */}
@@ -164,7 +169,15 @@ const FlippableCard = React.memo(function FlippableCard({
   );
 });
 
-const ListCardRow = React.memo(function ListCardRow({ card, onCardClick }: { card: DeckCard; onCardClick: (card: DeckCard) => void }) {
+const ListCardRow = React.memo(function ListCardRow({
+  card,
+  onCardClick,
+  hasError,
+}: {
+  card: DeckCard;
+  onCardClick: (card: DeckCard) => void;
+  hasError?: boolean;
+}) {
   return (
     <motion.button
       whileTap={{ scale: 0.985 }}
@@ -186,7 +199,7 @@ const ListCardRow = React.memo(function ListCardRow({ card, onCardClick }: { car
       }}
     >
       <div style={{ width: '36px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
-        <CardImage imageUrl={card.imageUrl} name={card.name} size="small" />
+        <CardImage imageUrl={card.imageUrl} name={card.name} size="small" highlightError={hasError} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
@@ -212,9 +225,10 @@ interface CategorySectionProps {
   onToggle: (category: string) => void;
   onCardClick: (card: DeckCard) => void;
   viewMode: ViewMode;
+  errorCardIds: Set<string>;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode, errorCardIds }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
@@ -264,6 +278,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
+                    hasError={errorCardIds.has(card.scryfallId)}
                   />
                 ))}
               </div>
@@ -281,6 +296,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
+                    hasError={errorCardIds.has(card.scryfallId)}
                   />
                 ))}
               </div>
@@ -301,6 +317,10 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   const [editingName, setEditingName] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(deck.name);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
+  const [errorsOpen, setErrorsOpen] = React.useState(false);
+
+  const errors = React.useMemo(() => validateDeck(deck), [deck]);
+  const errorCardIds = React.useMemo(() => collectErrorCardIds(errors), [errors]);
 
   function startEditingName() {
     setNameDraft(deck.name);
@@ -471,6 +491,29 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ManaGroup colors={(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity : ['C']} size="sm" />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
+          {errors.length > 0 && (
+            <button
+              onClick={() => setErrorsOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px 2px 6px',
+                backgroundColor: 'rgba(248, 113, 113, 0.1)',
+                border: '1px solid rgba(248, 113, 113, 0.25)',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+                color: 'var(--error)',
+                fontSize: '11px',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <XCircle size={12} />
+              {errors.length} {errors.length === 1 ? 'erro' : 'erros'}
+            </button>
+          )}
           <span style={{ flex: 1 }} />
           <div style={{
             display: 'flex',
@@ -539,6 +582,7 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             onToggle={toggleSection}
             onCardClick={handleCardClick}
             viewMode={viewMode}
+            errorCardIds={errorCardIds}
           />
         ))}
       </div>
@@ -555,6 +599,13 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             : null
         }
         deck={deck}
+      />
+
+      {/* Deck validation errors */}
+      <DeckErrorsSheet
+        isOpen={errorsOpen}
+        onClose={() => setErrorsOpen(false)}
+        errors={errors}
       />
     </div>
   );
