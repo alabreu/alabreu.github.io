@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -8,6 +8,9 @@ import { Button } from '../design-system/components/Button';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
+import { CoachLoginGate } from '../features/deck-builder/CoachLoginGate';
+import { supabase, supabaseConfigured } from '../lib/supabase';
+import { useSupabaseSession } from '../lib/useSupabaseSession';
 
 function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => void }) {
   const navigate = useNavigate();
@@ -263,8 +266,10 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
 export default function Home() {
   const { decks, deleteDeck } = useDeckStore();
   const navigate = useNavigate();
+  const { session } = useSupabaseSession();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [loginOpen, setLoginOpen] = React.useState(false);
   const versionTapCountRef = React.useRef(0);
   const lastVersionTapRef = React.useRef(0);
 
@@ -464,9 +469,82 @@ export default function Home() {
       {/* Import deck sheet */}
       <ImportDeckSheet isOpen={importOpen} onClose={() => setImportOpen(false)} />
 
+      {/* Login sheet */}
+      <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
+        <CoachLoginGate />
+      </BottomSheet>
+
       {/* Menu Bottom Sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <div style={{ padding: '8px 0 24px' }}>
+          {/* Account: login / logout */}
+          {supabaseConfigured && (
+            <button
+              onClick={() => {
+                if (session) {
+                  supabase?.auth.signOut();
+                  setMenuOpen(false);
+                } else {
+                  setMenuOpen(false);
+                  setLoginOpen(true);
+                }
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px 20px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                transition: 'background-color 0.1s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <span
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--surface-1)',
+                  border: '1px solid var(--border-default)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {session ? <LogOut size={17} /> : <LogIn size={17} />}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                  {session ? 'Sair da conta' : 'Entrar'}
+                </p>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--text-muted)',
+                    margin: '1px 0 0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {session ? session.user.email : 'Sincronize decks entre dispositivos'}
+                </p>
+              </div>
+            </button>
+          )}
+
+          {supabaseConfigured && (
+            <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+          )}
+
           {/* Import deck */}
           <button
             onClick={() => { setMenuOpen(false); setImportOpen(true); }}

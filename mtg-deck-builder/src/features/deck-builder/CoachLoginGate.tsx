@@ -46,7 +46,7 @@ export function CoachLoginGate() {
           Verifique seu e-mail
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-          Enviamos um link de acesso para <strong>{email}</strong>. Toque nele para entrar e liberar o Coach.
+          Enviamos um link de acesso para <strong>{email}</strong>. Toque nele para entrar.
         </p>
         <button
           onClick={() => setSent(false)}
@@ -99,10 +99,10 @@ export function CoachLoginGate() {
 
       <div>
         <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          Entrar no Coach
+          Entrar
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-          Sem senha, sem configurar chave de API. Só seu e-mail.
+          Sem senha — só seu e-mail. Sincroniza seus decks entre dispositivos e libera o Coach.
         </p>
       </div>
 
