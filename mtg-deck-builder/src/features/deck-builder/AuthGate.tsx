@@ -48,6 +48,9 @@ export function AuthGate() {
     const { data, error: err } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+      },
     });
     setSending(false);
     if (err) {
