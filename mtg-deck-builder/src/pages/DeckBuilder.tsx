@@ -128,16 +128,6 @@ export default function DeckBuilder() {
         <ArrowLeft size={17} />
       </button>
 
-      {/* Floating expand/collapse — only on main view */}
-      {!coachOpen && !searchOpen && (
-        <button
-          style={{ ...floatingBtnStyle, right: '60px' }}
-          onClick={() => setAllExpanded((v) => !v)}
-        >
-          <ChevronsUpDown size={15} />
-        </button>
-      )}
-
       {/* Floating EDHREC suggestions — only on search view */}
       {searchOpen && (
         <button
@@ -228,6 +218,30 @@ export default function DeckBuilder() {
             gap: '8px',
           }}
         >
+          {/* Coach button */}
+          <button
+            onClick={() => setCoachOpen(true)}
+            style={{
+              width: '52px',
+              height: '52px',
+              flexShrink: 0,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(18, 18, 20, 0.92)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+          >
+            <Bot size={18} />
+          </button>
+
           {/* Search pill */}
           <button
             onClick={() => setSearchOpen(true)}
@@ -254,9 +268,9 @@ export default function DeckBuilder() {
             </span>
           </button>
 
-          {/* Coach button */}
+          {/* Expand/collapse all */}
           <button
-            onClick={() => setCoachOpen(true)}
+            onClick={() => setAllExpanded((v) => !v)}
             style={{
               width: '52px',
               height: '52px',
@@ -275,7 +289,7 @@ export default function DeckBuilder() {
               color: 'rgba(255,255,255,0.7)',
             }}
           >
-            <Bot size={18} />
+            <ChevronsUpDown size={18} />
           </button>
         </div>
       )}
