@@ -261,7 +261,7 @@ export function CardBottomSheet({
     : [...baseCategories, selectedCategory];
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title={card.name} maxHeight="92vh">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={card.name} maxHeight="92dvh">
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Card image with DFC flip */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>

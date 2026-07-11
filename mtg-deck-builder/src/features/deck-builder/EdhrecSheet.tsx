@@ -159,7 +159,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
         isOpen={isOpen}
         onClose={onClose}
         title="Sugestões do EDHREC"
-        maxHeight="92vh"
+        maxHeight="92dvh"
         headerAction={
           <div
             style={{

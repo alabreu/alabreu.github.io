@@ -604,7 +604,7 @@ export function SearchTab({ deck }: SearchTabProps) {
         isOpen={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
         title="Busca avançada"
-        maxHeight="88vh"
+        maxHeight="88dvh"
         headerAction={
           <button
             onClick={() => setSyntaxHelpOpen(true)}

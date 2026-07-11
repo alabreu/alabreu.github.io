@@ -59,7 +59,7 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
   const canImport = deckName.trim().length > 0 && parsedCount > 0;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar deck" maxHeight="92vh">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar deck" maxHeight="92dvh">
       <div style={{ padding: '20px 20px 32px' }}>
 
         {phase.kind === 'idle' && (

@@ -78,7 +78,7 @@ const SECTIONS: Array<{
 
 export function SyntaxHelpSheet({ isOpen, onClose }: Props) {
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Sintaxe de busca" maxHeight="88vh">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Sintaxe de busca" maxHeight="88dvh">
       <div style={{ padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
           O campo de busca aceita a sintaxe completa do{' '}

@@ -17,7 +17,7 @@ export function BottomSheet({
   onClose,
   children,
   title,
-  maxHeight = '90vh',
+  maxHeight = '90dvh',
   headerAction,
 }: BottomSheetProps) {
   const sheetRef = React.useRef<HTMLDivElement>(null);
@@ -101,7 +101,7 @@ export function BottomSheet({
               bottom: 0,
               left: 0,
               right: 0,
-              maxHeight,
+              maxHeight: `min(${maxHeight}, calc(100dvh - env(safe-area-inset-top, 0px) - 12px))`,
               backgroundColor: 'var(--bg-elevated)',
               borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
               border: '1px solid var(--border-default)',

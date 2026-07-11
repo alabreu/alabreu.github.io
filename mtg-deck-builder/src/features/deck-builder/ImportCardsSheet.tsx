@@ -46,7 +46,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
   const parsedCount = React.useMemo(() => parseDecklist(text).length, [text]);
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar cartas" maxHeight="92vh">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title="Importar cartas" maxHeight="92dvh">
       <div style={{ padding: '20px 20px 32px' }}>
 
         {phase.kind === 'idle' && (

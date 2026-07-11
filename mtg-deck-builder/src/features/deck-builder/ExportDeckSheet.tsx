@@ -39,7 +39,7 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
       isOpen={isOpen}
       onClose={onClose}
       title="Exportar deck"
-      maxHeight="92vh"
+      maxHeight="92dvh"
     >
       <div style={{ padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>

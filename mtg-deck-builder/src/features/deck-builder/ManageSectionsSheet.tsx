@@ -235,7 +235,7 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
 
   return (
     <>
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Gerenciar seções" maxHeight="85vh">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Gerenciar seções" maxHeight="85dvh">
       <div style={{ padding: '4px 20px 32px' }}>
         {/* Draggable list */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
