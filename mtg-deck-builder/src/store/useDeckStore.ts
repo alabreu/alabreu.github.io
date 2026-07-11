@@ -351,7 +351,51 @@ export const useDeckStore = create<DeckStore>()(
                 updated.push({ ...card });
               }
             }
-            return { ...d, cards: updated, updatedAt: Date.now() };
+
+            let { commanderId, commanderName, commanderArtUrl, colorIdentity } = d;
+            let partnerId = d.partnerId ?? null;
+            let partnerName = d.partnerName ?? null;
+            let partnerArtUrl = d.partnerArtUrl ?? null;
+
+            // A brand-new deck imported with cards already tagged "Comandante"
+            // (a "// Comandante" header or a "[Commander]" inline tag) doesn't
+            // yet have commanderId/partnerId wired up — auto-detect from the
+            // tag so color identity and the "commander of this deck" badge
+            // work without an extra manual step. Never overrides an
+            // already-set commander.
+            if (!commanderId) {
+              const [first, second] = cards.filter((c) => c.category === 'Comandante');
+              if (first) {
+                commanderId = first.scryfallId;
+                commanderName = first.name;
+                commanderArtUrl = first.artCropUrl;
+                colorIdentity = colorIdentityOf(first);
+              }
+              if (second) {
+                partnerId = second.scryfallId;
+                partnerName = second.name;
+                partnerArtUrl = second.artCropUrl;
+                const partnerColors = colorIdentityOf(second);
+                const ORDER: ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
+                const merged = ORDER.filter(
+                  (c) => colorIdentity.includes(c) || partnerColors.includes(c)
+                );
+                colorIdentity = merged.length > 0 ? merged : [...new Set([...colorIdentity, ...partnerColors])];
+              }
+            }
+
+            return {
+              ...d,
+              cards: updated,
+              commanderId,
+              commanderName,
+              commanderArtUrl,
+              partnerId,
+              partnerName,
+              partnerArtUrl,
+              colorIdentity,
+              updatedAt: Date.now(),
+            };
           }),
         }));
       },

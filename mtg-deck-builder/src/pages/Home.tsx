@@ -20,6 +20,12 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
     deck.cards.some((c) => c.scryfallId === deck.commanderId)
       ? deck.commanderArtUrl
       : null;
+  const partnerArtUrl =
+    deck.partnerId &&
+    deck.partnerArtUrl &&
+    deck.cards.some((c) => c.scryfallId === deck.partnerId)
+      ? deck.partnerArtUrl
+      : null;
 
   return (
     <motion.div
@@ -39,7 +45,41 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
       onClick={() => navigate(`/deck/${deck.id}`)}
     >
       {/* Background art */}
-      {commanderArtUrl ? (
+      {commanderArtUrl && partnerArtUrl ? (
+        <>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+            <img
+              src={commanderArtUrl}
+              alt={deck.commanderName ?? ''}
+              style={{ width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+            />
+            <img
+              src={partnerArtUrl}
+              alt={deck.partnerName ?? ''}
+              style={{ width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+            />
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: '50%',
+              width: '2px',
+              transform: 'translateX(-1px)',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.9) 100%)',
+            }}
+          />
+        </>
+      ) : commanderArtUrl ? (
         <>
           <img
             src={commanderArtUrl}
