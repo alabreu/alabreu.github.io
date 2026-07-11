@@ -87,6 +87,17 @@ export function scryfallToDeckCard(scryfall: ScryfallCard, quantity: number, cat
   return toDeckCard(scryfall, category ?? defaultCategoryFor(scryfall), quantity);
 }
 
+async function fetchCardByExactName(name: string): Promise<ScryfallCard | null> {
+  const res = await fetch('https://api.scryfall.com/cards/collection', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifiers: [{ name }] }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return (data.data as ScryfallCard[])[0] ?? null;
+}
+
 export async function fetchCardsByName(
   parsed: ParsedLine[]
 ): Promise<{ toImport: DeckCard[]; notFound: string[]; sections: string[] }> {
@@ -123,14 +134,52 @@ export async function fetchCardsByName(
     }
   }
 
+  // Some exporters join two independent cards on one line with " // " instead
+  // of naming a real multi-faced card — most commonly a Commander paired with
+  // its chosen Background. Resolve each half independently for anything still
+  // missing; only split into two cards when the combined name isn't itself a
+  // single card on Scryfall (a genuine split/MDFC card resolves via its front
+  // face alone and is kept as one entry).
+  const pairResults = new Map<string, ScryfallCard[]>();
+  const stillMissing: string[] = [];
+  for (const name of notFoundNames) {
+    if (!name.includes(' // ')) {
+      stillMissing.push(name);
+      continue;
+    }
+    const [frontRaw, backRaw] = name.split(' // ').map((s) => s.trim());
+    const frontCard = frontRaw ? await fetchCardByExactName(frontRaw) : null;
+    if (frontCard && frontCard.name.toLowerCase() === name.toLowerCase()) {
+      pairResults.set(name.toLowerCase(), [frontCard]);
+      continue;
+    }
+    const backCard = backRaw ? await fetchCardByExactName(backRaw) : null;
+    const cards = [frontCard, backCard].filter((c): c is ScryfallCard => !!c);
+    if (cards.length > 0) {
+      pairResults.set(name.toLowerCase(), cards);
+    } else {
+      stillMissing.push(name);
+    }
+  }
+
   const toImport: DeckCard[] = [];
   const sections: string[] = [];
   for (const { name, quantity, section } of parsed) {
-    const scryfall = byName.get(name.toLowerCase());
-    if (!scryfall) continue;
-    toImport.push(scryfallToDeckCard(scryfall, quantity, section ?? undefined));
-    if (section && !sections.includes(section)) sections.push(section);
+    const key = name.toLowerCase();
+    const scryfall = byName.get(key);
+    if (scryfall) {
+      toImport.push(scryfallToDeckCard(scryfall, quantity, section ?? undefined));
+      if (section && !sections.includes(section)) sections.push(section);
+      continue;
+    }
+    const pair = pairResults.get(key);
+    if (pair) {
+      for (const card of pair) {
+        toImport.push(scryfallToDeckCard(card, quantity, section ?? undefined));
+      }
+      if (section && !sections.includes(section)) sections.push(section);
+    }
   }
 
-  return { toImport, notFound: notFoundNames, sections };
+  return { toImport, notFound: stillMissing, sections };
 }
