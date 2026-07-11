@@ -56,19 +56,29 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
               Cole sua lista no formato padrão. Uma carta por linha; linhas com{' '}
               <span style={{ fontFamily: 'monospace' }}>// Nome</span> criam e distribuem seções.
               Tags no final da linha, como <span style={{ fontFamily: 'monospace' }}>[Ramp]</span>{' '}
-              (formato Moxfield), também são reconhecidas:
+              (formato Moxfield), também são reconhecidas.
+            </p>
+            <p
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: 'var(--text-muted)',
+                margin: '0 0 6px',
+              }}
+            >
+              Exemplo:
             </p>
             <div
               style={{
                 fontFamily: 'monospace',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 12px',
-                marginBottom: '16px',
+                padding: '0 0 0 12px',
+                marginBottom: '18px',
                 lineHeight: 1.7,
+                borderLeft: '2px solid var(--border-subtle)',
               }}
             >
               // Terrenos<br />
@@ -81,7 +91,7 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
 
             {/* Textarea */}
             <textarea
-              placeholder={'Cole sua lista aqui...\n\n1 Sol Ring\n4 Lightning Bolt\n36 Island'}
+              placeholder="Cole sua lista aqui..."
               value={text}
               onChange={(e) => setText(e.target.value)}
               style={{
