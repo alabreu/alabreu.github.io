@@ -14,6 +14,7 @@ import { useDeckStore } from '../../store/useDeckStore';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import { CardActionsOverlay } from '../card/CardActionsOverlay';
 import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
+import { validateDeck, collectErrorCardIds } from './deckValidation';
 import {
   SearchFilters,
   EMPTY_FILTERS,
@@ -370,6 +371,8 @@ export function SearchTab({ deck }: SearchTabProps) {
     for (const c of deck.cards) map[c.scryfallId] = c.quantity;
     return map;
   }, [deck.cards]);
+
+  const errorCardIds = React.useMemo(() => collectErrorCardIds(validateDeck(deck)), [deck]);
 
   function triggerSearch(text: string, f: SearchFilters) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -1007,6 +1010,7 @@ export function SearchTab({ deck }: SearchTabProps) {
                       onClick={() => handleCardClick(card)}
                       showQuantityBadge={qty > 0 ? qty : undefined}
                       highlightInDeck={qty > 0}
+                      highlightError={errorCardIds.has(card.id)}
                     />
                     <CardActionsOverlay
                       qty={qty}

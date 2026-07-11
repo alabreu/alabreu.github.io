@@ -11,6 +11,7 @@ import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
 import { Deck, ScryfallCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { EdhrecList, fetchEdhrecLists, hydrateCards, translateHeader } from './edhrec';
+import { validateDeck, collectErrorCardIds } from './deckValidation';
 
 interface Props {
   isOpen: boolean;
@@ -74,6 +75,8 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
     for (const c of deck.cards) map[c.scryfallId] = c.quantity;
     return map;
   }, [deck.cards]);
+
+  const errorCardIds = React.useMemo(() => collectErrorCardIds(validateDeck(deck)), [deck]);
 
   // Load recommendation lists when opened
   React.useEffect(() => {
@@ -323,6 +326,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                             }}
                             showQuantityBadge={qty > 0 ? qty : undefined}
                             highlightInDeck={qty > 0}
+                            highlightError={errorCardIds.has(card.id)}
                           />
                           <CardActionsOverlay
                             qty={qty}
