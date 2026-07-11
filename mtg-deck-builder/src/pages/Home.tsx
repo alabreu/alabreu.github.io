@@ -8,7 +8,7 @@ import { Button } from '../design-system/components/Button';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
-import { CoachLoginGate } from '../features/deck-builder/CoachLoginGate';
+import { AuthGate } from '../features/deck-builder/AuthGate';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 
@@ -471,7 +471,7 @@ export default function Home() {
 
       {/* Login sheet */}
       <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
-        <CoachLoginGate />
+        <AuthGate />
       </BottomSheet>
 
       {/* Menu Bottom Sheet */}

@@ -6,7 +6,7 @@ import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
-import { CoachLoginGate } from './CoachLoginGate';
+import { AuthGate } from './AuthGate';
 
 export interface ModelOption {
   id: string;
@@ -542,7 +542,7 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
     if (!session) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <CoachLoginGate />
+          <AuthGate />
         </div>
       );
     }
