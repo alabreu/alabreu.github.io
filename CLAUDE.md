@@ -18,17 +18,25 @@ Site pessoal + **MTG Commander Deck Builder** em `mtg-deck-builder/` (React + Vi
 - Sempre rodar `npm run build` antes de commitar mudanças do app.
 - Idioma da UI: português (pt-BR).
 
-## Coach (IA) — Supabase em andamento
+## Backend (Supabase) — Fases 1 e 2 em produção
 
-- Login por magic link + proxy do Coach (Fase 1 lite + Fase 2 de
-  `mtg-deck-builder/docs/backend-plan.md`) iniciado em 06/07/2026. Setup
-  pendente (ação do usuário) documentado em `mtg-deck-builder/docs/supabase-setup.md`.
+- Login por magic link, decks na nuvem e proxy do Coach (Fases 1 e 2 de
+  `mtg-deck-builder/docs/backend-plan.md`) configurados e funcionando desde
+  11/07/2026 (projeto `CoBuilder`, ref `rxshomnccqfcarvujswq`). SMTP customizado
+  via Resend (o e-mail padrão do Supabase é limitado/não confiável).
 - `CoachTab` usa o proxy (`supabase/functions/coach-proxy`) quando
   `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` estão definidos no build; caso
   contrário cai no fluxo antigo (chave do OpenRouter do próprio usuário).
-- Decks na nuvem (resto da Fase 1) e Fase 3 (social) continuam para quando o
-  usuário disser **"vamos fazer o backend"** (agora referindo-se ao restante
-  do plano).
+- Decks sincronizam com a nuvem (tabela `decks`, RLS por `user_id`) via
+  `src/lib/deckSync.ts`, montado em `App.tsx` por `DeckCloudSync`: no login,
+  puxa e funde com o local (mais recente por `updatedAt` vence); mutações locais
+  empurram (debounced) enquanto a sessão está ativa; troca de conta no mesmo
+  navegador não vaza decks de uma conta pra outra (`mtg-deck-builder-last-synced-user`).
+  Sem sessão, tudo continua local-only (localStorage), sem mudança de comportamento.
+- Migrações do banco em `mtg-deck-builder/supabase/migrations/` — rodar cada
+  nova migração manualmente no SQL Editor do Supabase (sem CI de banco ainda).
+- Fase 3 (social) continua para quando o usuário disser **"vamos fazer o
+  backend"** de novo, referindo-se ao restante do plano.
 
 ## Segurança
 

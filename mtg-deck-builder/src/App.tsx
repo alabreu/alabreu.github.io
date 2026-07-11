@@ -4,10 +4,12 @@ import NewDeck from './pages/NewDeck';
 import DeckBuilder from './pages/DeckBuilder';
 import DesignSystem from './pages/DesignSystem';
 import { UpdateToast } from './components/UpdateToast';
+import { DeckCloudSync } from './components/DeckCloudSync';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <DeckCloudSync />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/new-deck" element={<NewDeck />} />
