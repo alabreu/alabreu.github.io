@@ -105,6 +105,51 @@ body {
   color: var(--accent);
 }
 
+/* Home background — a slow, subtle "embers" mesh (dark red/orange/gray)
+   concentrated near the top, fading into the base background, plus a
+   soft grain layer over the whole page for texture. */
+@keyframes ember-mesh-move {
+  0% {
+    background-position: 20% -15%, 75% 0%, 45% 10%;
+  }
+  50% {
+    background-position: 60% 5%, 25% -10%, 80% 15%;
+  }
+  100% {
+    background-position: 20% -15%, 75% 0%, 45% 10%;
+  }
+}
+
+.home-ember-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55vh;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 65% 45% at center, rgba(122, 42, 24, 0.38) 0%, transparent 72%),
+    radial-gradient(ellipse 55% 42% at center, rgba(148, 76, 22, 0.3) 0%, transparent 72%),
+    radial-gradient(ellipse 60% 46% at center, rgba(80, 80, 82, 0.26) 0%, transparent 72%);
+  background-size: 140% 140%, 130% 130%, 150% 150%;
+  background-repeat: no-repeat;
+  animation: ember-mesh-move 28s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 92%);
+  mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 92%);
+}
+
+.home-noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+}
+
 /* Skeleton shimmer animation */
 @keyframes shimmer {
   0% {
