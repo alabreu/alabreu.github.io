@@ -18,6 +18,9 @@ export const inlineCodeStyle: React.CSSProperties = {
   backgroundColor: 'var(--surface-3)',
   padding: '1px 4px',
   borderRadius: '4px',
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+  overflowWrap: 'break-word',
 };
 
 /** Shared react-markdown component overrides for every Tutor chat surface.
