@@ -111,51 +111,51 @@ body {
    Safari), plus a soft grain layer over the whole page for texture. */
 @keyframes ember-mesh-move {
   0% {
-    background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
+    background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
   }
   25% {
-    background-position: 0% 0%, 55% -80%, 58% 12%, 40% 34%, 66% 28%;
-    background-size: 100% 100%, 860% 500%, 140% 132%, 130% 112%, 118% 136%;
+    background-position: 0% 0%, 55% -90%, 58% 12%, 40% 34%, 66% 28%;
+    background-size: 100% 100%, 1440% 830%, 140% 132%, 130% 112%, 118% 136%;
   }
   50% {
-    background-position: 0% 0%, 40% -90%, 74% 38%, 22% 15%, 50% 52%;
-    background-size: 100% 100%, 920% 470%, 115% 138%, 136% 124%, 132% 114%;
+    background-position: 0% 0%, 40% -100%, 74% 38%, 22% 15%, 50% 52%;
+    background-size: 100% 100%, 1560% 780%, 115% 138%, 136% 124%, 132% 114%;
   }
   75% {
-    background-position: 0% 0%, 50% -82%, 34% 44%, 62% 26%, 26% 20%;
-    background-size: 100% 100%, 880% 490%, 132% 116%, 122% 134%, 116% 130%;
+    background-position: 0% 0%, 50% -92%, 34% 44%, 62% 26%, 26% 20%;
+    background-size: 100% 100%, 1470% 815%, 132% 116%, 122% 134%, 116% 130%;
   }
   100% {
-    background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
+    background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
   }
 }
 
 .home-ember-bg {
   position: fixed;
-  top: -25vh;
+  top: -30vh;
   left: -15%;
   right: -15%;
-  height: 80vh;
+  height: 150vh;
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(to bottom, transparent 0%, transparent 50%, var(--bg-base) 90%),
-    radial-gradient(ellipse 85% 85% at center, rgba(140, 62, 24, 0.85) 0%, transparent 80%),
-    radial-gradient(ellipse 46% 40% at center, rgba(150, 48, 24, 0.28) 0%, transparent 78%),
-    radial-gradient(ellipse 42% 37% at center, rgba(180, 94, 22, 0.22) 0%, transparent 78%),
-    radial-gradient(ellipse 44% 39% at center, rgba(96, 96, 98, 0.16) 0%, transparent 80%);
+    linear-gradient(to bottom, transparent 0%, transparent 42%, var(--bg-base) 80%),
+    radial-gradient(ellipse 85% 85% at center, rgba(140, 62, 24, 0.9) 0%, transparent 82%),
+    radial-gradient(ellipse 46% 40% at center, rgba(150, 48, 24, 0.3) 0%, transparent 78%),
+    radial-gradient(ellipse 42% 37% at center, rgba(180, 94, 22, 0.24) 0%, transparent 78%),
+    radial-gradient(ellipse 44% 39% at center, rgba(96, 96, 98, 0.18) 0%, transparent 80%);
   background-repeat: no-repeat;
-  background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
-  background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
+  background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
+  background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
   animation: ember-mesh-move 13s ease-in-out infinite;
 }
 
 .home-noise-overlay {
   position: fixed;
   inset: 0;
-  z-index: 5;
+  z-index: -1;
   pointer-events: none;
   opacity: 0.09;
   mix-blend-mode: screen;
