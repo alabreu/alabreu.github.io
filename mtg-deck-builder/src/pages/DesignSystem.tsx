@@ -15,6 +15,7 @@ import {
   saveAccentPreview,
   getSavedAccentPreview,
 } from '../design-system/accentPreview';
+import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay';
 
 function AccentPicker() {
   const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview());
@@ -85,6 +86,70 @@ function AccentPicker() {
           Badge accent
         </Badge>
       </div>
+    </div>
+  );
+}
+
+function NoiseToggle() {
+  const [enabled, setEnabled] = React.useState(() => getNoiseEnabled());
+
+  function toggle() {
+    const next = !enabled;
+    setNoiseEnabled(next);
+    setEnabled(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        Uma textura granulada bem sutil por cima de toda a interface, em todas as telas do app.
+        Fica salvo no seu navegador.
+      </p>
+
+      <button
+        onClick={toggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 14px',
+          backgroundColor: 'var(--surface-1)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          Grain no app inteiro
+        </span>
+        <span
+          style={{
+            width: '44px',
+            height: '26px',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: enabled ? 'var(--accent)' : 'var(--surface-3)',
+            border: `1px solid ${enabled ? 'var(--accent)' : 'var(--border-default)'}`,
+            position: 'relative',
+            flexShrink: 0,
+            transition: 'background-color 0.15s, border-color 0.15s',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: enabled ? '20px' : '2px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'left 0.15s',
+            }}
+          />
+        </span>
+      </button>
     </div>
   );
 }
@@ -193,6 +258,11 @@ export default function DesignSystem() {
         {/* ── Accent color picker ── */}
         <Section title="Accent Color — Testar">
           <AccentPicker />
+        </Section>
+
+        {/* ── Grain/noise toggle ── */}
+        <Section title="Efeitos — Grain">
+          <NoiseToggle />
         </Section>
 
         {/* ── Colors ── */}

@@ -7,6 +7,7 @@ import DeckBuilder from './pages/DeckBuilder';
 import DesignSystem from './pages/DesignSystem';
 import { UpdateToast } from './components/UpdateToast';
 import { DeckCloudSync } from './components/DeckCloudSync';
+import { NoiseOverlay } from './components/NoiseOverlay';
 import { PasswordRecoveryGate } from './features/deck-builder/PasswordRecoveryGate';
 import { useSupabaseSession } from './lib/useSupabaseSession';
 
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/design" element={<DesignSystem />} />
       </Routes>
       <UpdateToast />
+      <NoiseOverlay />
     </BrowserRouter>
   );
 }

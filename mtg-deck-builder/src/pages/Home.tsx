@@ -277,13 +277,11 @@ export default function Home() {
     <div
       style={{
         minHeight: '100dvh',
+        backgroundColor: 'var(--bg-base)',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <div className="home-ember-bg" />
-      <div className="home-noise-overlay" />
-
       {/* Header */}
       <header
         style={{

@@ -105,57 +105,12 @@ body {
   color: var(--accent);
 }
 
-/* Home background — a lively "embers/flame" mesh (dark red/orange/gray)
-   concentrated near the top, fading into the base background via a plain
-   layered gradient (not a mask — mask-image rendered a hard seam on iOS
-   Safari), plus a soft grain layer over the whole page for texture. */
-@keyframes ember-mesh-move {
-  0% {
-    background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
-  }
-  25% {
-    background-position: 0% 0%, 55% -90%, 58% 12%, 40% 34%, 66% 28%;
-    background-size: 100% 100%, 1440% 830%, 140% 132%, 130% 112%, 118% 136%;
-  }
-  50% {
-    background-position: 0% 0%, 40% -100%, 74% 38%, 22% 15%, 50% 52%;
-    background-size: 100% 100%, 1560% 780%, 115% 138%, 136% 124%, 132% 114%;
-  }
-  75% {
-    background-position: 0% 0%, 50% -92%, 34% 44%, 62% 26%, 26% 20%;
-    background-size: 100% 100%, 1470% 815%, 132% 116%, 122% 134%, 116% 130%;
-  }
-  100% {
-    background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
-  }
-}
-
-.home-ember-bg {
-  position: fixed;
-  top: -30vh;
-  left: -15%;
-  right: -15%;
-  height: 150vh;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to bottom, transparent 0%, transparent 42%, var(--bg-base) 80%),
-    radial-gradient(ellipse 85% 85% at center, rgba(140, 62, 24, 0.9) 0%, transparent 82%),
-    radial-gradient(ellipse 46% 40% at center, rgba(150, 48, 24, 0.3) 0%, transparent 78%),
-    radial-gradient(ellipse 42% 37% at center, rgba(180, 94, 22, 0.24) 0%, transparent 78%),
-    radial-gradient(ellipse 44% 39% at center, rgba(96, 96, 98, 0.18) 0%, transparent 80%);
-  background-repeat: no-repeat;
-  background-position: 0% 0%, 45% -95%, 30% 25%, 68% 20%, 48% 42%;
-  background-size: 100% 100%, 1500% 800%, 125% 118%, 120% 128%, 130% 122%;
-  animation: ember-mesh-move 13s ease-in-out infinite;
-}
-
-.home-noise-overlay {
+/* Global film-grain overlay — opt-in via the Design System toggle,
+   sits above all app content on every screen. */
+.app-noise-overlay {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 9999;
   pointer-events: none;
   opacity: 0.09;
   mix-blend-mode: screen;
