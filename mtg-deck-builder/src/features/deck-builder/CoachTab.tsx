@@ -4,12 +4,14 @@ import { ArrowUp, Bot, User, Key, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
-import { Deck } from '../../types';
+import { Deck, ScryfallCard } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
+import { CardMentionRow } from './CoachCardPreviews';
+import { splitIntoParagraphs, extractBoldNames, resolveCardMentions } from './coachCardMentions';
 
 const markdownComponents: Components = {
   p: ({ children }) => (
@@ -105,6 +107,7 @@ interface CoachTabProps {
   deck: Deck;
   model: string;
   onKeyboardChange?: (open: boolean) => void;
+  onOpenSearch?: (query: string) => void;
 }
 
 interface Message {
@@ -173,7 +176,8 @@ Regras de resposta:
 - Seja direto e objetivo; use bullet points para listas
 - Ao sugerir cartas, explique brevemente a sinergia e indique se há alternativas budget
 - Considere sempre a identidade de cores do comandante
-- Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione`;
+- Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione
+- Sempre que citar o nome de uma carta específica de Magic (sugestão, exemplo, comparação etc.), escreva o nome oficial em inglês entre ** (ex: **Sol Ring**), mesmo no meio da frase — isso ativa uma prévia visual da carta no app. Não coloque outros textos (títulos de seção, categorias) entre **, apenas nomes reais de cartas`;
 }
 
 export function ModelPicker({
@@ -311,8 +315,38 @@ function TypingDots() {
   );
 }
 
-function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolean }) {
+/** Resolves the Coach's bolded card-name mentions once a reply finishes
+ *  streaming (never mid-stream, to avoid refetching on every token). */
+function useResolvedCardMentions(content: string, active: boolean) {
+  const [resolved, setResolved] = React.useState<Map<string, ScryfallCard>>(new Map());
+  React.useEffect(() => {
+    if (!active) return;
+    const names = extractBoldNames(content);
+    if (names.length === 0) return;
+    let cancelled = false;
+    resolveCardMentions(names).then((map) => {
+      if (!cancelled) setResolved(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [content, active]);
+  return resolved;
+}
+
+function MessageBubble({
+  msg,
+  isStreaming,
+  deck,
+  onOpenSearch,
+}: {
+  msg: Message;
+  isStreaming: boolean;
+  deck: Deck;
+  onOpenSearch: (query: string) => void;
+}) {
   const isUser = msg.role === 'user';
+  const resolvedCards = useResolvedCardMentions(msg.content, !isUser && !isStreaming);
 
   if (isUser) {
     return (
@@ -376,12 +410,29 @@ function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolea
       <div style={{ maxWidth: '100%', minWidth: 0, padding: '2px 0' }}>
         {isStreaming && !msg.content ? (
           <TypingDots />
-        ) : (
+        ) : isStreaming ? (
           <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {msg.content}
             </ReactMarkdown>
-            {isStreaming && <span style={{ opacity: 0.4, fontSize: '13px' }}>▍</span>}
+            <span style={{ opacity: 0.4, fontSize: '13px' }}>▍</span>
+          </div>
+        ) : (
+          <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+            {splitIntoParagraphs(msg.content).map((block, i) => {
+              const names = extractBoldNames(block);
+              const cards = names
+                .map((n) => resolvedCards.get(n))
+                .filter((c): c is ScryfallCard => !!c);
+              return (
+                <React.Fragment key={i}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {block}
+                  </ReactMarkdown>
+                  {cards.length > 0 && <CardMentionRow cards={cards} deck={deck} onOpenSearch={onOpenSearch} />}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
         <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0' }}>{formatTime(msg.timestamp)}</p>
@@ -396,7 +447,7 @@ const SUGGESTIONS = [
   'O meu deck está equilibrado para Commander?',
 ];
 
-export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
+export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {} }: CoachTabProps) {
   // When Supabase is configured, the Coach runs through our proxy (magic-link
   // login, no per-user API key). Otherwise, fall back to the legacy
   // bring-your-own-OpenRouter-key flow.
@@ -705,7 +756,13 @@ export function CoachTab({ deck, model, onKeyboardChange }: CoachTabProps) {
         )}
 
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} msg={msg} isStreaming={msg.id === streamingId} />
+          <MessageBubble
+            key={msg.id}
+            msg={msg}
+            isStreaming={msg.id === streamingId}
+            deck={deck}
+            onOpenSearch={onOpenSearch}
+          />
         ))}
         <div ref={bottomRef} />
       </div>

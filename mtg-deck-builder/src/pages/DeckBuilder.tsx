@@ -36,7 +36,18 @@ export default function DeckBuilder() {
   const [allExpanded, setAllExpanded] = React.useState(true);
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [coachSearchQuery, setCoachSearchQuery] = React.useState('');
+  const [coachSearchQueryVersion, setCoachSearchQueryVersion] = React.useState(0);
   const { session } = useSupabaseSession();
+
+  // Coach's "ver N cartas na busca" link (10+ cards mentioned in one
+  // paragraph) hands off to Search pre-filled with a query matching all of them.
+  function handleOpenSearchFromCoach(query: string) {
+    setCoachSearchQuery(query);
+    setCoachSearchQueryVersion((v) => v + 1);
+    setCoachOpen(false);
+    setSearchOpen(true);
+  }
 
   const deck = decks.find((d) => d.id === id);
 
@@ -176,7 +187,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <SearchTab deck={deck} />
+              <SearchTab deck={deck} initialQuery={coachSearchQuery} initialQueryVersion={coachSearchQueryVersion} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -198,7 +209,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <CoachTab deck={deck} model={coachModel} />
+              <CoachTab deck={deck} model={coachModel} onOpenSearch={handleOpenSearchFromCoach} />
             </motion.div>
           )}
         </AnimatePresence>

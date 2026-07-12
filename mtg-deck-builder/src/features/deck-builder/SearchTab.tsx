@@ -47,6 +47,11 @@ function saveRecent(list: string[]) {
 
 interface SearchTabProps {
   deck: Deck;
+  /** Pre-fills and immediately runs a search (e.g. from a Coach "ver N cartas
+   *  na busca" link). `initialQueryVersion` should bump on every request so
+   *  clicking the same suggestion twice in a row still re-triggers. */
+  initialQuery?: string;
+  initialQueryVersion?: number;
 }
 
 // Scryfall site parity: same ordering (name A–Z) and same page size (60),
@@ -327,7 +332,7 @@ function MinMaxRow({
 
 /* ---------- Main component ---------- */
 
-export function SearchTab({ deck }: SearchTabProps) {
+export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTabProps) {
   const { addCard, removeCard } = useDeckStore();
 
   const [searchText, setSearchText] = React.useState('');
@@ -357,6 +362,14 @@ export function SearchTab({ deck }: SearchTabProps) {
       cancelled = true;
     };
   }, []);
+
+  React.useEffect(() => {
+    if (!initialQuery) return;
+    setSearchText(initialQuery);
+    setFilters(EMPTY_FILTERS);
+    triggerSearch(initialQuery, EMPTY_FILTERS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQueryVersion]);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsScrollRef = React.useRef<HTMLDivElement>(null);
