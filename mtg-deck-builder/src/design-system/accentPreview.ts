@@ -17,6 +17,7 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
   { id: 'yellow-neon', label: 'Amarelo neon', accent: '#F5F53C' },
   { id: 'yellow-pastel', label: 'Amarelo pastel', accent: '#F0D98C' },
+  { id: 'lilac', label: 'Lilás', accent: '#C8A2C8' },
 ];
 
 const STORAGE_KEY = 'accent-preview';
