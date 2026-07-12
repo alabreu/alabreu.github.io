@@ -115,28 +115,33 @@ body {
   }
 }
 
-/* "special" button variant — a slow-moving mesh of accent-color blobs */
+/* "special" button variant — a large, high-contrast pastel-to-neon band
+   that slowly pans behind the button, like a big surface drifting past
+   a small window. */
 @keyframes special-mesh-move {
-  0%, 100% {
-    background-position: 15% 20%, 85% 15%, 50% 90%;
+  0% {
+    background-position: 0% 15%;
   }
-  33% {
-    background-position: 75% 75%, 20% 60%, 85% 20%;
+  50% {
+    background-position: 100% 85%;
   }
-  66% {
-    background-position: 30% 85%, 70% 25%, 15% 55%;
+  100% {
+    background-position: 0% 15%;
   }
 }
 
 .btn-special-mesh {
   background-color: var(--accent);
-  background-image:
-    radial-gradient(circle, color-mix(in oklch, var(--accent) 28%, white 72%) 0%, transparent 68%),
-    radial-gradient(circle, color-mix(in oklch, var(--accent) 92%, black 35%) 0%, transparent 68%),
-    radial-gradient(circle, var(--accent-hover) 0%, transparent 70%);
-  background-size: 150% 150%, 150% 150%, 190% 190%;
-  background-repeat: no-repeat;
-  animation: special-mesh-move 9s ease-in-out infinite;
+  background-image: linear-gradient(
+    120deg,
+    color-mix(in oklch, var(--accent) 10%, white 90%) 0%,
+    color-mix(in oklch, var(--accent) 45%, white 55%) 22%,
+    var(--accent) 45%,
+    color-mix(in oklch, var(--accent) 92%, black 42%) 68%,
+    color-mix(in oklch, var(--accent) 10%, white 90%) 100%
+  );
+  background-size: 260% 260%;
+  animation: special-mesh-move 16s ease-in-out infinite;
 }
 
 .skeleton-shimmer {
