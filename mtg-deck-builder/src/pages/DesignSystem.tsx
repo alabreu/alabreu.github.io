@@ -390,10 +390,10 @@ export default function DesignSystem() {
               disabled
               value="Disabled"
             />
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Input placeholder="SM" size="sm" />
-              <Input placeholder="MD" size="md" />
-              <Input placeholder="LG" size="lg" />
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <Input placeholder="SM" size="sm" fullWidth={false} />
+              <Input placeholder="MD" size="md" fullWidth={false} />
+              <Input placeholder="LG" size="lg" fullWidth={false} />
             </div>
           </div>
         </Section>
