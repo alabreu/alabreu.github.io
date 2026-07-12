@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Star, Zap, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, Star, Zap, AlertTriangle, Info, Check, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../design-system/components/Button';
 import { Badge } from '../design-system/components/Badge';
@@ -9,6 +9,109 @@ import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaSymbol, ManaGroup } from '../design-system/components/ManaSymbol';
 import { Skeleton, SkeletonCard, SkeletonText } from '../design-system/components/Skeleton';
 import { ManaColor } from '../types';
+import {
+  ACCENT_PRESETS,
+  applyAccent,
+  saveAccentPreview,
+  clearAccentPreview,
+  getSavedAccentPreview,
+} from '../design-system/accentPreview';
+
+const DEFAULT_GOLD = '#c9a84c';
+
+function AccentPicker() {
+  const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview());
+
+  function pick(hex: string) {
+    applyAccent(hex);
+    saveAccentPreview(hex);
+    setActive(hex);
+  }
+
+  function reset() {
+    clearAccentPreview();
+    setActive(null);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        Troca a cor de destaque (--accent) no app inteiro em tempo real, pra testar antes de decidir.
+        Fica salvo no seu navegador até você resetar.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+        {ACCENT_PRESETS.map((p) => {
+          const isActive = active === p.accent;
+          return (
+            <button
+              key={p.id}
+              onClick={() => pick(p.accent)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 4px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: p.accent,
+                  border: isActive ? '2px solid var(--text-primary)' : '1px solid var(--border-subtle)',
+                  boxShadow: isActive ? '0 0 0 3px var(--bg-base), 0 0 0 4px var(--text-primary)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {isActive && <Check size={16} color="#0f0f0f" strokeWidth={3} />}
+              </div>
+              <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.2 }}>
+                {p.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+        <Button variant="secondary" size="sm" leftIcon={<RotateCcw size={13} />} onClick={reset} disabled={!active}>
+          Restaurar padrão (dourado)
+        </Button>
+        <div
+          style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            backgroundColor: DEFAULT_GOLD,
+            border: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+          }}
+        />
+      </div>
+
+      {/* Live sample using the real button/badge components, so the pick
+          reads on actual UI, not just a flat swatch. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+        <Button variant="primary" size="sm">
+          Botão primário
+        </Button>
+        <Badge variant="accent" size="sm">
+          Badge accent
+        </Badge>
+      </div>
+    </div>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -111,6 +214,11 @@ export default function DesignSystem() {
       </header>
 
       <main style={{ padding: '24px 16px', width: '100%', boxSizing: 'border-box' }}>
+        {/* ── Accent color picker ── */}
+        <Section title="Accent Color — Testar">
+          <AccentPicker />
+        </Section>
+
         {/* ── Colors ── */}
         <Section title="Colors — Backgrounds">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
