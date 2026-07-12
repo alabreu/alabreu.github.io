@@ -16,11 +16,12 @@ export interface ModelOption {
 }
 
 export const MODELS: ModelOption[] = [
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Muito capaz' },
-  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Raciocínio avançado' },
-  { id: 'google/gemma-3-27b-it:free', label: 'Gemma 3 27B', provider: 'Google', note: 'Rápido e capaz' },
-  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Raciocínio passo a passo' },
-  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Leve e rápido' },
+  { id: 'google/gemini-2.0-flash-001', label: 'Gemini 2.0 Flash', provider: 'Google', note: 'Pago (barato) · sem fila de sobrecarga' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Grátis · pode ficar sobrecarregado' },
+  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Grátis · raciocínio avançado' },
+  { id: 'google/gemma-3-27b-it:free', label: 'Gemma 3 27B', provider: 'Google', note: 'Grátis · rápido e capaz' },
+  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Grátis · raciocínio passo a passo' },
+  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Grátis · leve e rápido' },
 ];
 
 export const MODEL_KEY = 'openrouter-model';
@@ -137,8 +138,6 @@ export function ModelPicker({
               <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
                 {m.provider}
                 {m.note ? ` · ${m.note}` : ''}
-                {' · '}
-                <span style={{ color: 'var(--accent)', fontWeight: 500 }}>Grátis</span>
               </p>
             </div>
             {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
