@@ -115,6 +115,30 @@ body {
   }
 }
 
+/* "special" button variant — a slow-moving mesh of accent-color blobs */
+@keyframes special-mesh-move {
+  0%, 100% {
+    background-position: 15% 20%, 85% 15%, 50% 90%;
+  }
+  33% {
+    background-position: 75% 75%, 20% 60%, 85% 20%;
+  }
+  66% {
+    background-position: 30% 85%, 70% 25%, 15% 55%;
+  }
+}
+
+.btn-special-mesh {
+  background-color: var(--accent);
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, white 45%) 0%, transparent 60%),
+    radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, black 45%) 0%, transparent 60%),
+    radial-gradient(circle, var(--accent-hover) 0%, transparent 65%);
+  background-size: 180% 180%, 180% 180%, 220% 220%;
+  background-repeat: no-repeat;
+  animation: special-mesh-move 9s ease-in-out infinite;
+}
+
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,

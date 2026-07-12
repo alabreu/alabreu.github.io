@@ -239,12 +239,12 @@ export default function DeckBuilder() {
           {/* Coach button */}
           <button
             onClick={() => setCoachOpen(true)}
+            className="btn-special-mesh"
             style={{
               width: '52px',
               height: '52px',
               flexShrink: 0,
               borderRadius: '50%',
-              backgroundColor: 'var(--accent)',
               border: '1px solid transparent',
               boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
               display: 'flex',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'white';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'white' | 'special';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -46,6 +46,10 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     color: '#0f0f0f',
     border: '1px solid transparent',
   },
+  special: {
+    color: '#0f0f0f',
+    border: '1px solid transparent',
+  },
 };
 
 const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
@@ -65,6 +69,9 @@ const variantHoverStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   white: {
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
+  },
+  special: {
+    filter: 'brightness(1.08)',
   },
 };
 
@@ -144,7 +151,7 @@ export function Button({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchEnd={() => setIsHovered(false)}
-      className={className}
+      className={variant === 'special' ? `btn-special-mesh${className ? ` ${className}` : ''}` : className}
       aria-label={ariaLabel}
     >
       {isLoading ? (
