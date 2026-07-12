@@ -25,13 +25,32 @@ export function AuthGate() {
   const [mode, setMode] = React.useState<Mode>('signin');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [confirmSent, setConfirmSent] = React.useState(false);
   const [resetSent, setResetSent] = React.useState(false);
 
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setConfirmPassword('');
+  }
+
   async function handleSubmit() {
     if (!supabase || !email.trim() || !password || sending) return;
+
+    if (mode === 'signup') {
+      if (password.length < 6) {
+        setError('A senha precisa ter pelo menos 6 caracteres.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('As senhas não coincidem.');
+        return;
+      }
+    }
+
     setSending(true);
     setError(null);
 
@@ -63,7 +82,11 @@ export function AuthGate() {
   }
 
   async function handleForgotPassword() {
-    if (!supabase || !email.trim() || sending) return;
+    if (!supabase || sending) return;
+    if (!email.trim()) {
+      setError('Digite seu e-mail primeiro.');
+      return;
+    }
     setSending(true);
     setError(null);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -152,16 +175,31 @@ export function AuthGate() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && email.trim() && password) handleSubmit(); }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            if (mode === 'signup') return; // let focus move to "confirmar senha" instead
+            if (email.trim() && password) handleSubmit();
+          }}
           type="password"
           autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           fullWidth
         />
+        {mode === 'signup' && (
+          <Input
+            placeholder="Confirmar senha"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && email.trim() && password && confirmPassword) handleSubmit(); }}
+            type="password"
+            autoComplete="new-password"
+            fullWidth
+          />
+        )}
         <Button
           variant="primary"
           size="md"
           fullWidth
-          disabled={!email.trim() || !password || sending}
+          disabled={!email.trim() || !password || (mode === 'signup' && !confirmPassword) || sending}
           isLoading={sending}
           onClick={handleSubmit}
         >
@@ -171,7 +209,7 @@ export function AuthGate() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
           <button
-            onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); }}
+            onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
             style={linkButtonStyle}
           >
             {mode === 'signin' ? 'Criar conta' : 'Já tenho conta'}

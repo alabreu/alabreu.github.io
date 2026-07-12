@@ -5,6 +5,11 @@ import { supabase } from './supabase';
 export function useSupabaseSession() {
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
+  // Set when the user arrives via a "reset password" email link. Supabase
+  // signals this as a distinct auth event (not just a normal sign-in), so a
+  // "set new password" screen can gate the app instead of silently treating
+  // it like a regular login.
+  const [isPasswordRecovery, setIsPasswordRecovery] = React.useState(false);
 
   React.useEffect(() => {
     if (!supabase) {
@@ -15,8 +20,9 @@ export function useSupabaseSession() {
       setSession(data.session);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
     });
 
     // The magic link always opens in the device's default browser, never
@@ -39,5 +45,5 @@ export function useSupabaseSession() {
     };
   }, []);
 
-  return { session, loading };
+  return { session, loading, isPasswordRecovery, clearPasswordRecovery: () => setIsPasswordRecovery(false) };
 }
