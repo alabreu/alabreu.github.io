@@ -32,9 +32,9 @@ const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
     border: '1px solid var(--accent-border)',
   },
   success: {
-    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    backgroundColor: 'rgba(47, 174, 121, 0.1)',
     color: 'var(--success)',
-    border: '1px solid rgba(74, 222, 128, 0.25)',
+    border: '1px solid rgba(47, 174, 121, 0.25)',
   },
   warning: {
     backgroundColor: 'rgba(251, 191, 36, 0.1)',

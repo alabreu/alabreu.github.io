@@ -167,8 +167,8 @@ export function ImportCardsSheet({ isOpen, onClose, deckId }: ImportCardsSheetPr
                 alignItems: 'center',
                 gap: '14px',
                 padding: '16px',
-                backgroundColor: 'rgba(74, 222, 128, 0.07)',
-                border: '1px solid rgba(74, 222, 128, 0.18)',
+                backgroundColor: 'rgba(47, 174, 121, 0.07)',
+                border: '1px solid rgba(47, 174, 121, 0.18)',
                 borderRadius: 'var(--radius-lg)',
               }}
             >

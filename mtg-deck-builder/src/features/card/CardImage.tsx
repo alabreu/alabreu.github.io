@@ -28,7 +28,10 @@ export function CardImage({
 }: CardImageProps) {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
-  const ringColor = highlightError ? 'var(--error)' : highlightInDeck ? 'var(--accent)' : null;
+  // "Already in deck" reads as a success state, not a brand/accent one — it
+  // shouldn't shift color every time someone tweaks the accent (see the
+  // Design System accent picker).
+  const ringColor = highlightError ? 'var(--error)' : highlightInDeck ? 'var(--success)' : null;
 
   if (!imageUrl || error) {
     return (
