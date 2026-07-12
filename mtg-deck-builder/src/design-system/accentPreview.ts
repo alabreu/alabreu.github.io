@@ -11,13 +11,11 @@ export interface AccentPreset {
 // of a solid accent button) — the WCAG AA threshold for normal text — so
 // swapping the accent in doesn't quietly break legibility.
 export const ACCENT_PRESETS: AccentPreset[] = [
-  { id: 'orange', label: 'Laranja', accent: '#E8823A' },
-  { id: 'orange-pastel', label: 'Laranja pastel', accent: '#E8B088' },
-  { id: 'neon-green', label: 'Verde neon', accent: '#3FF566' },
+  { id: 'orange', label: 'Laranja', accent: '#EE9A5C' },
+  { id: 'orange-pastel', label: 'Marrom pastel', accent: '#E8B088' },
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
-  { id: 'yellow-neon', label: 'Amarelo neon', accent: '#F5F53C' },
-  { id: 'yellow-pastel', label: 'Amarelo pastel', accent: '#F0D98C' },
   { id: 'lilac', label: 'Lilás', accent: '#C8A2C8' },
+  { id: 'lilac-bright', label: 'Lilás aceso', accent: '#D584E0' },
 ];
 
 const STORAGE_KEY = 'accent-preview';
