@@ -239,20 +239,20 @@ export default function DeckBuilder() {
           {/* Coach button */}
           <button
             onClick={() => setCoachOpen(true)}
-            className="btn-special-mesh"
             style={{
               width: '52px',
               height: '52px',
               flexShrink: 0,
               borderRadius: '50%',
-              border: '1px solid transparent',
+              backgroundColor: 'var(--surface-2)',
+              border: '1px solid var(--border-default)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent',
-              color: '#0f0f0f',
+              color: 'var(--text-primary)',
             }}
           >
             <WizardHatIcon size={18} />
