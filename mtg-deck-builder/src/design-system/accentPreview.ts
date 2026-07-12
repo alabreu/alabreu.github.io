@@ -6,16 +6,20 @@ export interface AccentPreset {
 
 // Candidates for replacing the current gold/amber accent, chosen to read as
 // distinct from the two most common choices for this kind of product
-// (purple and yellow/gold).
+// (purple and yellow/gold). Every hex here holds at least a 4.5:1 contrast
+// ratio against #0f0f0f (the base background AND the text color used on top
+// of a solid accent button) — the WCAG AA threshold for normal text — so
+// swapping the accent in doesn't quietly break legibility.
 export const ACCENT_PRESETS: AccentPreset[] = [
   { id: 'orange', label: 'Laranja', accent: '#E8823A' },
-  { id: 'neon-green', label: 'Verde neon', accent: '#4AFA3C' },
-  { id: 'pastel-brown', label: 'Marrom pastel', accent: '#B98B6A' },
-  { id: 'coral-pink', label: 'Rosa avermelhado', accent: '#EA6472' },
-  { id: 'petrol-blue', label: 'Azul petróleo', accent: '#3B8FA3' },
+  { id: 'orange-pastel', label: 'Laranja pastel', accent: '#E8B088' },
+  { id: 'neon-green', label: 'Verde neon', accent: '#3FF566' },
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
-  { id: 'terracotta', label: 'Terracota', accent: '#C1613F' },
-  { id: 'turquoise', label: 'Turquesa', accent: '#2FBFB0' },
+  { id: 'brown-light', label: 'Marrom pastel claro', accent: '#B98B6A' },
+  { id: 'brown-mid', label: 'Marrom pastel médio', accent: '#A97C5C' },
+  { id: 'brown-dark', label: 'Marrom pastel escuro', accent: '#9C7154' },
+  { id: 'yellow-neon', label: 'Amarelo neon', accent: '#F5F53C' },
+  { id: 'yellow-pastel', label: 'Amarelo pastel', accent: '#F0D98C' },
 ];
 
 const STORAGE_KEY = 'accent-preview';

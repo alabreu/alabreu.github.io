@@ -40,7 +40,7 @@ function AccentPicker() {
         Fica salvo no seu navegador até você resetar.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
         {ACCENT_PRESETS.map((p) => {
           const isActive = active === p.accent;
           return (
