@@ -122,21 +122,21 @@ body {
 
 .home-ember-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 55vh;
+  top: -25vh;
+  left: -15%;
+  right: -15%;
+  height: 80vh;
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 65% 45% at center, rgba(122, 42, 24, 0.38) 0%, transparent 72%),
-    radial-gradient(ellipse 55% 42% at center, rgba(148, 76, 22, 0.3) 0%, transparent 72%),
-    radial-gradient(ellipse 60% 46% at center, rgba(80, 80, 82, 0.26) 0%, transparent 72%);
-  background-size: 140% 140%, 130% 130%, 150% 150%;
+    radial-gradient(ellipse 60% 55% at 35% 32%, rgba(122, 42, 24, 0.46) 0%, transparent 68%),
+    radial-gradient(ellipse 55% 50% at 65% 26%, rgba(148, 76, 22, 0.36) 0%, transparent 68%),
+    radial-gradient(ellipse 58% 52% at 50% 46%, rgba(84, 84, 86, 0.3) 0%, transparent 70%);
+  background-size: 130% 130%, 125% 125%, 135% 135%;
   background-repeat: no-repeat;
   animation: ember-mesh-move 28s ease-in-out infinite;
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 92%);
-  mask-image: linear-gradient(to bottom, black 0%, black 25%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
 }
 
 .home-noise-overlay {
@@ -144,10 +144,10 @@ body {
   inset: 0;
   z-index: 5;
   pointer-events: none;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  background-size: 160px 160px;
+  opacity: 0.09;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' result='t'/><feColorMatrix in='t' type='matrix' values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
 }
 
 /* Skeleton shimmer animation */
