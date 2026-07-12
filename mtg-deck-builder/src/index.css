@@ -105,18 +105,30 @@ body {
   color: var(--accent);
 }
 
-/* Home background — a slow, subtle "embers" mesh (dark red/orange/gray)
-   concentrated near the top, fading into the base background, plus a
-   soft grain layer over the whole page for texture. */
+/* Home background — a lively "embers/flame" mesh (dark red/orange/gray)
+   concentrated near the top, fading into the base background via a plain
+   layered gradient (not a mask — mask-image rendered a hard seam on iOS
+   Safari), plus a soft grain layer over the whole page for texture. */
 @keyframes ember-mesh-move {
   0% {
-    background-position: 20% -15%, 75% 0%, 45% 10%;
+    background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
+  }
+  25% {
+    background-position: 0% 0%, 58% 12%, 40% 34%, 66% 28%;
+    background-size: 100% 100%, 140% 132%, 130% 112%, 118% 136%;
   }
   50% {
-    background-position: 60% 5%, 25% -10%, 80% 15%;
+    background-position: 0% 0%, 74% 38%, 22% 15%, 50% 52%;
+    background-size: 100% 100%, 115% 138%, 136% 124%, 132% 114%;
+  }
+  75% {
+    background-position: 0% 0%, 34% 44%, 62% 26%, 26% 20%;
+    background-size: 100% 100%, 132% 116%, 122% 134%, 116% 130%;
   }
   100% {
-    background-position: 20% -15%, 75% 0%, 45% 10%;
+    background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
   }
 }
 
@@ -129,14 +141,14 @@ body {
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 60% 55% at 35% 32%, rgba(122, 42, 24, 0.46) 0%, transparent 68%),
-    radial-gradient(ellipse 55% 50% at 65% 26%, rgba(148, 76, 22, 0.36) 0%, transparent 68%),
-    radial-gradient(ellipse 58% 52% at 50% 46%, rgba(84, 84, 86, 0.3) 0%, transparent 70%);
-  background-size: 130% 130%, 125% 125%, 135% 135%;
+    linear-gradient(to bottom, transparent 0%, transparent 50%, var(--bg-base) 90%),
+    radial-gradient(ellipse 34% 30% at center, rgba(150, 48, 24, 0.62) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 27% at center, rgba(180, 94, 22, 0.52) 0%, transparent 60%),
+    radial-gradient(ellipse 32% 29% at center, rgba(96, 96, 98, 0.36) 0%, transparent 62%);
   background-repeat: no-repeat;
-  animation: ember-mesh-move 28s ease-in-out infinite;
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
+  background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
+  animation: ember-mesh-move 13s ease-in-out infinite;
 }
 
 .home-noise-overlay {
