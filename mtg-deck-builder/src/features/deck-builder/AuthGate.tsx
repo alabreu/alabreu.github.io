@@ -1,14 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Mail } from 'lucide-react';
+import { isAuthRetryableFetchError, type AuthError } from '@supabase/supabase-js';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { supabase } from '../../lib/supabase';
 
 type Mode = 'signin' | 'signup';
 
-function translateAuthError(message: string): string {
-  const m = message.toLowerCase();
+function translateAuthError(err: AuthError): string {
+  // Supabase's client only wraps 500-range responses in a generic
+  // "retryable" error without reading the body, so err.message is
+  // useless here (often literally "{}") — this is almost always a
+  // transient backend/e-mail-delivery hiccup, not something the user did.
+  if (isAuthRetryableFetchError(err)) {
+    return 'Erro temporário no servidor. Tente novamente em alguns segundos.';
+  }
+  const m = err.message.toLowerCase();
   if (m.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
   if (m.includes('user already registered') || m.includes('already been registered')) {
     return 'Esse e-mail já tem conta — tente entrar em vez de criar uma nova.';
@@ -16,8 +24,23 @@ function translateAuthError(message: string): string {
   if (m.includes('password should be at least') || m.includes('should contain at least')) {
     return 'A senha precisa ter pelo menos 6 caracteres.';
   }
+  if (m.includes('pwned') || m.includes('easy to guess') || m.includes('weak')) {
+    return 'Essa senha é muito comum/fácil de adivinhar. Escolha outra.';
+  }
   if (m.includes('unable to validate email') || m.includes('invalid email')) return 'E-mail inválido.';
   if (m.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar (verifique sua caixa de entrada).';
+  if (m.includes('error sending') || m.includes('confirmation email')) {
+    return 'Não conseguimos enviar o e-mail agora. Tente novamente em alguns minutos.';
+  }
+  if (m.includes('security purposes') || m.includes('rate limit') || m.includes('too many requests')) {
+    return 'Muitas tentativas seguidas — aguarde um minuto e tente de novo.';
+  }
+  if (m.includes('signups not allowed') || m.includes('signup is disabled')) {
+    return 'Cadastro de novas contas está temporariamente indisponível.';
+  }
+  if (m.includes('failed to fetch') || m.includes('network')) {
+    return 'Falha de conexão. Verifique sua internet e tente de novo.';
+  }
   return 'Algo deu errado. Tente novamente.';
 }
 
@@ -60,7 +83,10 @@ export function AuthGate() {
         password,
       });
       setSending(false);
-      if (err) setError(translateAuthError(err.message));
+      if (err) {
+        console.error('[AuthGate] signIn failed:', err.status, err.message);
+        setError(translateAuthError(err));
+      }
       return;
     }
 
@@ -73,7 +99,8 @@ export function AuthGate() {
     });
     setSending(false);
     if (err) {
-      setError(translateAuthError(err.message));
+      console.error('[AuthGate] signUp failed:', err.status, err.message);
+      setError(translateAuthError(err));
       return;
     }
     // If email confirmation is required in the Supabase project settings,
@@ -94,7 +121,8 @@ export function AuthGate() {
     });
     setSending(false);
     if (err) {
-      setError(translateAuthError(err.message));
+      console.error('[AuthGate] resetPasswordForEmail failed:', err.status, err.message);
+      setError(translateAuthError(err));
       return;
     }
     setResetSent(true);
