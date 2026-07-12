@@ -39,6 +39,7 @@ export default function DeckBuilder() {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [coachSearchQuery, setCoachSearchQuery] = React.useState('');
   const [coachSearchQueryVersion, setCoachSearchQueryVersion] = React.useState(0);
+  const [searchOpenedFromCoach, setSearchOpenedFromCoach] = React.useState(false);
   const { session } = useSupabaseSession();
 
   // Coach's "ver N cartas na busca" link (10+ cards mentioned in one
@@ -47,6 +48,7 @@ export default function DeckBuilder() {
     setCoachSearchQuery(query);
     setCoachSearchQueryVersion((v) => v + 1);
     setCoachOpen(false);
+    setSearchOpenedFromCoach(true);
     setSearchOpen(true);
   }
 
@@ -132,7 +134,11 @@ export default function DeckBuilder() {
       <button
         style={{ ...floatingBtnStyle, left: '16px' }}
         onClick={() => {
-          if (searchOpen) { setSearchOpen(false); return; }
+          if (searchOpen) {
+            setSearchOpen(false);
+            if (searchOpenedFromCoach) { setSearchOpenedFromCoach(false); setCoachOpen(true); }
+            return;
+          }
           if (coachOpen) { setCoachOpen(false); return; }
           navigate('/');
         }}
@@ -238,17 +244,15 @@ export default function DeckBuilder() {
               height: '52px',
               flexShrink: 0,
               borderRadius: '50%',
-              backgroundColor: 'rgba(18, 18, 20, 0.92)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              backgroundColor: 'var(--accent)',
+              border: '1px solid transparent',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent',
-              color: 'rgba(255,255,255,0.7)',
+              color: '#0f0f0f',
             }}
           >
             <WizardHatIcon size={18} />
@@ -256,7 +260,7 @@ export default function DeckBuilder() {
 
           {/* Search pill */}
           <button
-            onClick={() => setSearchOpen(true)}
+            onClick={() => { setSearchOpenedFromCoach(false); setSearchOpen(true); }}
             style={{
               flex: 1,
               borderRadius: '999px',
