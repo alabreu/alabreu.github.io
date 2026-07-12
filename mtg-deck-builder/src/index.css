@@ -111,24 +111,24 @@ body {
    Safari), plus a soft grain layer over the whole page for texture. */
 @keyframes ember-mesh-move {
   0% {
-    background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
+    background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
   }
   25% {
-    background-position: 0% 0%, 58% 12%, 40% 34%, 66% 28%;
-    background-size: 100% 100%, 140% 132%, 130% 112%, 118% 136%;
+    background-position: 0% 0%, 55% -80%, 58% 12%, 40% 34%, 66% 28%;
+    background-size: 100% 100%, 860% 500%, 140% 132%, 130% 112%, 118% 136%;
   }
   50% {
-    background-position: 0% 0%, 74% 38%, 22% 15%, 50% 52%;
-    background-size: 100% 100%, 115% 138%, 136% 124%, 132% 114%;
+    background-position: 0% 0%, 40% -90%, 74% 38%, 22% 15%, 50% 52%;
+    background-size: 100% 100%, 920% 470%, 115% 138%, 136% 124%, 132% 114%;
   }
   75% {
-    background-position: 0% 0%, 34% 44%, 62% 26%, 26% 20%;
-    background-size: 100% 100%, 132% 116%, 122% 134%, 116% 130%;
+    background-position: 0% 0%, 50% -82%, 34% 44%, 62% 26%, 26% 20%;
+    background-size: 100% 100%, 880% 490%, 132% 116%, 122% 134%, 116% 130%;
   }
   100% {
-    background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
-    background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
+    background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
+    background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
   }
 }
 
@@ -142,12 +142,13 @@ body {
   pointer-events: none;
   background-image:
     linear-gradient(to bottom, transparent 0%, transparent 50%, var(--bg-base) 90%),
-    radial-gradient(ellipse 34% 30% at center, rgba(150, 48, 24, 0.62) 0%, transparent 60%),
-    radial-gradient(ellipse 30% 27% at center, rgba(180, 94, 22, 0.52) 0%, transparent 60%),
-    radial-gradient(ellipse 32% 29% at center, rgba(96, 96, 98, 0.36) 0%, transparent 62%);
+    radial-gradient(ellipse 85% 85% at center, rgba(140, 62, 24, 0.85) 0%, transparent 80%),
+    radial-gradient(ellipse 46% 40% at center, rgba(150, 48, 24, 0.28) 0%, transparent 78%),
+    radial-gradient(ellipse 42% 37% at center, rgba(180, 94, 22, 0.22) 0%, transparent 78%),
+    radial-gradient(ellipse 44% 39% at center, rgba(96, 96, 98, 0.16) 0%, transparent 80%);
   background-repeat: no-repeat;
-  background-position: 0% 0%, 30% 25%, 68% 20%, 48% 42%;
-  background-size: 100% 100%, 125% 118%, 120% 128%, 130% 122%;
+  background-position: 0% 0%, 45% -85%, 30% 25%, 68% 20%, 48% 42%;
+  background-size: 100% 100%, 900% 480%, 125% 118%, 120% 128%, 130% 122%;
   animation: ember-mesh-move 13s ease-in-out infinite;
 }
 
