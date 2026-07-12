@@ -131,10 +131,10 @@ body {
 .btn-special-mesh {
   background-color: var(--accent);
   background-image:
-    radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, white 45%) 0%, transparent 60%),
-    radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, black 45%) 0%, transparent 60%),
-    radial-gradient(circle, var(--accent-hover) 0%, transparent 65%);
-  background-size: 180% 180%, 180% 180%, 220% 220%;
+    radial-gradient(circle, color-mix(in oklch, var(--accent) 28%, white 72%) 0%, transparent 68%),
+    radial-gradient(circle, color-mix(in oklch, var(--accent) 92%, black 35%) 0%, transparent 68%),
+    radial-gradient(circle, var(--accent-hover) 0%, transparent 70%);
+  background-size: 150% 150%, 150% 150%, 190% 190%;
   background-repeat: no-repeat;
   animation: special-mesh-move 9s ease-in-out infinite;
 }
