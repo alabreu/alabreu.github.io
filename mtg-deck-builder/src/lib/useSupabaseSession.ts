@@ -16,22 +16,23 @@ export function useSupabaseSession() {
       setLoading(false);
       return;
     }
-    // Password-recovery links use a `token_hash` + `type=recovery` query
-    // param (set via the "Reset Password" email template) instead of the
-    // default PKCE `?code=` link. PKCE's code exchange depends on a
-    // `code_verifier` stashed in localStorage by the SAME browser context
-    // that called resetPasswordForEmail() — but on iOS, that's the installed
-    // PWA, while the email link always opens in Safari, a separate storage
-    // context. verifyOtp() has no such dependency: the token_hash alone is
-    // enough to complete the exchange from any context.
+    // Password-recovery and signup-confirmation links use a `token_hash` +
+    // `type` query param (set via the corresponding email templates)
+    // instead of the default PKCE `?code=` link. PKCE's code exchange
+    // depends on a `code_verifier` stashed in localStorage by the SAME
+    // browser context that called resetPasswordForEmail()/signUp() — but on
+    // iOS, that's the installed PWA, while the email link always opens in
+    // Safari, a separate storage context. verifyOtp() has no such
+    // dependency: the token_hash alone is enough to complete the exchange
+    // from any context.
     const url = new URL(window.location.href);
     const tokenHash = url.searchParams.get('token_hash');
     const otpType = url.searchParams.get('type');
-    if (tokenHash && otpType === 'recovery') {
+    if (tokenHash && (otpType === 'recovery' || otpType === 'signup' || otpType === 'email')) {
       url.searchParams.delete('token_hash');
       url.searchParams.delete('type');
       window.history.replaceState(window.history.state, '', url.toString());
-      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
     }
 
     supabase.auth.getSession().then(({ data }) => {
