@@ -345,10 +345,10 @@ export default function DeckBuilder() {
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Modelo do Coach
+                Modelo do Tutor
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {MODELS.find((m) => m.id === coachModel)?.label ?? 'Gemini 2.0 Flash'}
+                {MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
               </p>
             </div>
           </button>
@@ -544,10 +544,10 @@ export default function DeckBuilder() {
       </BottomSheet>
 
       {/* Coach model sheet */}
-      <BottomSheet isOpen={coachModelOpen} onClose={() => setCoachModelOpen(false)} title="Modelo do Coach">
+      <BottomSheet isOpen={coachModelOpen} onClose={() => setCoachModelOpen(false)} title="Modelo do Tutor">
         <div style={{ padding: '8px 20px 32px' }}>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-            Todos os modelos são gratuitos via OpenRouter.
+            Modelos disponíveis via OpenRouter.
           </p>
           <ModelPicker
             selected={coachModel}
@@ -580,7 +580,7 @@ export default function DeckBuilder() {
             }}
           >
             <Trash2 size={14} />
-            Limpar histórico do Coach
+            Limpar histórico do Tutor
           </button>
 
           {supabaseConfigured && session && (

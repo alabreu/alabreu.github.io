@@ -156,7 +156,7 @@ export function AuthGate() {
           {mode === 'signin' ? 'Entrar' : 'Criar conta'}
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-          Sincroniza seus decks entre dispositivos e libera o Coach.
+          Sincroniza seus decks entre dispositivos e libera o Tutor.
         </p>
       </div>
 

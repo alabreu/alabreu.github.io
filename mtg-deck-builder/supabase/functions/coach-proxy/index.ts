@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return jsonError(405, 'method_not_allowed', 'Method not allowed.');
 
   const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!jwt) return jsonError(401, 'unauthorized', 'Faça login para usar o Coach.');
+  if (!jwt) return jsonError(401, 'unauthorized', 'Faça login para usar o Tutor.');
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
     return jsonError(
       429,
       'rate_limited',
-      `Limite diário do Coach atingido (${DAILY_LIMIT} mensagens). Volte amanhã!`
+      `Limite diário do Tutor atingido (${DAILY_LIMIT} mensagens). Volte amanhã!`
     );
   }
   await admin
@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       'HTTP-Referer': 'https://alabreu.github.io',
-      'X-Title': 'Cobuilder Coach',
+      'X-Title': 'Cobuilder Tutor',
     },
     body: JSON.stringify({ model: body.model, stream: true, messages: body.messages }),
   });

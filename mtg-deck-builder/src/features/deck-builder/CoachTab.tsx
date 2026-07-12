@@ -150,7 +150,7 @@ function buildSystemPrompt(deck: Deck): string {
     deckList = deckList.slice(0, 2800) + '\n  ... (lista truncada)';
   }
 
-  return `Você é um Coach especialista em Magic: The Gathering, focado no formato Commander/EDH.
+  return `Você é o Tutor, um especialista em Magic: The Gathering, focado no formato Commander/EDH.
 
 Você domina:
 - Regras oficiais do Magic e interações complexas
@@ -268,7 +268,7 @@ function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
         style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
       >
         <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-          Configurar Coach IA
+          Configurar Tutor IA
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
           Insira sua chave da API do OpenRouter. Ela fica salva apenas no seu dispositivo.
@@ -290,7 +290,7 @@ function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
           fullWidth
         />
         <Button variant="primary" size="md" fullWidth disabled={!value.trim()} onClick={() => onSave(value.trim())}>
-          Ativar Coach
+          Ativar Tutor
         </Button>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
           Crie sua chave em openrouter.ai/keys · Modelo configurável no menu ···
@@ -592,7 +592,7 @@ export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${apiKey}`,
               'HTTP-Referer': window.location.origin,
-              'X-Title': 'MTG Deck Builder Coach',
+              'X-Title': 'MTG Deck Builder Tutor',
             },
             body: JSON.stringify({ model, stream: true, messages: chatMessages }),
           });
@@ -602,7 +602,7 @@ export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {
         try {
           const json = await res.json();
           if (json?.error?.code === 'rate_limited') {
-            friendly = json.error.message ?? 'Limite diário do Coach atingido. Volte amanhã.';
+            friendly = json.error.message ?? 'Limite diário do Tutor atingido. Volte amanhã.';
           } else {
             const raw: string = json?.error?.metadata?.raw ?? '';
             if (res.status === 429) {
@@ -731,7 +731,7 @@ export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {
               <Bot size={22} style={{ color: 'var(--accent)' }} />
             </div>
             <div>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Coach IA pronto</p>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Tutor IA pronto</p>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
                 Pergunte sobre cartas, sinergias, curva de mana ou como melhorar seu deck.
               </p>
