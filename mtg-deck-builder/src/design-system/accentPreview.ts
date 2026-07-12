@@ -14,6 +14,7 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   { id: 'orange', label: 'Laranja', accent: '#F1AB78' },
   { id: 'orange-pastel', label: 'Marrom pastel', accent: '#DBB295' },
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
+  { id: 'yellow-pastel', label: 'Amarelo pastel', accent: '#F0D98C' },
   { id: 'lilac', label: 'Lilás', accent: '#CE9CCE' },
   { id: 'lilac-bright', label: 'Lilás aceso', accent: '#D584E0' },
 ];
