@@ -1,3 +1,4 @@
+import React from 'react';
 import { ScryfallCard } from '../../types';
 import { hydrateCards } from './edhrec';
 
@@ -92,4 +93,23 @@ export function buildCardNameQuery(names: string[]): string {
     .slice(0, 40)
     .map((n) => `!"${n.replace(/"/g, '')}"`)
     .join(' or ');
+}
+
+/** Resolves a chat message's bolded card-name mentions once it finishes
+ *  streaming (never mid-stream, to avoid refetching on every token). */
+export function useResolvedCardMentions(content: string, active: boolean) {
+  const [resolved, setResolved] = React.useState<Map<string, ScryfallCard>>(new Map());
+  React.useEffect(() => {
+    if (!active) return;
+    const names = extractBoldNames(content);
+    if (names.length === 0) return;
+    let cancelled = false;
+    resolveCardMentions(names).then((map) => {
+      if (!cancelled) setResolved(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [content, active]);
+  return resolved;
 }

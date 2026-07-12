@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { ArrowUp, User, Key, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Components } from 'react-markdown';
 import { Deck, ScryfallCard } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
@@ -12,113 +11,8 @@ import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
 import { CardMentionRow } from './CoachCardPreviews';
-import { splitIntoParagraphs, extractBoldNames, resolveCardMentions } from './coachCardMentions';
-
-function childrenToText(children: React.ReactNode): string {
-  if (typeof children === 'string') return children;
-  if (typeof children === 'number') return String(children);
-  if (Array.isArray(children)) return children.map(childrenToText).join('');
-  if (React.isValidElement(children)) {
-    return childrenToText((children.props as { children?: React.ReactNode }).children);
-  }
-  return '';
-}
-
-const inlineCodeStyle: React.CSSProperties = {
-  fontFamily: 'ui-monospace, monospace',
-  fontSize: '12px',
-  backgroundColor: 'var(--surface-3)',
-  padding: '1px 4px',
-  borderRadius: '4px',
-};
-
-/** Coach messages format Scryfall query syntax as inline code (see the
- *  system prompt) — single-line code spans are made clickable, opening
- *  Search pre-filled with that exact query. Multi-line/fenced blocks are
- *  left as plain code. */
-function getMarkdownComponents(onOpenSearch: (query: string) => void): Components {
-  return {
-    p: ({ children }) => (
-      <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{children}</p>
-    ),
-  strong: ({ children }) => <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{children}</strong>,
-  em: ({ children }) => <em>{children}</em>,
-  h1: ({ children }) => (
-    <p style={{ margin: '12px 0 6px', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
-  ),
-  h2: ({ children }) => (
-    <p style={{ margin: '12px 0 6px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
-  ),
-  h3: ({ children }) => (
-    <p style={{ margin: '10px 0 4px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
-  ),
-  h4: ({ children }) => (
-    <p style={{ margin: '10px 0 4px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
-  ),
-  ul: ({ children }) => <ul style={{ margin: '4px 0 8px', paddingLeft: '18px', listStyle: 'disc' }}>{children}</ul>,
-  ol: ({ children }) => <ol style={{ margin: '4px 0 8px', paddingLeft: '18px', listStyle: 'decimal' }}>{children}</ol>,
-  li: ({ children }) => (
-    <li style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, marginBottom: '4px' }}>{children}</li>
-  ),
-  a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-      {children}
-    </a>
-  ),
-  code: ({ children }) => {
-    const text = childrenToText(children).trim();
-    const isClickableQuery = text.length > 0 && !text.includes('\n');
-    if (!isClickableQuery) {
-      return <code style={inlineCodeStyle}>{children}</code>;
-    }
-    return (
-      <code
-        onClick={() => onOpenSearch(text)}
-        title="Abrir na busca"
-        style={{
-          ...inlineCodeStyle,
-          cursor: 'pointer',
-          color: 'var(--accent)',
-          textDecoration: 'underline',
-          textDecorationStyle: 'dotted',
-          textUnderlineOffset: '2px',
-        }}
-      >
-        {children}
-      </code>
-    );
-  },
-  pre: ({ children }) => (
-    <pre
-      style={{
-        margin: '8px 0',
-        padding: '8px 10px',
-        backgroundColor: 'var(--surface-1)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-md)',
-        overflowX: 'auto',
-        fontSize: '12px',
-      }}
-    >
-      {children}
-    </pre>
-  ),
-  hr: () => <hr style={{ margin: '10px 0', border: 'none', borderTop: '1px solid var(--border-subtle)' }} />,
-  table: ({ children }) => (
-    <div style={{ overflowX: 'auto', margin: '8px 0' }}>
-      <table style={{ borderCollapse: 'collapse', fontSize: '12px', width: '100%' }}>{children}</table>
-    </div>
-  ),
-  th: ({ children }) => (
-    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)' }}>
-      {children}
-    </th>
-  ),
-    td: ({ children }) => (
-      <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{children}</td>
-    ),
-  };
-}
+import { splitIntoParagraphs, extractBoldNames, useResolvedCardMentions } from './coachCardMentions';
+import { getMarkdownComponents, TypingDots } from './coachMarkdown';
 
 export interface ModelOption {
   id: string;
@@ -152,7 +46,7 @@ interface Message {
   timestamp: number;
 }
 
-const API_KEY_KEY = 'openrouter-api-key';
+export const API_KEY_KEY = 'openrouter-api-key';
 export const MESSAGES_PREFIX = 'coach-messages-';
 
 function genId(): string {
@@ -263,7 +157,7 @@ export function ModelPicker({
   );
 }
 
-function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
+export function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
   const [value, setValue] = React.useState('');
 
   return (
@@ -334,40 +228,6 @@ function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
       </motion.div>
     </div>
   );
-}
-
-function TypingDots() {
-  return (
-    <div style={{ display: 'flex', gap: '4px', padding: '4px 2px', alignItems: 'center' }}>
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-          transition={{ duration: 1, repeat: Infinity, delay: i * 0.18 }}
-          style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent)' }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/** Resolves the Coach's bolded card-name mentions once a reply finishes
- *  streaming (never mid-stream, to avoid refetching on every token). */
-function useResolvedCardMentions(content: string, active: boolean) {
-  const [resolved, setResolved] = React.useState<Map<string, ScryfallCard>>(new Map());
-  React.useEffect(() => {
-    if (!active) return;
-    const names = extractBoldNames(content);
-    if (names.length === 0) return;
-    let cancelled = false;
-    resolveCardMentions(names).then((map) => {
-      if (!cancelled) setResolved(map);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [content, active]);
-  return resolved;
 }
 
 function MessageBubble({

@@ -1,6 +1,8 @@
 import { HashRouter as BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
+import ChooseNewDeckMethod from './pages/ChooseNewDeckMethod';
 import NewDeck from './pages/NewDeck';
+import TutorDeckChat from './pages/TutorDeckChat';
 import DeckBuilder from './pages/DeckBuilder';
 import DesignSystem from './pages/DesignSystem';
 import { UpdateToast } from './components/UpdateToast';
@@ -17,7 +19,9 @@ export default function App() {
       {isPasswordRecovery && <PasswordRecoveryGate onDone={clearPasswordRecovery} />}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/new-deck" element={<NewDeck />} />
+        <Route path="/new-deck" element={<ChooseNewDeckMethod />} />
+        <Route path="/new-deck/manual" element={<NewDeck />} />
+        <Route path="/new-deck/tutor" element={<TutorDeckChat />} />
         <Route path="/deck/:id" element={<DeckBuilder />} />
         <Route path="/design" element={<DesignSystem />} />
       </Routes>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Search, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { ScryfallCard } from '../types';
 import { Button } from '../design-system/components/Button';
@@ -9,14 +9,20 @@ import { scryfallToDeckCard } from '../features/card/cardUtils';
 
 export default function NewDeck() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { createDeck, setCommander } = useDeckStore();
+
+  // The Tutor's commander-picker flow hands off here with a chosen card
+  // pre-filled (see ChooseNewDeckMethod / TutorDeckChat), skipping straight
+  // to naming the deck.
+  const prefilledCommander = (location.state as { commander?: ScryfallCard } | null)?.commander ?? null;
 
   const [deckName, setDeckName] = React.useState('');
   const [nameError, setNameError] = React.useState('');
   const [commanderQuery, setCommanderQuery] = React.useState('');
   const [results, setResults] = React.useState<ScryfallCard[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
-  const [selected, setSelected] = React.useState<ScryfallCard | null>(null);
+  const [selected, setSelected] = React.useState<ScryfallCard | null>(prefilledCommander);
 
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
