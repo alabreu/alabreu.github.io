@@ -142,7 +142,9 @@ export function AuthGate() {
           placeholder="seu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          type="email"
+          type="text"
+          inputMode="email"
+          autoCapitalize="none"
           autoComplete="email"
           fullWidth
         />
