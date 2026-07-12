@@ -56,15 +56,6 @@ export function saveAccentPreview(hex: string) {
   localStorage.setItem(STORAGE_KEY, hex);
 }
 
-export function clearAccentPreview() {
-  localStorage.removeItem(STORAGE_KEY);
-  const root = document.documentElement.style;
-  root.removeProperty('--accent');
-  root.removeProperty('--accent-hover');
-  root.removeProperty('--accent-subtle');
-  root.removeProperty('--accent-border');
-}
-
 export function getSavedAccentPreview(): string | null {
   return localStorage.getItem(STORAGE_KEY);
 }

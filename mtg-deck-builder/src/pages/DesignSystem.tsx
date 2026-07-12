@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Star, Zap, AlertTriangle, Info, Check, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Star, Zap, AlertTriangle, Info, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../design-system/components/Button';
 import { Badge } from '../design-system/components/Badge';
@@ -13,11 +13,8 @@ import {
   ACCENT_PRESETS,
   applyAccent,
   saveAccentPreview,
-  clearAccentPreview,
   getSavedAccentPreview,
 } from '../design-system/accentPreview';
-
-const DEFAULT_GOLD = '#c9a84c';
 
 function AccentPicker() {
   const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview());
@@ -28,16 +25,11 @@ function AccentPicker() {
     setActive(hex);
   }
 
-  function reset() {
-    clearAccentPreview();
-    setActive(null);
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
         Troca a cor de destaque (--accent) no app inteiro em tempo real, pra testar antes de decidir.
-        Fica salvo no seu navegador até você resetar.
+        Fica salvo no seu navegador.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
@@ -81,22 +73,6 @@ function AccentPicker() {
             </button>
           );
         })}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-        <Button variant="secondary" size="sm" leftIcon={<RotateCcw size={13} />} onClick={reset} disabled={!active}>
-          Restaurar padrão (dourado)
-        </Button>
-        <div
-          style={{
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            backgroundColor: DEFAULT_GOLD,
-            border: '1px solid var(--border-subtle)',
-            flexShrink: 0,
-          }}
-        />
       </div>
 
       {/* Live sample using the real button/badge components, so the pick
