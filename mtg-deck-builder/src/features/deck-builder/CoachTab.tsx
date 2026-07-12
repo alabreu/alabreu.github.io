@@ -1,22 +1,46 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUp, Bot, User, Key, Check, Loader2 } from 'lucide-react';
+import { ArrowUp, User, Key, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { Deck, ScryfallCard } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
+import { WizardHatIcon } from '../../design-system/components/WizardHatIcon';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
 import { CardMentionRow } from './CoachCardPreviews';
 import { splitIntoParagraphs, extractBoldNames, resolveCardMentions } from './coachCardMentions';
 
-const markdownComponents: Components = {
-  p: ({ children }) => (
-    <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{children}</p>
-  ),
+function childrenToText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(childrenToText).join('');
+  if (React.isValidElement(children)) {
+    return childrenToText((children.props as { children?: React.ReactNode }).children);
+  }
+  return '';
+}
+
+const inlineCodeStyle: React.CSSProperties = {
+  fontFamily: 'ui-monospace, monospace',
+  fontSize: '12px',
+  backgroundColor: 'var(--surface-3)',
+  padding: '1px 4px',
+  borderRadius: '4px',
+};
+
+/** Coach messages format Scryfall query syntax as inline code (see the
+ *  system prompt) — single-line code spans are made clickable, opening
+ *  Search pre-filled with that exact query. Multi-line/fenced blocks are
+ *  left as plain code. */
+function getMarkdownComponents(onOpenSearch: (query: string) => void): Components {
+  return {
+    p: ({ children }) => (
+      <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{children}</p>
+    ),
   strong: ({ children }) => <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{children}</strong>,
   em: ({ children }) => <em>{children}</em>,
   h1: ({ children }) => (
@@ -41,19 +65,29 @@ const markdownComponents: Components = {
       {children}
     </a>
   ),
-  code: ({ children }) => (
-    <code
-      style={{
-        fontFamily: 'ui-monospace, monospace',
-        fontSize: '12px',
-        backgroundColor: 'var(--surface-3)',
-        padding: '1px 4px',
-        borderRadius: '4px',
-      }}
-    >
-      {children}
-    </code>
-  ),
+  code: ({ children }) => {
+    const text = childrenToText(children).trim();
+    const isClickableQuery = text.length > 0 && !text.includes('\n');
+    if (!isClickableQuery) {
+      return <code style={inlineCodeStyle}>{children}</code>;
+    }
+    return (
+      <code
+        onClick={() => onOpenSearch(text)}
+        title="Abrir na busca"
+        style={{
+          ...inlineCodeStyle,
+          cursor: 'pointer',
+          color: 'var(--accent)',
+          textDecoration: 'underline',
+          textDecorationStyle: 'dotted',
+          textUnderlineOffset: '2px',
+        }}
+      >
+        {children}
+      </code>
+    );
+  },
   pre: ({ children }) => (
     <pre
       style={{
@@ -80,10 +114,11 @@ const markdownComponents: Components = {
       {children}
     </th>
   ),
-  td: ({ children }) => (
-    <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{children}</td>
-  ),
-};
+    td: ({ children }) => (
+      <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{children}</td>
+    ),
+  };
+}
 
 export interface ModelOption {
   id: string;
@@ -177,7 +212,8 @@ Regras de resposta:
 - Ao sugerir cartas, explique brevemente a sinergia e indique se há alternativas budget
 - Considere sempre a identidade de cores do comandante
 - Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione
-- Sempre que citar o nome de uma carta específica de Magic (sugestão, exemplo, comparação etc.), escreva o nome oficial em inglês entre ** (ex: **Sol Ring**), mesmo no meio da frase — isso ativa uma prévia visual da carta no app. Não coloque outros textos (títulos de seção, categorias) entre **, apenas nomes reais de cartas`;
+- Sempre que citar o nome de uma carta específica de Magic (sugestão, exemplo, comparação etc.), escreva o nome oficial em inglês entre ** (ex: **Sol Ring**), mesmo no meio da frase — isso ativa uma prévia visual da carta no app. Não coloque outros textos (títulos de seção, categorias) entre **, apenas nomes reais de cartas
+- Sempre que sugerir uma query/filtro de busca (sintaxe do Scryfall, ex: type:artifact subtype:equipment), escreva-a entre \` \` (crase, formatação de código inline), em uma linha só, sem quebras dentro do bloco — isso vira um link clicável que abre a busca com a query já aplicada. Não use \`\`\` (bloco de código) para isso, apenas crase simples`;
 }
 
 export function ModelPicker({
@@ -347,6 +383,7 @@ function MessageBubble({
 }) {
   const isUser = msg.role === 'user';
   const resolvedCards = useResolvedCardMentions(msg.content, !isUser && !isStreaming);
+  const markdownComponents = React.useMemo(() => getMarkdownComponents(onOpenSearch), [onOpenSearch]);
 
   if (isUser) {
     return (
@@ -404,7 +441,7 @@ function MessageBubble({
           flexShrink: 0,
         }}
       >
-        <Bot size={13} style={{ color: 'var(--accent)' }} />
+        <WizardHatIcon size={13} style={{ color: 'var(--accent)' }} />
       </div>
 
       <div style={{ maxWidth: '100%', minWidth: 0, padding: '2px 0' }}>
@@ -728,7 +765,7 @@ export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {
         {messages.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '32px 0 8px', textAlign: 'center' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bot size={22} style={{ color: 'var(--accent)' }} />
+              <WizardHatIcon size={22} style={{ color: 'var(--accent)' }} />
             </div>
             <div>
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Tutor IA pronto</p>

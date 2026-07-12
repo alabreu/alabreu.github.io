@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Bot, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, LogOut } from 'lucide-react';
+import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -250,7 +251,7 @@ export default function DeckBuilder() {
               color: 'rgba(255,255,255,0.7)',
             }}
           >
-            <Bot size={18} />
+            <WizardHatIcon size={18} />
           </button>
 
           {/* Search pill */}
