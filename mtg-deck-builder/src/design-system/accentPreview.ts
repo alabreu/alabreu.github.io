@@ -11,10 +11,10 @@ export interface AccentPreset {
 // of a solid accent button) — the WCAG AA threshold for normal text — so
 // swapping the accent in doesn't quietly break legibility.
 export const ACCENT_PRESETS: AccentPreset[] = [
-  { id: 'orange', label: 'Laranja', accent: '#EE9A5C' },
-  { id: 'orange-pastel', label: 'Marrom pastel', accent: '#E8B088' },
+  { id: 'orange', label: 'Laranja', accent: '#F1AB78' },
+  { id: 'orange-pastel', label: 'Marrom pastel', accent: '#DBB295' },
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
-  { id: 'lilac', label: 'Lilás', accent: '#C8A2C8' },
+  { id: 'lilac', label: 'Lilás', accent: '#CE9CCE' },
   { id: 'lilac-bright', label: 'Lilás aceso', accent: '#D584E0' },
 ];
 
