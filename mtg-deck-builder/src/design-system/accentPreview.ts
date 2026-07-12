@@ -15,9 +15,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   { id: 'orange-pastel', label: 'Laranja pastel', accent: '#E8B088' },
   { id: 'neon-green', label: 'Verde neon', accent: '#3FF566' },
   { id: 'emerald', label: 'Verde esmeralda', accent: '#2FAE79' },
-  { id: 'brown-light', label: 'Marrom pastel claro', accent: '#B98B6A' },
-  { id: 'brown-mid', label: 'Marrom pastel médio', accent: '#A97C5C' },
-  { id: 'brown-dark', label: 'Marrom pastel escuro', accent: '#9C7154' },
   { id: 'yellow-neon', label: 'Amarelo neon', accent: '#F5F53C' },
   { id: 'yellow-pastel', label: 'Amarelo pastel', accent: '#F0D98C' },
 ];
