@@ -1,12 +1,87 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUp, Bot, User, Key, Check, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import { Deck } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
+
+const markdownComponents: Components = {
+  p: ({ children }) => (
+    <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{children}</p>
+  ),
+  strong: ({ children }) => <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{children}</strong>,
+  em: ({ children }) => <em>{children}</em>,
+  h1: ({ children }) => (
+    <p style={{ margin: '12px 0 6px', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
+  ),
+  h2: ({ children }) => (
+    <p style={{ margin: '12px 0 6px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
+  ),
+  h3: ({ children }) => (
+    <p style={{ margin: '10px 0 4px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
+  ),
+  h4: ({ children }) => (
+    <p style={{ margin: '10px 0 4px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{children}</p>
+  ),
+  ul: ({ children }) => <ul style={{ margin: '4px 0 8px', paddingLeft: '18px', listStyle: 'disc' }}>{children}</ul>,
+  ol: ({ children }) => <ol style={{ margin: '4px 0 8px', paddingLeft: '18px', listStyle: 'decimal' }}>{children}</ol>,
+  li: ({ children }) => (
+    <li style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, marginBottom: '4px' }}>{children}</li>
+  ),
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+      {children}
+    </a>
+  ),
+  code: ({ children }) => (
+    <code
+      style={{
+        fontFamily: 'ui-monospace, monospace',
+        fontSize: '12px',
+        backgroundColor: 'var(--surface-3)',
+        padding: '1px 4px',
+        borderRadius: '4px',
+      }}
+    >
+      {children}
+    </code>
+  ),
+  pre: ({ children }) => (
+    <pre
+      style={{
+        margin: '8px 0',
+        padding: '8px 10px',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md)',
+        overflowX: 'auto',
+        fontSize: '12px',
+      }}
+    >
+      {children}
+    </pre>
+  ),
+  hr: () => <hr style={{ margin: '10px 0', border: 'none', borderTop: '1px solid var(--border-subtle)' }} />,
+  table: ({ children }) => (
+    <div style={{ overflowX: 'auto', margin: '8px 0' }}>
+      <table style={{ borderCollapse: 'collapse', fontSize: '12px', width: '100%' }}>{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)' }}>
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}>{children}</td>
+  ),
+};
 
 export interface ModelOption {
   id: string;
@@ -238,46 +313,78 @@ function TypingDots() {
 
 function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming: boolean }) {
   const isUser = msg.role === 'user';
+
+  if (isUser) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'row-reverse', gap: '8px', alignItems: 'flex-start' }}>
+        <div
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--surface-3)',
+            border: '1px solid var(--border-default)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <User size={13} style={{ color: 'var(--text-secondary)' }} />
+        </div>
+
+        <div
+          style={{
+            maxWidth: '82%',
+            padding: '10px 12px',
+            borderRadius: 'var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-lg)',
+            backgroundColor: 'var(--surface-3)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
+          <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
+            {msg.content}
+          </p>
+          <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0', textAlign: 'right' }}>
+            {formatTime(msg.timestamp)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Assistant replies render as plain text (no bubble surface), matching a
+  // Claude-style chat layout — only the user's own messages get a bubble.
   return (
-    <div style={{ display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
       <div
         style={{
           width: '28px',
           height: '28px',
           borderRadius: '50%',
-          backgroundColor: isUser ? 'var(--surface-3)' : 'var(--accent-subtle)',
-          border: `1px solid ${isUser ? 'var(--border-default)' : 'var(--accent-border)'}`,
+          backgroundColor: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        {isUser ? <User size={13} style={{ color: 'var(--text-secondary)' }} /> : <Bot size={13} style={{ color: 'var(--accent)' }} />}
+        <Bot size={13} style={{ color: 'var(--accent)' }} />
       </div>
 
-      <div
-        style={{
-          maxWidth: '82%',
-          padding: '10px 12px',
-          borderRadius: isUser
-            ? 'var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-lg)'
-            : 'var(--radius-sm) var(--radius-lg) var(--radius-lg) var(--radius-lg)',
-          backgroundColor: isUser ? 'var(--surface-3)' : 'var(--surface-2)',
-          border: `1px solid ${isUser ? 'var(--border-default)' : 'var(--border-subtle)'}`,
-        }}
-      >
+      <div style={{ maxWidth: '100%', minWidth: 0, padding: '2px 0' }}>
         {isStreaming && !msg.content ? (
           <TypingDots />
         ) : (
-          <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
-            {msg.content}
-            {isStreaming && <span style={{ opacity: 0.4 }}>▍</span>}
-          </p>
+          <div style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {msg.content}
+            </ReactMarkdown>
+            {isStreaming && <span style={{ opacity: 0.4, fontSize: '13px' }}>▍</span>}
+          </div>
         )}
-        <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0', textAlign: isUser ? 'right' : 'left' }}>
-          {formatTime(msg.timestamp)}
-        </p>
+        <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '4px 0 0' }}>{formatTime(msg.timestamp)}</p>
       </div>
     </div>
   );
