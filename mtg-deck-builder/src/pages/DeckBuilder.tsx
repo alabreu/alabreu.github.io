@@ -1,14 +1,15 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, Sparkles, LogOut } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
-import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX } from '../features/deck-builder/CoachTab';
+import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX, PersonaPicker, CustomInstructionsField } from '../features/deck-builder/CoachTab';
+import { PERSONAS, getPersonaId, setPersonaId } from '../features/deck-builder/tutorPersona';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
@@ -35,6 +36,8 @@ export default function DeckBuilder() {
     localStorage.setItem(MODEL_KEY, MODELS[0].id);
     return MODELS[0].id;
   });
+  const [personaOpen, setPersonaOpen] = React.useState(false);
+  const [personaId, setPersonaIdState] = React.useState(() => getPersonaId());
   const [allExpanded, setAllExpanded] = React.useState(true);
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -217,7 +220,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <CoachTab deck={deck} model={coachModel} onOpenSearch={handleOpenSearchFromCoach} />
+              <CoachTab deck={deck} model={coachModel} personaId={personaId} onOpenSearch={handleOpenSearchFromCoach} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -355,6 +358,53 @@ export default function DeckBuilder() {
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
+          {/* Persona / tone of voice */}
+          <button
+            onClick={() => { setMenuOpen(false); setPersonaOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Sparkles size={17} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Personalidade do Tutor
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
               </p>
             </div>
           </button>
@@ -616,6 +666,27 @@ export default function DeckBuilder() {
               Sair da conta ({session.user.email})
             </button>
           )}
+        </div>
+      </BottomSheet>
+
+      {/* Persona sheet */}
+      <BottomSheet isOpen={personaOpen} onClose={() => setPersonaOpen(false)} title="Personalidade do Tutor">
+        <div style={{ padding: '8px 20px 32px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+            Escolha o tom de voz do Tutor.
+          </p>
+          <PersonaPicker
+            selected={personaId}
+            onChange={(id) => {
+              setPersonaId(id);
+              setPersonaIdState(id);
+            }}
+          />
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '20px 0 12px' }} />
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+            Preferências adicionais (opcional) — ajustes de estilo sobre o preset escolhido.
+          </p>
+          <CustomInstructionsField />
         </div>
       </BottomSheet>
 

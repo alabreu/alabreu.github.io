@@ -16,6 +16,7 @@ import {
   ApiKeySetup,
 } from '../features/deck-builder/CoachTab';
 import { getMarkdownComponents, TypingDots } from '../features/deck-builder/coachMarkdown';
+import { getPersonaId, getCustomInstructions, buildTutorSystemPrompt } from '../features/deck-builder/tutorPersona';
 import {
   splitIntoParagraphs,
   extractBoldNames,
@@ -40,18 +41,23 @@ function formatTime(ts: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-const TUTOR_SYSTEM_PROMPT = `Você é o Tutor, um especialista em Magic: The Gathering, focado no formato Commander/EDH.
+function buildDeckChatSystemPrompt(): string {
+  const scopeIntro = `Você é o Tutor, um especialista em Magic: The Gathering, focado no formato Commander/EDH.
 
 Nesta conversa, sua ÚNICA tarefa é ajudar o usuário a escolher um COMANDANTE para um deck novo — o deck ainda NÃO foi criado, então não fale como se ele já existisse.
 
-Pergunte sobre o tema, mecânica, cores, arquétipo ou estilo de jogo que a pessoa quer, e sugira comandantes específicos e legais (criatura lendária, ou planeswalker cujo texto permite ser comandante) que se encaixem. Explique brevemente por que cada sugestão funciona.
+Pergunte sobre o tema, mecânica, cores, arquétipo ou estilo de jogo que a pessoa quer, e sugira comandantes específicos e legais (criatura lendária, ou planeswalker cujo texto permite ser comandante) que se encaixem. Explique brevemente por que cada sugestão funciona.`;
 
-Regras de resposta:
-- Sempre em português brasileiro
-- Seja direto; se a descrição for vaga, peça esclarecimentos antes de sugerir
+  return buildTutorSystemPrompt({
+    personaId: getPersonaId(),
+    customInstructions: getCustomInstructions(),
+    scopeIntro,
+    extraRules: `- Se a descrição for vaga, peça esclarecimentos antes de sugerir
 - Sempre que sugerir um comandante, escreva o nome oficial em inglês entre ** (ex: **Atraxa, Praetors' Voice**), mesmo no meio da frase — isso ativa uma prévia clicável que já leva pra criação do deck com aquele comandante
 - Não coloque outros textos entre ** — apenas nomes reais de cartas que podem ser comandante
-- Não sugira cartas que não podem ser comandante`;
+- Não sugira cartas que não podem ser comandante`,
+  });
+}
 
 const SUGGESTIONS = [
   'Quero um deck agressivo de vermelho e preto',
@@ -107,7 +113,7 @@ export default function TutorDeckChat() {
 
     try {
       const chatMessages = [
-        { role: 'system', content: TUTOR_SYSTEM_PROMPT },
+        { role: 'system', content: buildDeckChatSystemPrompt() },
         ...history.map((m) => ({ role: m.role, content: m.content })),
       ];
 

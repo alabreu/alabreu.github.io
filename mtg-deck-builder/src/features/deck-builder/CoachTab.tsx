@@ -13,6 +13,13 @@ import { AuthGate } from './AuthGate';
 import { CardMentionRow } from './CoachCardPreviews';
 import { splitIntoParagraphs, extractBoldNames, useResolvedCardMentions } from './coachCardMentions';
 import { getMarkdownComponents, TypingDots } from './coachMarkdown';
+import {
+  PERSONAS,
+  buildTutorSystemPrompt,
+  getCustomInstructions,
+  setCustomInstructions,
+  CUSTOM_INSTRUCTIONS_MAX_LEN,
+} from './tutorPersona';
 
 export interface ModelOption {
   id: string;
@@ -35,6 +42,7 @@ export const MODEL_KEY = 'openrouter-model';
 interface CoachTabProps {
   deck: Deck;
   model: string;
+  personaId: string;
   onKeyboardChange?: (open: boolean) => void;
   onOpenSearch?: (query: string) => void;
 }
@@ -58,7 +66,7 @@ function formatTime(ts: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function buildSystemPrompt(deck: Deck): string {
+function buildSystemPrompt(deck: Deck, personaId: string): string {
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
 
   const byCategory: Record<string, string[]> = {};
@@ -79,7 +87,7 @@ function buildSystemPrompt(deck: Deck): string {
     deckList = deckList.slice(0, 2800) + '\n  ... (lista truncada)';
   }
 
-  return `Você é o Tutor, um especialista em Magic: The Gathering, focado no formato Commander/EDH.
+  const scopeIntro = `Você é o Tutor, um especialista em Magic: The Gathering, focado no formato Commander/EDH.
 
 Você domina:
 - Regras oficiais do Magic e interações complexas
@@ -98,16 +106,61 @@ ${
 Identidade de cores: ${(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity.join('') : 'Incolor'}
 Total: ${totalCards} cartas
 
-${deckList}
+${deckList}`;
 
-Regras de resposta:
-- Sempre em português brasileiro
-- Seja direto e objetivo; use bullet points para listas
-- Ao sugerir cartas, explique brevemente a sinergia e indique se há alternativas budget
-- Considere sempre a identidade de cores do comandante
-- Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione
-- Sempre que citar o nome de uma carta específica de Magic (sugestão, exemplo, comparação etc.), escreva o nome oficial em inglês entre ** (ex: **Sol Ring**), mesmo no meio da frase — isso ativa uma prévia visual da carta no app. Não coloque outros textos (títulos de seção, categorias) entre **, apenas nomes reais de cartas
-- Sempre que sugerir uma query/filtro de busca (sintaxe do Scryfall, ex: type:artifact subtype:equipment), escreva-a entre \` \` (crase, formatação de código inline), em uma linha só, sem quebras dentro do bloco — isso vira um link clicável que abre a busca com a query já aplicada. Não use \`\`\` (bloco de código) para isso, apenas crase simples`;
+  return buildTutorSystemPrompt({
+    personaId,
+    customInstructions: getCustomInstructions(),
+    scopeIntro,
+    extraRules: '- Considere sempre a identidade de cores do comandante\n- Se o deck tiver menos de 100 cartas ou problemas óbvios, mencione',
+  });
+}
+
+export function PersonaPicker({
+  selected,
+  onChange,
+}: {
+  selected: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {PERSONAS.map((p) => {
+        const active = selected === p.id;
+        return (
+          <button
+            key={p.id}
+            onClick={() => onChange(p.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '11px 14px',
+              backgroundColor: active ? 'var(--accent-subtle)' : 'var(--surface-1)',
+              border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-default)'}`,
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              WebkitTapHighlightColor: 'transparent',
+              transition: 'background-color 0.1s, border-color 0.1s',
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
+                {p.name}
+                {p.subtitle !== 'Padrão' && (
+                  <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> · {p.subtitle}</span>
+                )}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>{p.description}</p>
+            </div>
+            {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function ModelPicker({
@@ -153,6 +206,42 @@ export function ModelPicker({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+export function CustomInstructionsField() {
+  const [value, setValue] = React.useState(() => getCustomInstructions());
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setCustomInstructions(value), 400);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value.slice(0, CUSTOM_INSTRUCTIONS_MAX_LEN))}
+        placeholder="Ex.: seja mais sucinto, priorize cartas até R$30, mostre sempre 10 exemplos..."
+        rows={3}
+        style={{
+          width: '100%',
+          resize: 'vertical',
+          padding: '10px 12px',
+          backgroundColor: 'var(--surface-1)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--text-primary)',
+          fontFamily: 'inherit',
+          fontSize: '13px',
+          lineHeight: 1.5,
+          outline: 'none',
+        }}
+      />
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, textAlign: 'right' }}>
+        {value.length}/{CUSTOM_INSTRUCTIONS_MAX_LEN}
+      </p>
     </div>
   );
 }
@@ -344,7 +433,7 @@ const SUGGESTIONS = [
   'O meu deck está equilibrado para Commander?',
 ];
 
-export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {} }: CoachTabProps) {
+export function CoachTab({ deck, model, personaId, onKeyboardChange, onOpenSearch = () => {} }: CoachTabProps) {
   // When Supabase is configured, the Coach runs through our proxy (magic-link
   // login, no per-user API key). Otherwise, fall back to the legacy
   // bring-your-own-OpenRouter-key flow.
@@ -467,7 +556,7 @@ export function CoachTab({ deck, model, onKeyboardChange, onOpenSearch = () => {
 
     try {
       const chatMessages = [
-        { role: 'system', content: buildSystemPrompt(deck) },
+        { role: 'system', content: buildSystemPrompt(deck, personaId) },
         ...history.map((m) => ({ role: m.role, content: m.content })),
       ];
 

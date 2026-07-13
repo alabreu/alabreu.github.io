@@ -15,6 +15,25 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 // Bounds worst-case cost exposure per user per day. Tune to taste.
 const DAILY_LIMIT = 40;
 
+// Guard rails against prompt-injection / token-abuse (e.g. someone treating
+// the Tutor as a free general-purpose LLM proxy). Keep in sync with
+// src/features/deck-builder/CoachTab.tsx's MODELS list.
+const ALLOWED_MODELS = new Set([
+  'openai/gpt-4o-mini',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'deepseek/deepseek-r1:free',
+  'google/gemma-3-27b-it:free',
+  'qwen/qwq-32b:free',
+  'mistralai/mistral-7b-instruct:free',
+]);
+const MAX_MESSAGES = 60;
+// The system prompt (deck list + persona + rules + guard rails + custom
+// instructions) can legitimately run ~6.5k chars for a full 100-card deck —
+// give it headroom instead of clipping real conversations.
+const MAX_MESSAGE_CHARS = 9000;
+const MAX_TOTAL_CHARS = 45000;
+const MAX_TOKENS = 2000;
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
@@ -75,6 +94,36 @@ Deno.serve(async (req: Request) => {
   if (!body.model || !Array.isArray(body.messages)) {
     return jsonError(400, 'bad_request', 'model e messages são obrigatórios.');
   }
+  if (!ALLOWED_MODELS.has(body.model)) {
+    return jsonError(400, 'bad_request', 'Modelo não suportado.');
+  }
+
+  const messages = body.messages as unknown[];
+  if (messages.length === 0 || messages.length > MAX_MESSAGES) {
+    return jsonError(400, 'bad_request', 'Conversa inválida ou longa demais.');
+  }
+  let totalChars = 0;
+  for (const m of messages) {
+    if (
+      typeof m !== 'object' ||
+      m === null ||
+      !('role' in m) ||
+      !('content' in m) ||
+      typeof (m as { role: unknown }).role !== 'string' ||
+      typeof (m as { content: unknown }).content !== 'string' ||
+      !['system', 'user', 'assistant'].includes((m as { role: string }).role)
+    ) {
+      return jsonError(400, 'bad_request', 'Mensagem inválida.');
+    }
+    const content = (m as { content: string }).content;
+    if (content.length > MAX_MESSAGE_CHARS) {
+      return jsonError(400, 'bad_request', 'Mensagem longa demais.');
+    }
+    totalChars += content.length;
+  }
+  if (totalChars > MAX_TOTAL_CHARS) {
+    return jsonError(400, 'bad_request', 'Conversa longa demais.');
+  }
 
   const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -84,7 +133,7 @@ Deno.serve(async (req: Request) => {
       'HTTP-Referer': 'https://alabreu.github.io',
       'X-Title': 'Cobuilder Tutor',
     },
-    body: JSON.stringify({ model: body.model, stream: true, messages: body.messages }),
+    body: JSON.stringify({ model: body.model, stream: true, messages, max_tokens: MAX_TOKENS }),
   });
 
   // Stream OpenRouter's SSE response straight through to the client
