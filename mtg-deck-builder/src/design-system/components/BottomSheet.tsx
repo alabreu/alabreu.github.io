@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { edgeInset } from '../responsive';
+import { NoiseOverlay } from '../../components/NoiseOverlay';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -198,6 +199,11 @@ export function BottomSheet({
             >
               {children}
             </div>
+
+            {/* Scoped to this sheet's own surface — the global page grain
+                (App.tsx) sits below the sheet backdrop, so without this the
+                sheet would look grain-free while it's open. */}
+            <NoiseOverlay style={{ position: 'absolute', zIndex: 2 }} />
           </motion.div>
         </>
       )}
