@@ -160,7 +160,7 @@ body {
   top: -30%;
   left: -6%;
   background: #7a2a18;
-  animation: mesh-blob-sweep-1 6s ease-in-out infinite alternate;
+  animation: mesh-blob-sweep-1 4.2s ease-in-out infinite alternate;
 }
 
 .home-mesh-blob-2 {
@@ -169,8 +169,8 @@ body {
   top: -14%;
   left: 22%;
   background: #b3491c;
-  animation: mesh-blob-sweep-2 5s ease-in-out infinite alternate;
-  animation-delay: -1.5s;
+  animation: mesh-blob-sweep-2 3.5s ease-in-out infinite alternate;
+  animation-delay: -1s;
 }
 
 .home-mesh-blob-3 {
@@ -179,8 +179,8 @@ body {
   top: -24%;
   left: 46%;
   background: #545456;
-  animation: mesh-blob-sweep-3 7s ease-in-out infinite alternate;
-  animation-delay: -3s;
+  animation: mesh-blob-sweep-3 4.8s ease-in-out infinite alternate;
+  animation-delay: -2s;
 }
 
 .home-mesh-blob-4 {
@@ -189,8 +189,8 @@ body {
   top: -16%;
   left: 68%;
   background: #2a1410;
-  animation: mesh-blob-sweep-4 5.5s ease-in-out infinite alternate;
-  animation-delay: -2s;
+  animation: mesh-blob-sweep-4 3.8s ease-in-out infinite alternate;
+  animation-delay: -1.4s;
 }
 
 .home-mesh-fade {
