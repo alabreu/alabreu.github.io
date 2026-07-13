@@ -17,6 +17,7 @@ import {
   getSavedAccentPreview,
 } from '../design-system/accentPreview';
 import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay';
+import { getFlameTintEnabled, setFlameTintEnabled } from '../design-system/flameTint';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 function AccentPicker() {
@@ -124,6 +125,71 @@ function NoiseToggle() {
       >
         <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
           Grain no app inteiro
+        </span>
+        <span
+          style={{
+            width: '44px',
+            height: '26px',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: enabled ? 'var(--accent)' : 'var(--surface-3)',
+            border: `1px solid ${enabled ? 'var(--accent)' : 'var(--border-default)'}`,
+            position: 'relative',
+            flexShrink: 0,
+            transition: 'background-color 0.15s, border-color 0.15s',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: enabled ? '20px' : '2px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'left 0.15s',
+            }}
+          />
+        </span>
+      </button>
+    </div>
+  );
+}
+
+function FlameTintToggle() {
+  const [enabled, setEnabled] = React.useState(() => getFlameTintEnabled());
+
+  function toggle() {
+    const next = !enabled;
+    setFlameTintEnabled(next);
+    setEnabled(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        Recolore o mesh de brasas ("flame blur") da Home usando a cor de accent atual, em vez
+        do vermelho/laranja fixo. Troque o accent acima pra ver outras variações — a paleta de
+        fogo é só o resultado padrão do accent atual, não um caso especial.
+      </p>
+
+      <button
+        onClick={toggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 14px',
+          backgroundColor: 'var(--surface-1)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          Colorir flame blur com o accent
         </span>
         <span
           style={{
@@ -274,6 +340,11 @@ export default function DesignSystem() {
         {/* ── Grain/noise toggle ── */}
         <Section title="Efeitos — Grain">
           <NoiseToggle />
+        </Section>
+
+        {/* ── Flame blur tint toggle ── */}
+        <Section title="Efeitos — Flame Blur">
+          <FlameTintToggle />
         </Section>
 
         {/* ── Colors ── */}
