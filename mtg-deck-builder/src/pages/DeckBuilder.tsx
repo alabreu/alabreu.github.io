@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, Sparkles, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, Sparkles, History, LogOut } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
@@ -38,6 +38,8 @@ export default function DeckBuilder() {
   });
   const [personaOpen, setPersonaOpen] = React.useState(false);
   const [personaId, setPersonaIdState] = React.useState(() => getPersonaId());
+  const [tutorMenuOpen, setTutorMenuOpen] = React.useState(false);
+  const [tutorSessionsOpen, setTutorSessionsOpen] = React.useState(false);
   const [allExpanded, setAllExpanded] = React.useState(true);
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -161,8 +163,11 @@ export default function DeckBuilder() {
         </button>
       )}
 
-      {/* Floating menu button */}
-      <button style={{ ...floatingBtnStyle, right: edgeInset(16) }} onClick={() => setMenuOpen(true)}>
+      {/* Floating menu button — contextual: Tutor options while chatting, deck options otherwise */}
+      <button
+        style={{ ...floatingBtnStyle, right: edgeInset(16) }}
+        onClick={() => (coachOpen ? setTutorMenuOpen(true) : setMenuOpen(true))}
+      >
         <MoreHorizontal size={17} />
       </button>
 
@@ -317,100 +322,6 @@ export default function DeckBuilder() {
       {/* Deck actions bottom sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">
         <div style={{ padding: '8px 0 24px' }}>
-          {/* Coach model */}
-          <button
-            onClick={() => { setMenuOpen(false); setCoachModelOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Cpu size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Modelo do Tutor
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Persona / tone of voice */}
-          <button
-            onClick={() => { setMenuOpen(false); setPersonaOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Sparkles size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Personalidade do Tutor
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
           {/* Manage sections */}
           <button
             onClick={() => { setMenuOpen(false); setManageSectionsOpen(true); }}
@@ -599,6 +510,150 @@ export default function DeckBuilder() {
         </div>
       </BottomSheet>
 
+      {/* Tutor options bottom sheet */}
+      <BottomSheet isOpen={tutorMenuOpen} onClose={() => setTutorMenuOpen(false)} title="Opções do Tutor">
+        <div style={{ padding: '8px 0 24px' }}>
+          {/* Coach model */}
+          <button
+            onClick={() => { setTutorMenuOpen(false); setCoachModelOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Cpu size={17} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Modelo do Tutor
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
+          {/* Persona / tone of voice */}
+          <button
+            onClick={() => { setTutorMenuOpen(false); setPersonaOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Sparkles size={17} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Personalidade do Tutor
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
+              </p>
+            </div>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
+          {/* Sessions: clear history, sign out */}
+          <button
+            onClick={() => { setTutorMenuOpen(false); setTutorSessionsOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <History size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                Gerenciar sessões
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                Limpar histórico ou sair da conta
+              </p>
+            </div>
+          </button>
+        </div>
+      </BottomSheet>
+
       {/* Coach model sheet */}
       <BottomSheet isOpen={coachModelOpen} onClose={() => setCoachModelOpen(false)} title="Modelo do Tutor">
         <div style={{ padding: '8px 20px 32px' }}>
@@ -613,11 +668,16 @@ export default function DeckBuilder() {
               setCoachModelOpen(false);
             }}
           />
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '16px 0 12px' }} />
+        </div>
+      </BottomSheet>
+
+      {/* Tutor sessions sheet: clear history, sign out */}
+      <BottomSheet isOpen={tutorSessionsOpen} onClose={() => setTutorSessionsOpen(false)} title="Gerenciar sessões">
+        <div style={{ padding: '8px 20px 32px' }}>
           <button
             onClick={() => {
               localStorage.removeItem(`${MESSAGES_PREFIX}${deck.id}`);
-              setCoachModelOpen(false);
+              setTutorSessionsOpen(false);
             }}
             style={{
               width: '100%',
@@ -643,7 +703,7 @@ export default function DeckBuilder() {
             <button
               onClick={() => {
                 supabase?.auth.signOut();
-                setCoachModelOpen(false);
+                setTutorSessionsOpen(false);
               }}
               style={{
                 width: '100%',
