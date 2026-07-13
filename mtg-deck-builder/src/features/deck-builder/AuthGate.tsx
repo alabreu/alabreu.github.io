@@ -4,6 +4,7 @@ import { Sparkles, Mail } from 'lucide-react';
 import { isAuthRetryableFetchError, type AuthError } from '@supabase/supabase-js';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
+import { GoogleIcon } from '../../design-system/components/GoogleIcon';
 import { supabase } from '../../lib/supabase';
 
 type Mode = 'signin' | 'signup';
@@ -108,6 +109,22 @@ export function AuthGate() {
     if (!data.session) setConfirmSent(true);
   }
 
+  async function handleGoogleSignIn() {
+    if (!supabase || sending) return;
+    setError(null);
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+      },
+    });
+    if (err) {
+      console.error('[AuthGate] Google OAuth failed:', err.status, err.message);
+      setError(translateAuthError(err));
+    }
+    // On success the browser navigates away to Google immediately — nothing more to do here.
+  }
+
   async function handleForgotPassword() {
     if (!supabase || sending) return;
     if (!email.trim()) {
@@ -186,6 +203,25 @@ export function AuthGate() {
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
           Sincroniza seus decks entre dispositivos e libera o Tutor.
         </p>
+      </div>
+
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <Button
+          variant="white"
+          size="md"
+          fullWidth
+          leftIcon={<GoogleIcon size={18} />}
+          disabled={sending}
+          onClick={handleGoogleSignIn}
+        >
+          Continuar com Google
+        </Button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ou</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        </div>
       </div>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
