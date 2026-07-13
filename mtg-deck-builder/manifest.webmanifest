@@ -1,6 +1,6 @@
 {
-  "name": "Cobuilder",
-  "short_name": "Cobuilder",
+  "name": "Tutor Brew",
+  "short_name": "Tutor Brew",
   "description": "Construtor de decks de Commander (MTG)",
   "start_url": "/mtg-deck-builder/",
   "scope": "/mtg-deck-builder/",
