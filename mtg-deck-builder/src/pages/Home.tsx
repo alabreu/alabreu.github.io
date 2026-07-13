@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -9,6 +9,7 @@ import { BottomSheet } from '../design-system/components/BottomSheet';
 import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 import { AuthGate } from '../features/deck-builder/AuthGate';
+import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 
@@ -270,6 +271,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false);
   const versionTapCountRef = React.useRef(0);
   const lastVersionTapRef = React.useRef(0);
 
@@ -469,6 +471,9 @@ export default function Home() {
       {/* Import deck sheet */}
       <ImportDeckSheet isOpen={importOpen} onClose={() => setImportOpen(false)} />
 
+      {/* Feedback sheet */}
+      <FeedbackSheet isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+
       {/* Login sheet */}
       <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
         <AuthGate />
@@ -589,6 +594,53 @@ export default function Home() {
               </p>
             </div>
           </button>
+
+          {/* Feedback: bug report / feature suggestion */}
+          {supabaseConfigured && (
+            <button
+              onClick={() => { setMenuOpen(false); setFeedbackOpen(true); }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px 20px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                transition: 'background-color 0.1s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <span
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--surface-1)',
+                  border: '1px solid var(--border-default)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <MessageSquare size={17} />
+              </span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                  Enviar feedback
+                </p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                  Reportar um bug ou sugerir algo
+                </p>
+              </div>
+            </button>
+          )}
 
           {/* Build version — tap 5x quickly to reach the (hidden) Design System page */}
           <p
