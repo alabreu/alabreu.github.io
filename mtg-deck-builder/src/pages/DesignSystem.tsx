@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Star, Zap, AlertTriangle, Info, Check } from 'lucide-react';
+import { ArrowLeft, Star, Zap, AlertTriangle, Info, Check, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../design-system/components/Button';
 import { Badge } from '../design-system/components/Badge';
@@ -18,6 +18,7 @@ import {
 } from '../design-system/accentPreview';
 import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay';
 import { getFlameTintEnabled, setFlameTintEnabled } from '../design-system/flameTint';
+import { getFlameSpeed, setFlameSpeed, DEFAULT_FLAME_SPEED } from '../design-system/flameSpeed';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 function AccentPicker() {
@@ -222,6 +223,120 @@ function FlameTintToggle() {
   );
 }
 
+function FlameSpeedControl() {
+  const [speed, setSpeed] = React.useState(() => getFlameSpeed());
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = parseFloat(e.target.value);
+    setSpeed(next);
+    setFlameSpeed(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        Controla a velocidade do movimento dos círculos do flame blur. 1x é o padrão atual;
+        valores maiores aceleram, menores desaceleram.
+      </p>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          Velocidade do flame blur
+        </span>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+          {speed.toFixed(2)}x
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min={0.25}
+        max={3}
+        step={0.05}
+        value={speed}
+        onChange={handleChange}
+        style={{ width: '100%', accentColor: 'var(--accent)' }}
+      />
+
+      {speed !== DEFAULT_FLAME_SPEED && (
+        <button
+          onClick={() => { setSpeed(DEFAULT_FLAME_SPEED); setFlameSpeed(DEFAULT_FLAME_SPEED); }}
+          style={{
+            alignSelf: 'flex-start',
+            background: 'none',
+            border: 'none',
+            color: 'var(--accent)',
+            fontSize: '12px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            padding: 0,
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          Restaurar padrão (1x)
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = React.useState(defaultOpen);
+
+  return (
+    <section style={{ marginBottom: '40px' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          paddingBottom: '8px',
+          marginBottom: open ? '16px' : 0,
+          borderBottom: '1px solid var(--border-subtle)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            margin: 0,
+          }}
+        >
+          {title}
+        </h2>
+        <ChevronDown
+          size={14}
+          style={{
+            color: 'var(--text-muted)',
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.15s',
+          }}
+        />
+      </button>
+      {open && <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>{children}</div>}
+    </section>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: '40px' }}>
@@ -337,15 +452,12 @@ export default function DesignSystem() {
           <AccentPicker />
         </Section>
 
-        {/* ── Grain/noise toggle ── */}
-        <Section title="Efeitos — Grain">
+        {/* ── Visual effect controls, grouped + collapsible ── */}
+        <CollapsibleSection title="Ajustes Visuais">
           <NoiseToggle />
-        </Section>
-
-        {/* ── Flame blur tint toggle ── */}
-        <Section title="Efeitos — Flame Blur">
           <FlameTintToggle />
-        </Section>
+          <FlameSpeedControl />
+        </CollapsibleSection>
 
         {/* ── Colors ── */}
         <Section title="Colors — Backgrounds">

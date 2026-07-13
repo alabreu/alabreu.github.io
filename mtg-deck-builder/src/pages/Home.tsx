@@ -510,73 +510,6 @@ export default function Home() {
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
         <div style={{ padding: '8px 0 24px' }}>
           {/* Account: login / logout */}
-          {supabaseConfigured && (
-            <button
-              onClick={() => {
-                if (session) {
-                  supabase?.auth.signOut();
-                  setMenuOpen(false);
-                } else {
-                  setMenuOpen(false);
-                  setLoginOpen(true);
-                }
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-                padding: '14px 20px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'inherit',
-                transition: 'background-color 0.1s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-            >
-              <span
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--surface-1)',
-                  border: '1px solid var(--border-default)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                {session ? <LogOut size={17} /> : <LogIn size={17} />}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                  {session ? 'Sair da conta' : 'Entrar'}
-                </p>
-                <p
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--text-muted)',
-                    margin: '1px 0 0',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {session ? session.user.email : 'Sincronize decks entre dispositivos'}
-                </p>
-              </div>
-            </button>
-          )}
-
-          {supabaseConfigured && (
-            <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-          )}
-
           {/* Import deck */}
           <button
             onClick={() => { setMenuOpen(false); setImportOpen(true); }}
@@ -664,6 +597,73 @@ export default function Home() {
                 </p>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
                   Reportar um bug ou sugerir algo
+                </p>
+              </div>
+            </button>
+          )}
+
+          {supabaseConfigured && (
+            <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+          )}
+
+          {supabaseConfigured && (
+            <button
+              onClick={() => {
+                if (session) {
+                  supabase?.auth.signOut();
+                  setMenuOpen(false);
+                } else {
+                  setMenuOpen(false);
+                  setLoginOpen(true);
+                }
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '14px 20px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                transition: 'background-color 0.1s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <span
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--surface-1)',
+                  border: '1px solid var(--border-default)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {session ? <LogOut size={17} /> : <LogIn size={17} />}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                  {session ? 'Sair da conta' : 'Entrar'}
+                </p>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--text-muted)',
+                    margin: '1px 0 0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {session ? session.user.email : 'Sincronize decks entre dispositivos'}
                 </p>
               </div>
             </button>

@@ -161,7 +161,11 @@ body {
   top: -30%;
   left: -6%;
   background: var(--mesh-blob-1, #7a2a18);
-  animation: mesh-blob-sweep-1 4.2s ease-in-out infinite alternate;
+  animation-name: mesh-blob-sweep-1;
+  animation-duration: calc(4.2s * var(--mesh-duration-scale, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 
 .home-mesh-blob-2 {
@@ -170,8 +174,12 @@ body {
   top: -14%;
   left: 22%;
   background: var(--mesh-blob-2, #b3491c);
-  animation: mesh-blob-sweep-2 3.5s ease-in-out infinite alternate;
-  animation-delay: -1s;
+  animation-name: mesh-blob-sweep-2;
+  animation-duration: calc(3.5s * var(--mesh-duration-scale, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-delay: calc(-1s * var(--mesh-duration-scale, 1));
 }
 
 .home-mesh-blob-3 {
@@ -180,8 +188,12 @@ body {
   top: -24%;
   left: 46%;
   background: var(--mesh-blob-3, #545456);
-  animation: mesh-blob-sweep-3 4.8s ease-in-out infinite alternate;
-  animation-delay: -2s;
+  animation-name: mesh-blob-sweep-3;
+  animation-duration: calc(4.8s * var(--mesh-duration-scale, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-delay: calc(-2s * var(--mesh-duration-scale, 1));
 }
 
 .home-mesh-blob-4 {
@@ -190,8 +202,12 @@ body {
   top: -16%;
   left: 68%;
   background: var(--mesh-blob-4, #2a1410);
-  animation: mesh-blob-sweep-4 3.8s ease-in-out infinite alternate;
-  animation-delay: -1.4s;
+  animation-name: mesh-blob-sweep-4;
+  animation-duration: calc(3.8s * var(--mesh-duration-scale, 1));
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-delay: calc(-1.4s * var(--mesh-duration-scale, 1));
 }
 
 .home-mesh-fade {
