@@ -38,6 +38,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       style={{
         position: 'relative',
+        zIndex: 4,
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
         cursor: 'pointer',
