@@ -22,6 +22,7 @@ import {
   useResolvedCardMentions,
 } from '../features/deck-builder/coachCardMentions';
 import { CommanderSuggestionRow } from '../features/deck-builder/CommanderSuggestionRow';
+import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 interface Message {
   id: string;
@@ -232,21 +233,30 @@ export default function TutorDeckChat() {
           paddingBottom: '14px',
           paddingLeft: '16px',
           paddingRight: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
           borderBottom: '1px solid var(--border-subtle)',
         }}
       >
-        <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            maxWidth: CONTENT_MAX_WIDTH,
+            margin: '0 auto',
+            boxSizing: 'border-box',
+          }}
         >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-          Escolher comandante com o Tutor
-        </h1>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Escolher comandante com o Tutor
+          </h1>
+        </div>
       </header>
 
       {supabaseConfigured ? (
@@ -257,14 +267,14 @@ export default function TutorDeckChat() {
             </motion.div>
           </div>
         ) : !session ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto' }}>
             <AuthGate />
           </div>
         ) : (
           renderChat()
         )
       ) : !apiKey ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto' }}>
           <ApiKeySetup onSave={(key) => { localStorage.setItem(API_KEY_KEY, key); setApiKey(key); }} />
         </div>
       ) : (
@@ -275,7 +285,7 @@ export default function TutorDeckChat() {
 
   function renderChat() {
     return (
-      <>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto', minHeight: 0 }}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {messages.length === 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '32px 0 8px', textAlign: 'center' }}>
@@ -360,7 +370,7 @@ export default function TutorDeckChat() {
             </button>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 }

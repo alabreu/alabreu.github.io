@@ -6,6 +6,7 @@ import { useDeckStore } from '../store/useDeckStore';
 import { ScryfallCard } from '../types';
 import { Button } from '../design-system/components/Button';
 import { scryfallToDeckCard } from '../features/card/cardUtils';
+import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 export default function NewDeck() {
   const navigate = useNavigate();
@@ -102,35 +103,44 @@ export default function NewDeck() {
           paddingBottom: '14px',
           paddingLeft: '16px',
           paddingRight: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
           borderBottom: '1px solid var(--border-subtle)',
         }}
       >
-        <button
-          onClick={() => navigate(-1)}
+        <div
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-secondary)',
             display: 'flex',
-            padding: '4px',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            maxWidth: CONTENT_MAX_WIDTH,
+            margin: '0 auto',
+            boxSizing: 'border-box',
           }}
         >
-          <ArrowLeft size={20} />
-        </button>
-        <h1
-          style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Novo deck
-        </h1>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              padding: '4px',
+            }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1
+            style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Novo deck
+          </h1>
+        </div>
       </header>
 
       {/* Scrollable content */}
@@ -142,6 +152,10 @@ export default function NewDeck() {
           display: 'flex',
           flexDirection: 'column',
           gap: '36px',
+          width: '100%',
+          maxWidth: CONTENT_MAX_WIDTH,
+          margin: '0 auto',
+          boxSizing: 'border-box',
         }}
       >
         {/* Deck name */}
@@ -492,15 +506,17 @@ export default function NewDeck() {
           borderTop: '1px solid var(--border-subtle)',
         }}
       >
-        <Button
-          variant="white"
-          size="lg"
-          fullWidth
-          disabled={!deckName.trim()}
-          onClick={handleCreate}
-        >
-          Criar deck
-        </Button>
+        <div style={{ width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto', boxSizing: 'border-box' }}>
+          <Button
+            variant="white"
+            size="lg"
+            fullWidth
+            disabled={!deckName.trim()}
+            onClick={handleCreate}
+          >
+            Criar deck
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import {
   getSavedAccentPreview,
 } from '../design-system/accentPreview';
 import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay';
+import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 function AccentPicker() {
   const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview());
@@ -222,39 +223,48 @@ export default function DesignSystem() {
           backgroundColor: 'var(--bg-elevated)',
           borderBottom: '1px solid var(--border-subtle)',
           padding: 'max(12px, env(safe-area-inset-top)) 16px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
         }}
       >
-        <button
-          onClick={() => navigate('/')}
+        <div
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-secondary)',
             display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            maxWidth: CONTENT_MAX_WIDTH,
+            margin: '0 auto',
+            boxSizing: 'border-box',
           }}
         >
-          <ArrowLeft size={20} />
-        </button>
-        <h1
-          style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Design System
-        </h1>
-        <Badge variant="accent" size="sm" style={{ marginLeft: '4px' }}>
-          v0.1
-        </Badge>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+            }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1
+            style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Design System
+          </h1>
+          <Badge variant="accent" size="sm" style={{ marginLeft: '4px' }}>
+            v0.1
+          </Badge>
+        </div>
       </header>
 
-      <main style={{ padding: '24px 16px', width: '100%', boxSizing: 'border-box' }}>
+      <main style={{ padding: '24px 16px', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto', boxSizing: 'border-box' }}>
         {/* ── Accent color picker ── */}
         <Section title="Accent Color — Testar">
           <AccentPicker />

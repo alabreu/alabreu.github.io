@@ -15,6 +15,7 @@ import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
+import { CONTENT_MAX_WIDTH, edgeInset } from '../design-system/responsive';
 
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
@@ -132,7 +133,7 @@ export default function DeckBuilder() {
     >
       {/* Floating back button — closes overlays first, then goes home */}
       <button
-        style={{ ...floatingBtnStyle, left: '16px' }}
+        style={{ ...floatingBtnStyle, left: edgeInset(16) }}
         onClick={() => {
           if (searchOpen) {
             setSearchOpen(false);
@@ -149,7 +150,7 @@ export default function DeckBuilder() {
       {/* Floating EDHREC suggestions — only on search view */}
       {searchOpen && (
         <button
-          style={{ ...floatingBtnStyle, right: '60px' }}
+          style={{ ...floatingBtnStyle, right: edgeInset(60) }}
           onClick={() => setEdhrecOpen(true)}
           aria-label="Sugestões do EDHREC"
         >
@@ -158,12 +159,12 @@ export default function DeckBuilder() {
       )}
 
       {/* Floating menu button */}
-      <button style={{ ...floatingBtnStyle, right: '16px' }} onClick={() => setMenuOpen(true)}>
+      <button style={{ ...floatingBtnStyle, right: edgeInset(16) }} onClick={() => setMenuOpen(true)}>
         <MoreHorizontal size={17} />
       </button>
 
       {/* Main content — Decklist is always the base view */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto' }}>
         {/* Decklist (permanent base) */}
         <div
           style={{
@@ -228,8 +229,8 @@ export default function DeckBuilder() {
           style={{
             position: 'fixed',
             bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
-            left: '16px',
-            right: '16px',
+            left: edgeInset(16),
+            right: edgeInset(16),
             zIndex: 50,
             display: 'flex',
             alignItems: 'center',

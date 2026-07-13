@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { edgeInset } from '../responsive';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -99,8 +100,8 @@ export function BottomSheet({
             style={{
               position: 'fixed',
               bottom: 0,
-              left: 0,
-              right: 0,
+              left: edgeInset(0),
+              right: edgeInset(0),
               maxHeight: `min(${maxHeight}, calc(100dvh - env(safe-area-inset-top, 0px) - 12px))`,
               backgroundColor: 'var(--bg-elevated)',
               borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',

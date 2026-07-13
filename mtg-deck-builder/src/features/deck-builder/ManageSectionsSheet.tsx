@@ -7,6 +7,7 @@ import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { Deck } from '../../types';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
+import { edgeInset } from '../../design-system/responsive';
 
 const ITEM_H = 52;
 
@@ -323,8 +324,8 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
             style={{
               position: 'fixed',
               bottom: 0,
-              left: 0,
-              right: 0,
+              left: edgeInset(0),
+              right: edgeInset(0),
               backgroundColor: 'var(--bg-elevated)',
               borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
               border: '1px solid var(--border-default)',

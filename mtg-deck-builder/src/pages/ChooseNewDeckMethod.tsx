@@ -3,6 +3,7 @@ import { ArrowLeft, Crown, FileInput, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
+import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 interface OptionCardProps {
   icon: React.ReactNode;
@@ -73,24 +74,45 @@ export default function ChooseNewDeckMethod() {
           paddingBottom: '14px',
           paddingLeft: '16px',
           paddingRight: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
           borderBottom: '1px solid var(--border-subtle)',
         }}
       >
-        <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            maxWidth: CONTENT_MAX_WIDTH,
+            margin: '0 auto',
+            boxSizing: 'border-box',
+          }}
         >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-          Novo deck
-        </h1>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Novo deck
+          </h1>
+        </div>
       </header>
 
-      <div style={{ flex: 1, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div
+        style={{
+          flex: 1,
+          padding: '24px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          width: '100%',
+          maxWidth: CONTENT_MAX_WIDTH,
+          margin: '0 auto',
+          boxSizing: 'border-box',
+        }}
+      >
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 4px' }}>Como você quer começar?</p>
 
         <OptionCard

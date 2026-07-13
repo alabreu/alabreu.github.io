@@ -10,6 +10,7 @@ import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 import { AuthGate } from '../features/deck-builder/AuthGate';
 import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
+import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 
@@ -289,6 +290,10 @@ export default function Home() {
         style={{
           padding: '0 20px 0',
           paddingTop: 'max(56px, calc(env(safe-area-inset-top) + 20px))',
+          width: '100%',
+          maxWidth: CONTENT_MAX_WIDTH,
+          margin: '0 auto',
+          boxSizing: 'border-box',
         }}
       >
         <motion.div
@@ -357,7 +362,18 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: '0 16px 32px', display: 'flex', flexDirection: 'column' }}>
+      <main
+        style={{
+          flex: 1,
+          padding: '0 16px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          maxWidth: CONTENT_MAX_WIDTH,
+          margin: '0 auto',
+          boxSizing: 'border-box',
+        }}
+      >
         {decks.length === 0 ? (
           /* Empty state */
           <motion.div
