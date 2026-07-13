@@ -280,11 +280,21 @@ export default function Home() {
     <div
       style={{
         minHeight: '100dvh',
-        backgroundColor: 'var(--bg-base)',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
+      {/* Ambient mesh-gradient background — solid blurred blobs, see index.css */}
+      <div className="home-mesh-bg">
+        <div className="home-mesh-blobs">
+          <div className="home-mesh-blob home-mesh-blob-1" />
+          <div className="home-mesh-blob home-mesh-blob-2" />
+          <div className="home-mesh-blob home-mesh-blob-3" />
+          <div className="home-mesh-blob home-mesh-blob-4" />
+        </div>
+        <div className="home-mesh-fade" />
+      </div>
+
       {/* Header */}
       <header
         style={{
