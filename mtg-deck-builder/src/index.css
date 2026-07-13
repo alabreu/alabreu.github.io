@@ -25,11 +25,12 @@
   --text-muted: #6b6b6b;
   --text-disabled: #404040;
 
-  /* Accent - gold/amber for Commander */
-  --accent: #c9a84c;
-  --accent-hover: #d4b86a;
-  --accent-subtle: rgba(201, 168, 76, 0.12);
-  --accent-border: rgba(201, 168, 76, 0.3);
+  /* Accent - pastel yellow (default; matches the "Amarelo pastel" preset
+     in the Design System accent picker) */
+  --accent: #f0d98c;
+  --accent-hover: #f2df9d;
+  --accent-subtle: rgba(240, 217, 140, 0.12);
+  --accent-border: rgba(240, 217, 140, 0.3);
 
   /* Status */
   --success: #2fae79;

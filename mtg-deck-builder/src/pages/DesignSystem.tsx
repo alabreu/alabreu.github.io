@@ -11,6 +11,7 @@ import { Skeleton, SkeletonCard, SkeletonText } from '../design-system/component
 import { ManaColor } from '../types';
 import {
   ACCENT_PRESETS,
+  DEFAULT_ACCENT,
   applyAccent,
   saveAccentPreview,
   getSavedAccentPreview,
@@ -19,7 +20,7 @@ import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay'
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 function AccentPicker() {
-  const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview());
+  const [active, setActive] = React.useState<string | null>(() => getSavedAccentPreview() ?? DEFAULT_ACCENT);
 
   function pick(hex: string) {
     applyAccent(hex);

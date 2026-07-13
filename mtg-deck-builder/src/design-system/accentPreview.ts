@@ -19,6 +19,9 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   { id: 'lilac-bright', label: 'Lilás aceso', accent: '#D584E0' },
 ];
 
+/** Matches the --accent default hard-coded in index.css. */
+export const DEFAULT_ACCENT = '#F0D98C';
+
 const STORAGE_KEY = 'accent-preview';
 
 function hexToRgb(hex: string): [number, number, number] {
