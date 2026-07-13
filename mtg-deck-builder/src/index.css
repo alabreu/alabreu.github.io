@@ -113,13 +113,19 @@ body {
    fades the whole thing into the base background toward the bottom. */
 @keyframes mesh-blob-drift {
   0%, 100% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) scale(1);
   }
-  33% {
-    transform: translate(5%, -7%);
+  20% {
+    transform: translate(5%, -6%) scale(1.06);
   }
-  66% {
-    transform: translate(-6%, 5%);
+  40% {
+    transform: translate(-4%, 4%) scale(0.96);
+  }
+  60% {
+    transform: translate(6%, 3%) scale(1.04);
+  }
+  80% {
+    transform: translate(-5%, -4%) scale(0.97);
   }
 }
 
@@ -148,40 +154,40 @@ body {
 .home-mesh-blob-1 {
   width: 38%;
   height: 55%;
-  top: -12%;
+  top: -30%;
   left: -6%;
   background: #7a2a18;
-  animation: mesh-blob-drift 15s ease-in-out infinite;
+  animation: mesh-blob-drift 4s ease-in-out infinite;
 }
 
 .home-mesh-blob-2 {
   width: 34%;
   height: 50%;
-  top: 4%;
+  top: -14%;
   left: 22%;
   background: #b3491c;
-  animation: mesh-blob-drift 19s ease-in-out infinite reverse;
-  animation-delay: -4s;
+  animation: mesh-blob-drift 5s ease-in-out infinite reverse;
+  animation-delay: -1.3s;
 }
 
 .home-mesh-blob-3 {
   width: 36%;
   height: 52%;
-  top: -6%;
+  top: -24%;
   left: 46%;
   background: #545456;
-  animation: mesh-blob-drift 17s ease-in-out infinite;
-  animation-delay: -8s;
+  animation: mesh-blob-drift 4.5s ease-in-out infinite;
+  animation-delay: -2.6s;
 }
 
 .home-mesh-blob-4 {
   width: 34%;
   height: 50%;
-  top: 2%;
+  top: -16%;
   left: 68%;
   background: #2a1410;
-  animation: mesh-blob-drift 21s ease-in-out infinite reverse;
-  animation-delay: -11s;
+  animation: mesh-blob-drift 5.5s ease-in-out infinite reverse;
+  animation-delay: -3.8s;
 }
 
 .home-mesh-fade {
