@@ -139,11 +139,13 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
     };
   }, [persona.cardName]);
 
+  const facePosition = persona.facePosition ?? '50% 50%';
+
   return (
     <div
       style={{
-        width: '40px',
-        height: '40px',
+        width: '48px',
+        height: '48px',
         borderRadius: '50%',
         overflow: 'hidden',
         flexShrink: 0,
@@ -155,9 +157,20 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
       }}
     >
       {artUrl ? (
-        <img src={artUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img
+          src={artUrl}
+          alt=""
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: facePosition,
+            transform: `scale(${persona.faceZoom ?? 1})`,
+            transformOrigin: facePosition,
+          }}
+        />
       ) : (
-        <WizardHatIcon size={17} style={{ color: 'var(--accent)' }} />
+        <WizardHatIcon size={19} style={{ color: 'var(--accent)' }} />
       )}
     </div>
   );
