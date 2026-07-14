@@ -51,9 +51,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         url.searchParams.delete('token_hash');
         url.searchParams.delete('type');
         window.history.replaceState(window.history.state, '', url.toString());
-        const { error } = await supabase!.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
-        if (error) console.error('[auth] verifyOtp failed:', error.status, error.message);
-        authSettled = true; // onAuthStateChange delivers the resulting session
+
+        // Login-CSRF guard: a token in the URL must not silently switch an
+        // already-signed-in user into a *different* account (an attacker could
+        // send their own signup/email-confirm link and, if it's honored while
+        // the victim is logged in, hijack them into the attacker's account —
+        // where the victim's decks then sync). Recovery is inherently for the
+        // current user (and routes to the gated password screen), so only it
+        // may proceed when a session already exists.
+        const { data: pre } = await supabase!.auth.getSession();
+        if (pre.session && otpType !== 'recovery') {
+          console.warn('[auth] ignoring URL token: already signed in');
+        } else {
+          const { error } = await supabase!.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
+          if (error) console.error('[auth] verifyOtp failed:', error.status, error.message);
+          authSettled = true; // onAuthStateChange delivers the resulting session
+        }
       }
 
       const { data } = await supabase!.auth.getSession();
