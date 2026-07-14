@@ -44,6 +44,10 @@ function canBePartnerWith(
   return false;
 }
 
+// Full-card fetches keyed by Scryfall id, shared across sheet opens for the
+// whole session so re-opening a card doesn't re-hit the API.
+const fullCardCache = new Map<string, ScryfallCard>();
+
 interface CardBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -86,10 +90,13 @@ export function CardBottomSheet({
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
   const [qtyInput, setQtyInput] = React.useState('0');
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
-  const priceSource = React.useMemo(() => getPriceSource(), []);
+  // Re-read on each open so changing the reference store in Settings takes
+  // effect without needing to close the deck.
+  const [priceSource, setPriceSource] = React.useState(() => getPriceSource());
 
   React.useEffect(() => {
     if (!isOpen) return;
+    setPriceSource(getPriceSource());
     let cancelled = false;
     getUsdBrlRate().then((rate) => {
       if (!cancelled) setUsdBrlRate(rate);
@@ -100,16 +107,23 @@ export function CardBottomSheet({
   }, [isOpen]);
 
   // Cards opened from the decklist only carry the slim stored data (no set,
-  // rarity, oracle text). Fetch the full card from Scryfall to fill it in.
+  // rarity, oracle text). Fetch the full card from Scryfall to fill it in —
+  // cached by id so re-opening the same card doesn't re-hit the API.
   React.useEffect(() => {
     setFetchedCard(null);
     if (!isOpen || !cardProp || cardProp.set_name) return;
+    const cached = fullCardCache.get(cardProp.id);
+    if (cached) {
+      setFetchedCard(cached);
+      return;
+    }
     let cancelled = false;
     fetch(`https://api.scryfall.com/cards/${cardProp.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return;
         const full = data as ScryfallCard;
+        fullCardCache.set(full.id, full);
         setFetchedCard(full);
         // Backfill fields older builds didn't store (keywords, colorIdentity,
         // backImageUrl) so features like partner detection heal over time
@@ -167,7 +181,8 @@ export function CardBottomSheet({
     existingCard?.backImageUrl || card.card_faces?.[1]?.image_uris?.normal || null;
   const isDfc = Boolean(backImageUrl);
 
-  const usdPrice = card.prices?.usd ? parseFloat(card.prices.usd) : null;
+  const usdPriceRaw = card.prices?.usd ? parseFloat(card.prices.usd) : NaN;
+  const usdPrice = Number.isFinite(usdPriceRaw) ? usdPriceRaw : null;
 
   const isInDeck = !!existingCard;
   const quantity = existingCard?.quantity ?? 0;

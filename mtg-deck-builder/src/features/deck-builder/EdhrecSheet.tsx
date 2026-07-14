@@ -43,10 +43,12 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const { addCard, removeCard } = useDeckStore();
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
-  const priceSource = React.useMemo(() => getPriceSource(), []);
+  // Re-read on open so a store change in Settings applies without reopening the deck.
+  const [priceSource, setPriceSource] = React.useState(() => getPriceSource());
 
   React.useEffect(() => {
     if (!isOpen) return;
+    setPriceSource(getPriceSource());
     let cancelled = false;
     getUsdBrlRate().then((rate) => {
       if (!cancelled) setUsdBrlRate(rate);

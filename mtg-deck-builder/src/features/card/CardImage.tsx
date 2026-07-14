@@ -28,6 +28,14 @@ export function CardImage({
 }: CardImageProps) {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
+  // Reset load/error state when the URL changes on a reused instance (e.g. the
+  // card sheet swaps the slim stored image for the full fetched one) — without
+  // this, a previous URL that errored keeps the 🃏 fallback showing for the new
+  // valid URL, and a new URL would flash in with no skeleton.
+  React.useEffect(() => {
+    setLoaded(false);
+    setError(false);
+  }, [imageUrl]);
   // "Already in deck" reads as a success state, not a brand/accent one — it
   // shouldn't shift color every time someone tweaks the accent (see the
   // Design System accent picker).
