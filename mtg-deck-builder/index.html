@@ -2,6 +2,9 @@
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- Don't leak the URL (which briefly carries the auth token_hash on email
+         links) to cross-origin destinations via the Referer header. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Honored by Safari < 26 (dark base). Safari 26+ ignores theme-color and
@@ -23,7 +26,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Young+Serif&family=Lora:wght@700&family=Bitter:wght@700&family=DM+Serif+Display&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/mtg-deck-builder/assets/index-c6FWd_0_.js"></script>
+    <script type="module" crossorigin src="/mtg-deck-builder/assets/index-CsUgVvrs.js"></script>
     <link rel="stylesheet" crossorigin href="/mtg-deck-builder/assets/index-JtS5s21Q.css">
   </head>
   <body>
