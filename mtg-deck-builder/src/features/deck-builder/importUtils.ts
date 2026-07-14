@@ -42,7 +42,7 @@ function normalizeSectionName(name: string): string {
 
 export function parseDecklist(text: string): ParsedLine[] {
   const result: ParsedLine[] = [];
-  const seen = new Set<string>();
+  const seen = new Map<string, ParsedLine>();
   let currentSection: string | null = null;
 
   for (const raw of text.split('\n')) {
@@ -57,13 +57,18 @@ export function parseDecklist(text: string): ParsedLine[] {
 
     // A leading "N " or "Nx " sets the quantity; lines without one (e.g. a
     // bare card name pasted from a "not found" list) default to 1 instead of
-    // being silently dropped.
-    const match = line.match(/^(\d+)[xX]?\s+(.+)$/);
-    const quantity = match ? Math.min(99, Math.max(1, parseInt(match[1], 10))) : 1;
+    // being silently dropped. Only treat a leading number as a quantity when
+    // it's a plausible count (<= 99) or has an explicit "x" — otherwise a card
+    // whose name starts with a big number (e.g. "1996 World Champion") would be
+    // mis-parsed with the number stripped off.
+    const match = line.match(/^(\d+)(x?)\s+(.+)$/i);
+    const leadingNum = match ? parseInt(match[1], 10) : 0;
+    const isQuantity = !!match && (!!match[2] || leadingNum <= 99);
+    const quantity = isQuantity ? Math.min(99, Math.max(1, leadingNum)) : 1;
 
     // Moxfield-style inline tag at the end of the line, e.g. "Sol Ring [Ramp]"
     // or "Ardenn, Intrepid Archaeologist [Commander{top}]" (pin marker discarded).
-    let rest = match ? match[2] : line;
+    let rest = isQuantity ? match![3] : line;
     let inlineSection: string | null = null;
     const bracketMatch = rest.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
     if (bracketMatch) {
@@ -73,14 +78,23 @@ export function parseDecklist(text: string): ParsedLine[] {
     }
 
     const name = rest
-      .replace(/\s+\([A-Z0-9]{2,6}\)\s+\d+.*/, '')
+      // Trailing "(SET) 123" collector reference — case-insensitive so lowercase
+      // set codes some exporters emit ("(m21) 263") don't leak into the name.
+      .replace(/\s+\([A-Za-z0-9]{2,6}\)\s+\d+.*/, '')
       .replace(/\s+\*.*$/, '')
       .trim();
     if (!name) continue;
     const key = name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push({ quantity, name, section: inlineSection ?? currentSection });
+    const existing = seen.get(key);
+    if (existing) {
+      // Same card listed twice — sum the quantities instead of dropping the
+      // repeat (keeps the first occurrence's section).
+      existing.quantity = Math.min(99, existing.quantity + quantity);
+      continue;
+    }
+    const entry: ParsedLine = { quantity, name, section: inlineSection ?? currentSection };
+    seen.set(key, entry);
+    result.push(entry);
   }
   return result;
 }
@@ -100,40 +114,71 @@ async function fetchCardByExactName(name: string): Promise<ScryfallCard | null> 
   return (data.data as ScryfallCard[])[0] ?? null;
 }
 
+/** Lowercase + strip diacritics + unify curly apostrophes, so a typed
+ *  "Lim-Dul's Vault" matches Scryfall's canonical "Lim-Dûl's Vault". */
+function normalizeName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // combining diacritical marks
+    .replace(/[‘’]/g, "'") // curly apostrophes → straight
+    .toLowerCase()
+    .trim();
+}
+
 export async function fetchCardsByName(
   parsed: ParsedLine[]
 ): Promise<{ toImport: DeckCard[]; notFound: string[]; sections: string[] }> {
   const identifiers = parsed.map((p) => ({ name: p.name }));
   const foundCards: ScryfallCard[] = [];
   const notFoundNames: string[] = [];
+  let chunkErrors = 0;
 
   for (let i = 0; i < identifiers.length; i += 75) {
     const batch = identifiers.slice(i, i + 75);
-    const res = await fetch('https://api.scryfall.com/cards/collection', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifiers: batch }),
-    });
-    if (!res.ok) throw new Error('Scryfall error');
-    const data = await res.json();
-    foundCards.push(...(data.data as ScryfallCard[]));
-    for (const missing of data.not_found ?? []) {
-      if (missing.name) notFoundNames.push(missing.name as string);
+    // Space batches out (~100ms) so a big multi-chunk import doesn't burst
+    // past Scryfall's rate limit.
+    if (i > 0) await new Promise((res) => setTimeout(res, 100));
+    try {
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifiers: batch }),
+      });
+      if (!res.ok) throw new Error('Scryfall error');
+      const data = await res.json();
+      foundCards.push(...(data.data as ScryfallCard[]));
+      for (const missing of data.not_found ?? []) {
+        if (missing.name) notFoundNames.push(missing.name as string);
+      }
+    } catch {
+      // A single failed chunk must not discard the cards already fetched from
+      // earlier chunks — surface this chunk's names as "not found" and press on.
+      chunkErrors++;
+      for (const id of batch) notFoundNames.push(id.name);
     }
   }
+
+  // Every chunk failed — this is a total failure (offline / Scryfall down), so
+  // let the caller show an error instead of "0 imported, N not found".
+  if (foundCards.length === 0 && chunkErrors > 0) throw new Error('Scryfall error');
 
   // Build lookup by full name AND by front-face name (for DFC fuzzy matches).
   // Scryfall fuzzy-matches "Delver of Secrets" → returns the card whose canonical
   // name is "Delver of Secrets // Insectile Aberration". Without the front-face
-  // alias, our map lookup by the original searched name would miss it.
+  // alias, our map lookup by the original searched name would miss it. Also
+  // index a diacritic/punctuation-normalized key so accent/apostrophe
+  // differences between the typed name and Scryfall's canonical name still match.
   const byName = new Map<string, ScryfallCard>();
+  const byNorm = new Map<string, ScryfallCard>();
+  const addKeys = (key: string, card: ScryfallCard) => {
+    if (!byName.has(key)) byName.set(key, card);
+    const norm = normalizeName(key);
+    if (!byNorm.has(norm)) byNorm.set(norm, card);
+  };
   for (const card of foundCards) {
-    byName.set(card.name.toLowerCase(), card);
+    addKeys(card.name.toLowerCase(), card);
     const frontFace = card.card_faces?.[0];
-    if (frontFace) {
-      const frontKey = frontFace.name.toLowerCase();
-      if (!byName.has(frontKey)) byName.set(frontKey, card);
-    }
+    if (frontFace) addKeys(frontFace.name.toLowerCase(), card);
   }
 
   // Some exporters join two independent cards on one line with " // " instead
@@ -168,7 +213,7 @@ export async function fetchCardsByName(
   const sections: string[] = [];
   for (const { name, quantity, section } of parsed) {
     const key = name.toLowerCase();
-    const scryfall = byName.get(key);
+    const scryfall = byName.get(key) ?? byNorm.get(normalizeName(name));
     if (scryfall) {
       toImport.push(scryfallToDeckCard(scryfall, quantity, section ?? undefined));
       if (section && !sections.includes(section)) sections.push(section);

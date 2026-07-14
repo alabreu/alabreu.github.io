@@ -10,6 +10,7 @@ import { parseDecklist, fetchCardsByName } from './importUtils';
 type Phase =
   | { kind: 'idle' }
   | { kind: 'loading'; total: number }
+  | { kind: 'error' }
   | { kind: 'done'; added: number; notFound: string[]; deckId: string; sections: string[] };
 
 interface ImportDeckSheetProps {
@@ -51,7 +52,7 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
       importCards(deck.id, toImport);
       setPhase({ kind: 'done', added: toImport.length, notFound, deckId: deck.id, sections });
     } catch {
-      setPhase({ kind: 'idle' });
+      setPhase({ kind: 'error' });
     }
   }
 
@@ -233,6 +234,20 @@ export function ImportDeckSheet({ isOpen, onClose }: ImportDeckSheetProps) {
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
               Buscando {phase.total} {phase.total === 1 ? 'carta' : 'cartas'}...
             </p>
+          </div>
+        )}
+
+        {phase.kind === 'error' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <AlertCircle size={24} style={{ color: 'var(--error)', flexShrink: 0 }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
+                Não foi possível buscar as cartas. Verifique sua conexão e tente novamente.
+              </p>
+            </div>
+            <Button variant="secondary" size="md" fullWidth onClick={() => setPhase({ kind: 'idle' })}>
+              Tentar novamente
+            </Button>
           </div>
         )}
 
