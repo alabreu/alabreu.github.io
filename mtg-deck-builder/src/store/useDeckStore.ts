@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Deck, DeckCard, ManaColor, DEFAULT_CATEGORIES } from '../types';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '../lib/safeStorage';
 
 type DeckStore = {
   decks: Deck[];
@@ -394,14 +395,17 @@ export const useDeckStore = create<DeckStore>()(
         set((state) => ({
           decks: state.decks.map((d) => {
             if (d.id !== deckId) return d;
-            let updated = [...d.cards];
+            // Single pass with an id→index map instead of findIndex+map per
+            // imported card (which was O(n·m) with a full array rebuild each
+            // match — janky on large decklist pastes).
+            const updated = d.cards.map((c) => ({ ...c }));
+            const indexById = new Map(updated.map((c, i) => [c.scryfallId, i]));
             for (const card of cards) {
-              const idx = updated.findIndex((c) => c.scryfallId === card.scryfallId);
-              if (idx >= 0) {
-                updated = updated.map((c, i) =>
-                  i === idx ? { ...c, quantity: c.quantity + card.quantity } : c
-                );
+              const idx = indexById.get(card.scryfallId);
+              if (idx !== undefined) {
+                updated[idx].quantity += card.quantity;
               } else {
+                indexById.set(card.scryfallId, updated.length);
                 updated.push({ ...card });
               }
             }
@@ -485,6 +489,20 @@ export const useDeckStore = create<DeckStore>()(
     }),
     {
       name: 'mtg-deck-builder-storage',
+      version: 1,
+      // Passthrough migration establishing a versioning baseline. The pre-version
+      // ("version 0") persisted shape is identical to v1, so we return it as-is
+      // — WITHOUT a migrate fn, bumping the version makes zustand silently
+      // DISCARD all existing decks on upgrade (data loss).
+      migrate: (persisted) => persisted as { decks: Deck[] },
+      // Route persistence through safeStorage so a disabled/full localStorage
+      // (Safari private mode, quota exceeded on big decks) degrades to
+      // in-memory-only instead of throwing inside a store mutation.
+      storage: createJSONStorage(() => ({
+        getItem: safeGetItem,
+        setItem: safeSetItem,
+        removeItem: safeRemoveItem,
+      })),
     }
   )
 );
