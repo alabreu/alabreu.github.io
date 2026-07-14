@@ -46,10 +46,12 @@ export function FeedbackSheet({ isOpen, onClose }: FeedbackSheetProps) {
     setError(null);
     const { error: err } = await supabase.from('feedback').insert({
       type,
-      message: message.trim(),
-      contact_email: contactEmail.trim() || session?.user.email || null,
+      // Clamp to the DB size limits (migration 0005) so a legit long report
+      // fails gracefully client-side instead of hitting a constraint error.
+      message: message.trim().slice(0, 4000),
+      contact_email: (contactEmail.trim() || session?.user.email || '').slice(0, 320) || null,
       user_id: session?.user.id ?? null,
-      page_context: window.location.hash || window.location.pathname,
+      page_context: (window.location.hash || window.location.pathname).slice(0, 500),
     });
     setSending(false);
     if (err) {
@@ -121,6 +123,7 @@ export function FeedbackSheet({ isOpen, onClose }: FeedbackSheetProps) {
                 : 'Qual sua ideia?'
             }
             value={message}
+            maxLength={4000}
             onChange={(e) => setMessage(e.target.value)}
             style={{
               display: 'block',
@@ -147,6 +150,7 @@ export function FeedbackSheet({ isOpen, onClose }: FeedbackSheetProps) {
             <Input
               placeholder="Seu e-mail (opcional, pra te responder)"
               value={contactEmail}
+              maxLength={320}
               onChange={(e) => setContactEmail(e.target.value)}
               type="text"
               inputMode="email"

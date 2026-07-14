@@ -14,6 +14,13 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // Bounds worst-case cost exposure per user per day. Tune to taste.
 const DAILY_LIMIT = 40;
+// Backstop across ALL users: since signup is self-serve, the per-user limit
+// alone doesn't cap aggregate spend on the paid model (an attacker can create
+// many accounts). This hard daily ceiling protects the OpenRouter key's cost
+// regardless of account count. Raise it as the real user base grows. NOTE:
+// this is only a code-side safety net — also set a hard spend limit on the
+// OpenRouter key itself in the OpenRouter dashboard.
+const GLOBAL_DAILY_LIMIT = 2000;
 
 // Guard rails against prompt-injection / token-abuse (e.g. someone treating
 // the Tutor as a free general-purpose LLM proxy). Keep in sync with
@@ -105,9 +112,21 @@ Deno.serve(async (req: Request) => {
     return jsonError(400, 'bad_request', 'Conversa longa demais.');
   }
 
-  // Rate limit: atomically increment today's counter (see migration 0004). The
-  // returned value reflects all concurrent callers, so parallel requests can't
-  // race past the cap the way a read-then-write could.
+  // Reconstruct the messages with ONLY role+content before forwarding, so a
+  // client can't smuggle extra keys (a multi-MB junk field that escapes the
+  // size caps, or OpenRouter routing params) into the upstream request. Also
+  // enforce a single leading system message — the app always sends exactly one
+  // at index 0; anything else is a malformed/abusive payload.
+  const safeMessages: { role: string; content: string }[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i] as { role: string; content: string };
+    if (m.role === 'system' && i !== 0) {
+      return jsonError(400, 'bad_request', 'Estrutura de conversa inválida.');
+    }
+    safeMessages.push({ role: m.role, content: m.content });
+  }
+
+  // Rate limit: atomically increment today's per-user counter (migration 0004).
   const { data: newCount, error: incErr } = await admin.rpc('add_coach_usage', {
     p_user_id: userId,
     p_day: today,
@@ -117,7 +136,6 @@ Deno.serve(async (req: Request) => {
     return jsonError(500, 'internal', 'Erro ao verificar limite de uso.');
   }
   if (newCount > DAILY_LIMIT) {
-    // Over the cap — refund the increment we just made and reject.
     await admin.rpc('add_coach_usage', { p_user_id: userId, p_day: today, p_delta: -1 });
     return jsonError(
       429,
@@ -126,10 +144,27 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Refund the counted message if the upstream call fails, so an overloaded
-  // free model returning 429s doesn't silently burn the user's daily quota.
+  // Global daily backstop (migration 0005) — bounds total spend across all
+  // accounts. Increment only after the per-user check passed.
+  const { data: globalCount, error: gErr } = await admin.rpc('add_global_coach_usage', {
+    p_day: today,
+    p_delta: 1,
+  });
+  if (gErr || typeof globalCount !== 'number') {
+    await admin.rpc('add_coach_usage', { p_user_id: userId, p_day: today, p_delta: -1 });
+    return jsonError(500, 'internal', 'Erro ao verificar limite de uso.');
+  }
+  if (globalCount > GLOBAL_DAILY_LIMIT) {
+    await admin.rpc('add_global_coach_usage', { p_day: today, p_delta: -1 });
+    await admin.rpc('add_coach_usage', { p_user_id: userId, p_day: today, p_delta: -1 });
+    return jsonError(429, 'rate_limited', 'O Tutor atingiu o limite de uso de hoje. Tente novamente amanhã.');
+  }
+
+  // Refund both counters if the upstream call fails, so an overloaded free
+  // model returning 429s doesn't silently burn anyone's quota.
   async function refund() {
     await admin.rpc('add_coach_usage', { p_user_id: userId, p_day: today, p_delta: -1 });
+    await admin.rpc('add_global_coach_usage', { p_day: today, p_delta: -1 });
   }
 
   let upstream: Response;
@@ -142,7 +177,7 @@ Deno.serve(async (req: Request) => {
         'HTTP-Referer': 'https://alabreu.github.io',
         'X-Title': 'Cobuilder Tutor',
       },
-      body: JSON.stringify({ model: body.model, stream: true, messages, max_tokens: MAX_TOKENS }),
+      body: JSON.stringify({ model: body.model, stream: true, messages: safeMessages, max_tokens: MAX_TOKENS }),
     });
   } catch {
     // Network/DNS failure reaching OpenRouter — must still return CORS headers,
@@ -154,16 +189,16 @@ Deno.serve(async (req: Request) => {
 
   if (!upstream.ok) {
     await refund();
-    // Forward the upstream error body (the client parses error.code/message)
-    // with CORS headers attached.
-    const text = await upstream.text();
-    return new Response(text, {
-      status: upstream.status,
-      headers: {
-        ...CORS_HEADERS,
-        'Content-Type': upstream.headers.get('Content-Type') ?? 'application/json',
-      },
-    });
+    // Do NOT forward the upstream body — OpenRouter error messages can leak the
+    // operator's account state (e.g. a 402 "you have X credits left"). Map the
+    // status to a generic client-safe message instead.
+    let msg: string;
+    if (upstream.status === 429) msg = 'Modelo sobrecarregado — aguarde alguns segundos e tente novamente.';
+    else if (upstream.status === 404) msg = 'Modelo indisponível. Escolha outro no menu ···.';
+    else if (upstream.status === 401 || upstream.status === 403 || upstream.status === 402)
+      msg = 'Serviço do Tutor temporariamente indisponível. Tente novamente mais tarde.';
+    else msg = 'Erro no serviço do Tutor. Tente novamente.';
+    return jsonError(upstream.status, 'upstream_error', msg);
   }
 
   // Stream OpenRouter's SSE response straight through to the client
