@@ -225,7 +225,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <CoachTab deck={deck} model={coachModel} personaId={personaId} onOpenSearch={handleOpenSearchFromCoach} />
+              <CoachTab key={deck.id} deck={deck} model={coachModel} personaId={personaId} onOpenSearch={handleOpenSearchFromCoach} />
             </motion.div>
           )}
         </AnimatePresence>

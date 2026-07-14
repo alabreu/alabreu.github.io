@@ -16,6 +16,7 @@ import {
   ApiKeySetup,
 } from '../features/deck-builder/CoachTab';
 import { getMarkdownComponents, TypingDots } from '../features/deck-builder/coachMarkdown';
+import { streamTutorReply } from '../features/deck-builder/tutorChatStream';
 import { getPersonaId, getCustomInstructions, buildTutorSystemPrompt } from '../features/deck-builder/tutorPersona';
 import {
   splitIntoParagraphs,
@@ -117,101 +118,27 @@ export default function TutorDeckChat() {
         ...history.map((m) => ({ role: m.role, content: m.content })),
       ];
 
-      const res = useProxy
-        ? await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coach-proxy`, {
-            method: 'POST',
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session!.access_token}`,
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY!,
-            },
-            body: JSON.stringify({ model, messages: chatMessages }),
-          })
-        : await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${apiKey}`,
-              'HTTP-Referer': window.location.origin,
-              'X-Title': 'MTG Deck Builder Tutor',
-            },
-            body: JSON.stringify({ model, stream: true, messages: chatMessages }),
-          });
+      const final = await streamTutorReply({
+        useProxy,
+        model,
+        messages: chatMessages,
+        session,
+        apiKey,
+        signal: controller.signal,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        onThinking: () =>
+          setMessages((prev) => prev.map((m) => (m.id === aId ? { ...m, content: '\u{1F9E0} Pensando...' } : m))),
+        onToken: (text) =>
+          setMessages((prev) => prev.map((m) => (m.id === aId ? { ...m, content: text } : m))),
+      });
 
-      if (!res.ok) {
-        let friendly: string;
-        try {
-          const json = await res.json();
-          if (json?.error?.code === 'rate_limited') {
-            friendly = json.error.message ?? 'Limite diário do Tutor atingido. Volte amanhã.';
-          } else {
-            const raw: string = json?.error?.metadata?.raw ?? '';
-            if (res.status === 429) {
-              const seconds = raw.match(/"Retry-After":"(\d+)"/)?.[1];
-              friendly = `Modelo sobrecarregado — aguarde${seconds ? ` ${seconds}s` : ' alguns segundos'} e tente novamente.`;
-            } else if (res.status === 401 || res.status === 403) {
-              friendly = useProxy
-                ? 'Sessão expirada — saia e entre novamente.'
-                : 'Chave de API inválida.';
-            } else if (res.status === 404) {
-              friendly = 'Modelo indisponível.';
-            } else {
-              friendly = json?.error?.message ?? `Erro ${res.status}`;
-            }
-          }
-        } catch {
-          friendly = `Erro ${res.status}`;
-        }
-        throw new Error(friendly);
-      }
-
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
-      let lineBuffer = '';
-      let isThinking = false;
-
-      outer: while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        lineBuffer += decoder.decode(value, { stream: true });
-        const lines = lineBuffer.split('\n');
-        lineBuffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break outer;
-          try {
-            const parsed = JSON.parse(data);
-            const delta = parsed?.choices?.[0]?.delta;
-            if (!delta) continue;
-
-            if (delta.reasoning_content && !accumulated) {
-              if (!isThinking) {
-                isThinking = true;
-                setMessages((prev) =>
-                  prev.map((m) => (m.id === aId ? { ...m, content: '\u{1F9E0} Pensando...' } : m))
-                );
-              }
-              continue;
-            }
-
-            if (delta.content) {
-              if (isThinking) {
-                isThinking = false;
-                accumulated = '';
-              }
-              accumulated += delta.content;
-              setMessages((prev) => prev.map((m) => (m.id === aId ? { ...m, content: accumulated } : m)));
-            }
-          } catch {
-            // skip malformed SSE chunk
-          }
-        }
+      if (!final.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aId ? { ...m, content: 'O modelo não retornou uma resposta. Tente novamente ou troque de modelo.' } : m
+          )
+        );
       }
     } catch (err) {
       if (controller.signal.aborted) return;
@@ -381,7 +308,7 @@ export default function TutorDeckChat() {
   }
 }
 
-function TutorMessageBubble({
+const TutorMessageBubble = React.memo(function TutorMessageBubble({
   msg,
   isStreaming,
   onPickCommander,
@@ -470,4 +397,4 @@ function TutorMessageBubble({
       </div>
     </div>
   );
-}
+});
