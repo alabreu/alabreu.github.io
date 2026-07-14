@@ -1,5 +1,6 @@
 import React from 'react';
 import { Language, translations } from './translations';
+import { safeGetItem, safeSetItem } from './safeStorage';
 
 const LANGUAGE_KEY = 'app-language';
 
@@ -12,12 +13,12 @@ function detectDefaultLanguage(): Language {
 }
 
 export function getLanguage(): Language {
-  const stored = localStorage.getItem(LANGUAGE_KEY);
+  const stored = safeGetItem(LANGUAGE_KEY);
   return stored === 'pt' || stored === 'en' ? stored : detectDefaultLanguage();
 }
 
 export function setLanguage(lang: Language): void {
-  localStorage.setItem(LANGUAGE_KEY, lang);
+  safeSetItem(LANGUAGE_KEY, lang);
 }
 
 interface LanguageContextValue {
@@ -55,7 +56,9 @@ export function useT() {
       let text = translations[lang][key] ?? translations.pt[key] ?? key;
       if (vars) {
         for (const [k, v] of Object.entries(vars)) {
-          text = text.replace(`{{${k}}}`, String(v));
+          // split/join replaces every occurrence without needing replaceAll
+          // (not in the current TS lib target) or regex-escaping the braces.
+          text = text.split(`{{${k}}}`).join(String(v));
         }
       }
       return text;

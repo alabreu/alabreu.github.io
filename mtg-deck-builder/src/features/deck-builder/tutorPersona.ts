@@ -1,6 +1,7 @@
 // Shared persona/system-prompt module for the Tutor, used by both CoachTab
 // (deck-level chat) and TutorDeckChat (commander-picking chat) so tone,
 // custom instructions and guard rails stay identical across both surfaces.
+import { safeGetItem, safeSetItem } from '../../lib/safeStorage';
 
 export interface Persona {
   id: string;
@@ -86,12 +87,12 @@ export const CUSTOM_INSTRUCTIONS_KEY = 'tutor-custom-instructions';
 export const CUSTOM_INSTRUCTIONS_MAX_LEN = 300;
 
 export function getPersonaId(): string {
-  const stored = localStorage.getItem(PERSONA_KEY);
+  const stored = safeGetItem(PERSONA_KEY);
   return stored && PERSONAS.some((p) => p.id === stored) ? stored : DEFAULT_PERSONA_ID;
 }
 
 export function setPersonaId(id: string): void {
-  localStorage.setItem(PERSONA_KEY, id);
+  safeSetItem(PERSONA_KEY, id);
 }
 
 export function getPersona(): Persona {
@@ -99,11 +100,11 @@ export function getPersona(): Persona {
 }
 
 export function getCustomInstructions(): string {
-  return (localStorage.getItem(CUSTOM_INSTRUCTIONS_KEY) ?? '').slice(0, CUSTOM_INSTRUCTIONS_MAX_LEN);
+  return (safeGetItem(CUSTOM_INSTRUCTIONS_KEY) ?? '').slice(0, CUSTOM_INSTRUCTIONS_MAX_LEN);
 }
 
 export function setCustomInstructions(text: string): void {
-  localStorage.setItem(CUSTOM_INSTRUCTIONS_KEY, text.slice(0, CUSTOM_INSTRUCTIONS_MAX_LEN));
+  safeSetItem(CUSTOM_INSTRUCTIONS_KEY, text.slice(0, CUSTOM_INSTRUCTIONS_MAX_LEN));
 }
 
 const RESPONSE_RULES = `Regras de resposta:

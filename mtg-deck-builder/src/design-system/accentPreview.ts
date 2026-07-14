@@ -1,3 +1,5 @@
+import { safeGetItem, safeSetItem } from '../lib/safeStorage';
+
 export interface AccentPreset {
   id: string;
   label: string;
@@ -56,12 +58,17 @@ export function applyAccent(hex: string) {
   root.setProperty('--accent-border', rgba(hex, 0.3));
 }
 
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+
 export function saveAccentPreview(hex: string) {
-  localStorage.setItem(STORAGE_KEY, hex);
+  safeSetItem(STORAGE_KEY, hex);
 }
 
 export function getSavedAccentPreview(): string | null {
-  return localStorage.getItem(STORAGE_KEY);
+  const saved = safeGetItem(STORAGE_KEY);
+  // Guard against corrupted/legacy values — a malformed hex flows through
+  // hexToRgb as NaN and paints invalid CSS variables app-wide.
+  return saved && HEX_RE.test(saved) ? saved : null;
 }
 
 /** Re-applies a previously saved preview on app boot, before first paint,

@@ -1,8 +1,10 @@
+import { safeGetItem, safeSetItem } from '../lib/safeStorage';
+
 const FLAME_TINT_KEY = 'flame-tint-enabled';
 const FLAME_TINT_CHANGE_EVENT = 'flame-tint-change';
 
 export function getFlameTintEnabled(): boolean {
-  return localStorage.getItem(FLAME_TINT_KEY) === '1';
+  return safeGetItem(FLAME_TINT_KEY) === '1';
 }
 
 /** Sets the 4 --mesh-blob-* custom properties as color-mix() expressions
@@ -27,7 +29,7 @@ export function applyFlameTint(enabled: boolean) {
 }
 
 export function setFlameTintEnabled(enabled: boolean): void {
-  localStorage.setItem(FLAME_TINT_KEY, enabled ? '1' : '0');
+  safeSetItem(FLAME_TINT_KEY, enabled ? '1' : '0');
   applyFlameTint(enabled);
   window.dispatchEvent(new Event(FLAME_TINT_CHANGE_EVENT));
 }

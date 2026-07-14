@@ -1,5 +1,6 @@
 import { ScryfallCard } from '../types';
 import { usdToBrlLabel, ligaMagicUrl } from './usdBrl';
+import { safeGetItem, safeSetItem } from './safeStorage';
 
 export type PriceSource = 'ligamagic' | 'tcgplayer';
 
@@ -7,12 +8,12 @@ const STORAGE_KEY = 'price-source';
 const DEFAULT_SOURCE: PriceSource = 'ligamagic';
 
 export function getPriceSource(): PriceSource {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = safeGetItem(STORAGE_KEY);
   return stored === 'ligamagic' || stored === 'tcgplayer' ? stored : DEFAULT_SOURCE;
 }
 
 export function setPriceSource(source: PriceSource): void {
-  localStorage.setItem(STORAGE_KEY, source);
+  safeSetItem(STORAGE_KEY, source);
 }
 
 /** TCGplayer search URL (front face name for DFCs) — Scryfall's own default

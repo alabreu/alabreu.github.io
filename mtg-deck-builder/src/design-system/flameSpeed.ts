@@ -1,8 +1,10 @@
+import { safeGetItem, safeSetItem } from '../lib/safeStorage';
+
 const FLAME_SPEED_KEY = 'flame-speed-multiplier';
 export const DEFAULT_FLAME_SPEED = 1;
 
 export function getFlameSpeed(): number {
-  const raw = localStorage.getItem(FLAME_SPEED_KEY);
+  const raw = safeGetItem(FLAME_SPEED_KEY);
   const n = raw ? parseFloat(raw) : DEFAULT_FLAME_SPEED;
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_FLAME_SPEED;
 }
@@ -15,7 +17,7 @@ export function applyFlameSpeed(speed: number) {
 }
 
 export function setFlameSpeed(speed: number): void {
-  localStorage.setItem(FLAME_SPEED_KEY, String(speed));
+  safeSetItem(FLAME_SPEED_KEY, String(speed));
   applyFlameSpeed(speed);
 }
 

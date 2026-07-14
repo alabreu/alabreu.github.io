@@ -1,12 +1,14 @@
+import { safeGetItem, safeSetItem } from '../lib/safeStorage';
+
 const NOISE_KEY = 'noise-overlay-enabled';
 const NOISE_CHANGE_EVENT = 'noise-overlay-change';
 
 export function getNoiseEnabled(): boolean {
-  return localStorage.getItem(NOISE_KEY) === '1';
+  return safeGetItem(NOISE_KEY) === '1';
 }
 
 export function setNoiseEnabled(enabled: boolean): void {
-  localStorage.setItem(NOISE_KEY, enabled ? '1' : '0');
+  safeSetItem(NOISE_KEY, enabled ? '1' : '0');
   window.dispatchEvent(new Event(NOISE_CHANGE_EVENT));
 }
 
