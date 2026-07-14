@@ -7,7 +7,8 @@ import { CardImage } from '../card/CardImage';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import { CardActionsOverlay } from '../card/CardActionsOverlay';
-import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
+import { getUsdBrlRate } from '../../lib/usdBrl';
+import { getPriceSource, getCardPriceLink } from '../../lib/priceSource';
 import { Deck, ScryfallCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { EdhrecList, fetchEdhrecLists, hydrateCards, translateHeader } from './edhrec';
@@ -42,6 +43,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const { addCard, removeCard } = useDeckStore();
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+  const priceSource = React.useMemo(() => getPriceSource(), []);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -311,7 +313,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                       card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
                     const synergy = synergyFor(card.name);
 
-                    const brl = usdToBrlLabel(card.prices?.usd, usdBrlRate);
+                    const priceLink = getCardPriceLink(card, usdBrlRate, priceSource);
 
                     return (
                       <div key={card.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
@@ -351,9 +353,9 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                               </p>
                             )}
                           </div>
-                          {brl && (
+                          {priceLink && (
                             <a
-                              href={ligaMagicUrl(card.name)}
+                              href={priceLink.url}
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
@@ -365,7 +367,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                                 flexShrink: 0,
                               }}
                             >
-                              {brl}
+                              {priceLink.label}
                             </a>
                           )}
                         </div>

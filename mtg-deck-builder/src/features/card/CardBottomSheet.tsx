@@ -10,6 +10,7 @@ import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { scryfallToDeckCard, canBeCommanderCard } from './cardUtils';
 import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
 import { getUsdBrlRate, formatBrl, ligaMagicUrl } from '../../lib/usdBrl';
+import { getPriceSource, tcgplayerUrl } from '../../lib/priceSource';
 
 function canBePartnerWith(
   card: ScryfallCard,
@@ -85,6 +86,7 @@ export function CardBottomSheet({
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
   const [qtyInput, setQtyInput] = React.useState('0');
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
+  const priceSource = React.useMemo(() => getPriceSource(), []);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -426,7 +428,7 @@ export function CardBottomSheet({
             </div>
           )}
 
-          {/* Price — Scryfall USD + BRL estimate linking to LigaMagic */}
+          {/* Price — Scryfall USD, plus a link to the user's chosen reference store */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
               Preço
@@ -438,7 +440,7 @@ export function CardBottomSheet({
                 </span>
               )}
               <a
-                href={ligaMagicUrl(card.name)}
+                href={priceSource === 'ligamagic' ? ligaMagicUrl(card.name) : tcgplayerUrl(card.name)}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -451,13 +453,15 @@ export function CardBottomSheet({
                   textDecoration: 'none',
                 }}
               >
-                {usdPrice !== null && usdBrlRate !== null
-                  ? `≈ ${formatBrl(usdPrice * usdBrlRate)} · LigaMagic`
-                  : 'Ver na LigaMagic'}
+                {priceSource === 'ligamagic'
+                  ? usdPrice !== null && usdBrlRate !== null
+                    ? `≈ ${formatBrl(usdPrice * usdBrlRate)} · LigaMagic`
+                    : 'Ver na LigaMagic'
+                  : 'Ver na TCGplayer'}
                 <ExternalLink size={12} />
               </a>
             </div>
-            {usdPrice !== null && usdBrlRate !== null && (
+            {priceSource === 'ligamagic' && usdPrice !== null && usdBrlRate !== null && (
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 Estimativa pela cotação do dia (fonte: TCGplayer via Scryfall)
               </span>

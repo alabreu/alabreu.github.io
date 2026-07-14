@@ -13,7 +13,8 @@ import { ScryfallCard, ManaColor, Deck } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { scryfallToDeckCard, defaultCategoryFor } from '../card/cardUtils';
 import { CardActionsOverlay } from '../card/CardActionsOverlay';
-import { getUsdBrlRate, usdToBrlLabel, ligaMagicUrl } from '../../lib/usdBrl';
+import { getUsdBrlRate } from '../../lib/usdBrl';
+import { getPriceSource, getCardPriceLink } from '../../lib/priceSource';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
 import {
   SearchFilters,
@@ -352,6 +353,7 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
   const [usdBrlRate, setUsdBrlRate] = React.useState<number | null>(null);
   const [viewMode, setViewMode] = React.useState<ViewMode>('2col');
   const [recent, setRecent] = React.useState<string[]>(loadRecent);
+  const priceSource = React.useMemo(() => getPriceSource(), []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -1006,6 +1008,7 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
               const qty = deckCardMap[card.id] ?? 0;
               const imageUrl =
                 card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
+              const priceLink = getCardPriceLink(card, usdBrlRate, priceSource);
 
               return (
                 <motion.div
@@ -1046,9 +1049,9 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
                     >
                       {card.name}
                     </span>
-                    {usdToBrlLabel(card.prices?.usd, usdBrlRate) && (
+                    {priceLink && (
                       <a
-                        href={ligaMagicUrl(card.name)}
+                        href={priceLink.url}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -1060,7 +1063,7 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
                           flexShrink: 0,
                         }}
                       >
-                        {usdToBrlLabel(card.prices?.usd, usdBrlRate)}
+                        {priceLink.label}
                       </a>
                     )}
                   </div>

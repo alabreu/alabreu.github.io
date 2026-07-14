@@ -15,8 +15,11 @@ import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { useLanguage, useT } from '../lib/i18n';
 import { Language } from '../lib/translations';
+import { PriceSource, getPriceSource, setPriceSource } from '../lib/priceSource';
 
-function LanguageFlagAvatar({ emoji }: { emoji: string }) {
+/** Small circular "avatar" for a picker option — a flag emoji for language,
+ *  a currency symbol for price store. */
+function OptionAvatar({ content, fontSize = '17px' }: { content: string; fontSize?: string }) {
   return (
     <div
       style={{
@@ -28,27 +31,26 @@ function LanguageFlagAvatar({ emoji }: { emoji: string }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '17px',
+        fontSize,
+        fontWeight: 700,
+        color: 'var(--text-secondary)',
         flexShrink: 0,
       }}
     >
-      {emoji}
+      {content}
     </div>
   );
 }
 
-function LanguagePicker({
+function OptionList<T extends string>({
+  options,
   selected,
   onChange,
 }: {
-  selected: Language;
-  onChange: (lang: Language) => void;
+  options: { id: T; avatar: string; avatarFontSize?: string; label: string; description?: string }[];
+  selected: T;
+  onChange: (id: T) => void;
 }) {
-  const t = useT();
-  const options: { id: Language; emoji: string; label: string }[] = [
-    { id: 'pt', emoji: '🇧🇷', label: t('home.languagePortuguese') },
-    { id: 'en', emoji: '🇺🇸', label: t('home.languageEnglish') },
-  ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {options.map((o) => {
@@ -72,15 +74,71 @@ function LanguagePicker({
               transition: 'background-color 0.1s, border-color 0.1s',
             }}
           >
-            <LanguageFlagAvatar emoji={o.emoji} />
-            <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
-              {o.label}
-            </span>
+            <OptionAvatar content={o.avatar} fontSize={o.avatarFontSize} />
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
+                {o.label}
+              </p>
+              {o.description && (
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>{o.description}</p>
+              )}
+            </div>
             {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
           </button>
         );
       })}
     </div>
+  );
+}
+
+function LanguagePicker({
+  selected,
+  onChange,
+}: {
+  selected: Language;
+  onChange: (lang: Language) => void;
+}) {
+  const t = useT();
+  return (
+    <OptionList
+      selected={selected}
+      onChange={onChange}
+      options={[
+        { id: 'pt', avatar: '🇧🇷', label: t('home.languagePortuguese') },
+        { id: 'en', avatar: '🇺🇸', label: t('home.languageEnglish') },
+      ]}
+    />
+  );
+}
+
+function StorePicker({
+  selected,
+  onChange,
+}: {
+  selected: PriceSource;
+  onChange: (source: PriceSource) => void;
+}) {
+  const t = useT();
+  return (
+    <OptionList
+      selected={selected}
+      onChange={onChange}
+      options={[
+        {
+          id: 'ligamagic',
+          avatar: 'R$',
+          avatarFontSize: '12px',
+          label: t('home.storeLigaMagic'),
+          description: t('home.storeLigaMagicDesc'),
+        },
+        {
+          id: 'tcgplayer',
+          avatar: '$',
+          label: t('home.storeTCGplayer'),
+          description: t('home.storeTCGplayerDesc'),
+        },
+      ]}
+    />
   );
 }
 
@@ -347,7 +405,8 @@ export default function Home() {
   const [importOpen, setImportOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
-  const [languageOpen, setLanguageOpen] = React.useState(false);
+  const [languageStoreOpen, setLanguageStoreOpen] = React.useState(false);
+  const [priceSource, setPriceSourceState] = React.useState<PriceSource>(() => getPriceSource());
   const versionTapCountRef = React.useRef(0);
   const lastVersionTapRef = React.useRef(0);
 
@@ -678,9 +737,9 @@ export default function Home() {
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
 
-          {/* Language */}
+          {/* Language & Store */}
           <button
-            onClick={() => { setMenuOpen(false); setLanguageOpen(true); }}
+            onClick={() => { setMenuOpen(false); setLanguageStoreOpen(true); }}
             style={{
               width: '100%',
               display: 'flex',
@@ -715,10 +774,11 @@ export default function Home() {
             </span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                {t('home.language')}
+                {t('home.languageAndStore')}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                {lang === 'pt' ? t('home.languagePortuguese') : t('home.languageEnglish')}
+                {lang === 'pt' ? t('home.languagePortuguese') : t('home.languageEnglish')} ·{' '}
+                {priceSource === 'ligamagic' ? t('home.storeLigaMagic') : t('home.storeTCGplayer')}
               </p>
             </div>
           </button>
@@ -825,16 +885,27 @@ export default function Home() {
         </div>
       </BottomSheet>
 
-      {/* Language sheet */}
-      <BottomSheet isOpen={languageOpen} onClose={() => setLanguageOpen(false)} title={t('home.language')}>
-        <div style={{ padding: '8px 20px 32px' }}>
-          <LanguagePicker
-            selected={lang}
-            onChange={(next) => {
-              setLang(next);
-              setLanguageOpen(false);
-            }}
-          />
+      {/* Language & Store sheet */}
+      <BottomSheet isOpen={languageStoreOpen} onClose={() => setLanguageStoreOpen(false)} title={t('home.languageAndStore')}>
+        <div style={{ padding: '8px 20px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              {t('home.language')}
+            </p>
+            <LanguagePicker selected={lang} onChange={setLang} />
+          </div>
+          <div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              {t('home.store')}
+            </p>
+            <StorePicker
+              selected={priceSource}
+              onChange={(next) => {
+                setPriceSource(next);
+                setPriceSourceState(next);
+              }}
+            />
+          </div>
         </div>
       </BottomSheet>
 
