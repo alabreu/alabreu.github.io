@@ -34,6 +34,10 @@ export default function NewDeck() {
       setIsSearching(false);
       return;
     }
+    // Ignore a resolved fetch if the effect was torn down meanwhile (query
+    // changed, or a commander was selected) — otherwise a slow response lands
+    // and renders stale results underneath the already-selected commander.
+    let ignore = false;
     setIsSearching(true);
     debounceRef.current = setTimeout(async () => {
       try {
@@ -41,19 +45,23 @@ export default function NewDeck() {
         const res = await fetch(
           `https://api.scryfall.com/cards/search?q=${q}&order=name&unique=cards`
         );
+        if (ignore) return;
         if (res.ok) {
           const data = await res.json();
-          setResults((data.data as ScryfallCard[]).slice(0, 24));
+          if (!ignore) setResults((data.data as ScryfallCard[]).slice(0, 24));
         } else {
           setResults([]);
         }
       } catch {
-        setResults([]);
+        if (!ignore) setResults([]);
       } finally {
-        setIsSearching(false);
+        if (!ignore) setIsSearching(false);
       }
     }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      ignore = true;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [commanderQuery, selected]);
 
   function handleSelect(card: ScryfallCard) {
@@ -384,9 +392,9 @@ export default function NewDeck() {
             </p>
           )}
 
-          {/* Results list */}
+          {/* Results list — never shown once a commander is selected */}
           <AnimatePresence>
-            {results.length > 0 && (
+            {!selected && results.length > 0 && (
               <motion.div
                 key="results"
                 initial={{ opacity: 0, y: 4 }}
