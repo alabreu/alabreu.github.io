@@ -18,6 +18,75 @@ import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 import { CONTENT_MAX_WIDTH, edgeInset } from '../design-system/responsive';
 
+type MenuRowTone = 'default' | 'accent' | 'danger';
+const MENU_ROW_TONES: Record<MenuRowTone, { bg: string; border: string; icon: string; title: string }> = {
+  default: { bg: 'var(--surface-1)', border: 'var(--border-default)', icon: 'var(--text-secondary)', title: 'var(--text-primary)' },
+  accent: { bg: 'var(--accent-subtle)', border: 'var(--accent-border)', icon: 'var(--accent)', title: 'var(--text-primary)' },
+  danger: { bg: 'rgba(248, 113, 113, 0.12)', border: 'rgba(248, 113, 113, 0.2)', icon: 'var(--error)', title: 'var(--error)' },
+};
+
+/** One row in a bottom-sheet action menu: icon chip + title + subtitle. */
+function MenuRow({
+  icon,
+  title,
+  subtitle,
+  onClick,
+  tone = 'default',
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+  tone?: MenuRowTone;
+}) {
+  const t = MENU_ROW_TONES[tone];
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        padding: '14px 20px',
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: 'inherit',
+        transition: 'background-color 0.1s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+    >
+      <span
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: 'var(--radius-md)',
+          backgroundColor: t.bg,
+          border: `1px solid ${t.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          color: t.icon,
+        }}
+      >
+        {icon}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: t.title, margin: 0 }}>{title}</p>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {subtitle}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+const MENU_DIVIDER = <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />;
+
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -330,335 +399,61 @@ export default function DeckBuilder() {
       {/* Deck actions bottom sheet */}
       <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Opções do deck">
         <div style={{ padding: '8px 0 24px' }}>
-          {/* Manage sections */}
-          <button
+          <MenuRow
+            icon={<LayoutList size={17} />}
+            title="Gerenciar seções"
+            subtitle="Ordenar, criar e remover seções"
             onClick={() => { setMenuOpen(false); setManageSectionsOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <LayoutList size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Gerenciar seções
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Ordenar, criar e remover seções
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Import cards */}
-          <button
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<FileInput size={17} />}
+            tone="accent"
+            title="Importar cartas"
+            subtitle="Adicionar de uma lista de texto"
             onClick={() => { setMenuOpen(false); setImportOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--accent-subtle)',
-                border: '1px solid var(--accent-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--accent)',
-              }}
-            >
-              <FileInput size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Importar cartas
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Adicionar de uma lista de texto
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Export cards */}
-          <button
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<FileOutput size={17} />}
+            title="Exportar cartas"
+            subtitle="Copiar lista em texto"
             onClick={() => { setMenuOpen(false); setExportOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <FileOutput size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Exportar cartas
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Copiar lista em texto
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Delete deck */}
-          <button
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<Trash2 size={17} />}
+            tone="danger"
+            title="Excluir deck"
+            subtitle="Remove permanentemente este deck"
             onClick={() => { setMenuOpen(false); setConfirmDelete(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'rgba(248, 113, 113, 0.12)',
-                border: '1px solid rgba(248, 113, 113, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--error)',
-              }}
-            >
-              <Trash2 size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--error)', margin: 0 }}>
-                Excluir deck
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Remove permanentemente este deck
-              </p>
-            </div>
-          </button>
+          />
         </div>
       </BottomSheet>
 
       {/* Tutor options bottom sheet */}
       <BottomSheet isOpen={tutorMenuOpen} onClose={() => setTutorMenuOpen(false)} title="Opções do Tutor">
         <div style={{ padding: '8px 0 24px' }}>
-          {/* Coach model */}
-          <button
+          <MenuRow
+            icon={<Cpu size={17} />}
+            title="Modelo do Tutor"
+            subtitle={MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
             onClick={() => { setTutorMenuOpen(false); setCoachModelOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Cpu size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Modelo do Tutor
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Persona / tone of voice */}
-          <button
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<Sparkles size={17} />}
+            title="Personalidade do Tutor"
+            subtitle={PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
             onClick={() => { setTutorMenuOpen(false); setPersonaOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Sparkles size={17} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Personalidade do Tutor
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
-              </p>
-            </div>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
-
-          {/* Sessions: clear history, sign out */}
-          <button
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<History size={17} />}
+            title="Gerenciar sessões"
+            subtitle="Limpar histórico ou sair da conta"
             onClick={() => { setTutorMenuOpen(false); setTutorSessionsOpen(true); }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '14px 20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.1s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--surface-1)',
-                border: '1px solid var(--border-default)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <History size={17} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Gerenciar sessões
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Limpar histórico ou sair da conta
-              </p>
-            </div>
-          </button>
+          />
         </div>
       </BottomSheet>
 
