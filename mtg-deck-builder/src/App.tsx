@@ -10,24 +10,27 @@ import { DeckCloudSync } from './components/DeckCloudSync';
 import { NoiseOverlay } from './components/NoiseOverlay';
 import { PasswordRecoveryGate } from './features/deck-builder/PasswordRecoveryGate';
 import { useSupabaseSession } from './lib/useSupabaseSession';
+import { LanguageProvider } from './lib/i18n';
 
 export default function App() {
   const { isPasswordRecovery, clearPasswordRecovery } = useSupabaseSession();
 
   return (
-    <BrowserRouter>
-      <DeckCloudSync />
-      {isPasswordRecovery && <PasswordRecoveryGate onDone={clearPasswordRecovery} />}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/new-deck" element={<ChooseNewDeckMethod />} />
-        <Route path="/new-deck/manual" element={<NewDeck />} />
-        <Route path="/new-deck/tutor" element={<TutorDeckChat />} />
-        <Route path="/deck/:id" element={<DeckBuilder />} />
-        <Route path="/design" element={<DesignSystem />} />
-      </Routes>
-      <UpdateToast />
-      <NoiseOverlay />
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <DeckCloudSync />
+        {isPasswordRecovery && <PasswordRecoveryGate onDone={clearPasswordRecovery} />}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/new-deck" element={<ChooseNewDeckMethod />} />
+          <Route path="/new-deck/manual" element={<NewDeck />} />
+          <Route path="/new-deck/tutor" element={<TutorDeckChat />} />
+          <Route path="/deck/:id" element={<DeckBuilder />} />
+          <Route path="/design" element={<DesignSystem />} />
+        </Routes>
+        <UpdateToast />
+        <NoiseOverlay />
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -13,9 +13,80 @@ import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
+import { useLanguage, useT } from '../lib/i18n';
+import { Language } from '../lib/translations';
+
+function LanguageFlagAvatar({ emoji }: { emoji: string }) {
+  return (
+    <div
+      style={{
+        width: '36px',
+        height: '36px',
+        borderRadius: '50%',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-default)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '17px',
+        flexShrink: 0,
+      }}
+    >
+      {emoji}
+    </div>
+  );
+}
+
+function LanguagePicker({
+  selected,
+  onChange,
+}: {
+  selected: Language;
+  onChange: (lang: Language) => void;
+}) {
+  const t = useT();
+  const options: { id: Language; emoji: string; label: string }[] = [
+    { id: 'pt', emoji: '🇧🇷', label: t('home.languagePortuguese') },
+    { id: 'en', emoji: '🇺🇸', label: t('home.languageEnglish') },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {options.map((o) => {
+        const active = selected === o.id;
+        return (
+          <button
+            key={o.id}
+            onClick={() => onChange(o.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '11px 14px',
+              backgroundColor: active ? 'var(--accent-subtle)' : 'var(--surface-1)',
+              border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-default)'}`,
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              WebkitTapHighlightColor: 'transparent',
+              transition: 'background-color 0.1s, border-color 0.1s',
+            }}
+          >
+            <LanguageFlagAvatar emoji={o.emoji} />
+            <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
+              {o.label}
+            </span>
+            {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => void }) {
   const navigate = useNavigate();
+  const t = useT();
   const [showDelete, setShowDelete] = React.useState(false);
   const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
   // Only show art if the commander card still exists in the deck
@@ -209,7 +280,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
               color: commanderArtUrl ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)',
             }}
           >
-            {totalCards} cartas
+            {t(totalCards === 1 ? 'home.cardCountSingular' : 'home.cardCountPlural', { count: totalCards })}
           </span>
         </div>
       </div>
@@ -238,7 +309,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
             onClick={(e) => e.stopPropagation()}
           >
             <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>
-              Excluir "{deck.name}"?
+              {t('home.deleteConfirm', { name: deck.name })}
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button
@@ -246,7 +317,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
                 size="sm"
                 onClick={() => setShowDelete(false)}
               >
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="danger"
@@ -256,7 +327,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
                   setShowDelete(false);
                 }}
               >
-                Excluir
+                {t('common.delete')}
               </Button>
             </div>
           </motion.div>
@@ -270,10 +341,13 @@ export default function Home() {
   const { decks, deleteDeck } = useDeckStore();
   const navigate = useNavigate();
   const { session } = useSupabaseSession();
+  const { lang, setLang } = useLanguage();
+  const t = useT();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
+  const [languageOpen, setLanguageOpen] = React.useState(false);
   const versionTapCountRef = React.useRef(0);
   const lastVersionTapRef = React.useRef(0);
 
@@ -326,7 +400,7 @@ export default function Home() {
                   lineHeight: 1.05,
                 }}
               >
-                My decks
+                {t('home.title')}
               </h1>
               <p
                 style={{
@@ -336,7 +410,7 @@ export default function Home() {
                   letterSpacing: '-0.01em',
                 }}
               >
-                {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
+                {t(decks.length === 1 ? 'home.deckCountSingular' : 'home.deckCountPlural', { count: decks.length })}
               </p>
             </div>
 
@@ -412,10 +486,10 @@ export default function Home() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                Nenhum deck ainda
+                {t('home.emptyTitle')}
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5 }}>
-                Crie seu primeiro deck Commander e comece a construir sua coleção.
+                {t('home.emptyDescription')}
               </p>
             </div>
             <Button
@@ -424,7 +498,7 @@ export default function Home() {
               leftIcon={<Plus size={18} />}
               onClick={() => navigate('/new-deck')}
             >
-              Criar Primeiro Deck
+              {t('home.createFirstDeck')}
             </Button>
           </motion.div>
         ) : (
@@ -487,7 +561,7 @@ export default function Home() {
               >
                 <Plus size={22} strokeWidth={1.5} />
                 <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  Novo deck
+                  {t('home.newDeck')}
                 </span>
               </motion.button>
             </motion.div>
@@ -502,12 +576,12 @@ export default function Home() {
       <FeedbackSheet isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
       {/* Login sheet */}
-      <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title="Entrar">
+      <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title={t('home.loginSheetTitle')}>
         <AuthGate />
       </BottomSheet>
 
       {/* Menu Bottom Sheet */}
-      <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
+      <BottomSheet isOpen={menuOpen} onClose={() => setMenuOpen(false)} title={t('home.menuTitle')}>
         <div style={{ padding: '8px 0 24px' }}>
           {/* Account: login / logout */}
           {/* Import deck */}
@@ -547,10 +621,10 @@ export default function Home() {
             </span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                Importar deck
+                {t('home.importDeck')}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                Criar deck a partir de uma lista
+                {t('home.importDeckDesc')}
               </p>
             </div>
           </button>
@@ -593,14 +667,61 @@ export default function Home() {
               </span>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                  Enviar feedback
+                  {t('home.sendFeedback')}
                 </p>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
-                  Reportar um bug ou sugerir algo
+                  {t('home.sendFeedbackDesc')}
                 </p>
               </div>
             </button>
           )}
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+
+          {/* Language */}
+          <button
+            onClick={() => { setMenuOpen(false); setLanguageOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Globe size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                {t('home.language')}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                {lang === 'pt' ? t('home.languagePortuguese') : t('home.languageEnglish')}
+              </p>
+            </div>
+          </button>
 
           {supabaseConfigured && (
             <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
@@ -651,7 +772,7 @@ export default function Home() {
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                  {session ? 'Sair da conta' : 'Entrar'}
+                  {session ? t('home.logout') : t('common.login')}
                 </p>
                 <p
                   style={{
@@ -663,7 +784,7 @@ export default function Home() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {session ? session.user.email : 'Sincronize decks entre dispositivos'}
+                  {session ? session.user.email : t('home.syncDevices')}
                 </p>
               </div>
             </button>
@@ -693,14 +814,27 @@ export default function Home() {
               userSelect: 'none',
             }}
           >
-            Versão {__BUILD_SHA__} ·{' '}
-            {new Date(__BUILD_TIME__).toLocaleString('pt-BR', {
+            {t('home.version')} {__BUILD_SHA__} ·{' '}
+            {new Date(__BUILD_TIME__).toLocaleString(lang === 'pt' ? 'pt-BR' : 'en-US', {
               day: '2-digit',
               month: '2-digit',
               hour: '2-digit',
               minute: '2-digit',
             })}
           </p>
+        </div>
+      </BottomSheet>
+
+      {/* Language sheet */}
+      <BottomSheet isOpen={languageOpen} onClose={() => setLanguageOpen(false)} title={t('home.language')}>
+        <div style={{ padding: '8px 20px 32px' }}>
+          <LanguagePicker
+            selected={lang}
+            onChange={(next) => {
+              setLang(next);
+              setLanguageOpen(false);
+            }}
+          />
         </div>
       </BottomSheet>
 
