@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Intentionally NO theme-color meta: a fixed theme-color paints an opaque
-         bar behind the iOS Safari status bar (a black band on the Home screen).
-         Without it, Safari tints that area from the page content, so the Home
-         mesh gradient extends behind the status bar. -->
-    <!-- theme-color intentionally omitted (see comment above) -->
+    <!-- Honored by Safari < 26 (dark base). Safari 26+ ignores theme-color and
+         instead samples the top fixed element's background-color — see
+         .home-mesh-bg in index.css. -->
+    <meta name="theme-color" content="#0f0f0f" />
     <title>Tutor Brew</title>
 
     <!-- PWA / iOS home screen -->
