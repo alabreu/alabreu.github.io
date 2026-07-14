@@ -22,9 +22,16 @@ export function FeedbackSheet({ isOpen, onClose }: FeedbackSheetProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [sent, setSent] = React.useState(false);
 
+  const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => { if (resetTimerRef.current) clearTimeout(resetTimerRef.current); }, []);
+
   function handleClose() {
     onClose();
-    setTimeout(() => {
+    // Delay the state reset until the close animation finishes; track the timer
+    // so it's cleared if the sheet unmounts first (avoids a state update on an
+    // unmounted component).
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => {
       setType('bug');
       setMessage('');
       setContactEmail('');

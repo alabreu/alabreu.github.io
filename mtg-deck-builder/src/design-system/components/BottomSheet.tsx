@@ -14,6 +14,18 @@ interface BottomSheetProps {
   headerAction?: React.ReactNode;
 }
 
+// Ref-count of open sheets so the body scroll lock isn't released while another
+// sheet is still open (or re-locked out of order) when sheets overlap.
+let openSheetCount = 0;
+function lockBodyScroll() {
+  if (openSheetCount === 0) document.body.style.overflow = 'hidden';
+  openSheetCount++;
+}
+function unlockBodyScroll() {
+  openSheetCount = Math.max(0, openSheetCount - 1);
+  if (openSheetCount === 0) document.body.style.overflow = '';
+}
+
 export function BottomSheet({
   isOpen,
   onClose,
@@ -25,16 +37,27 @@ export function BottomSheet({
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const startY = React.useRef<number | null>(null);
   const currentY = React.useRef<number>(0);
+  const titleId = React.useId();
+  const closeOnRef = React.useRef(onClose);
+  closeOnRef.current = onClose;
 
-  // Lock body scroll when open
+  // Lock body scroll while open (ref-counted), close on Escape, and move focus
+  // into the sheet on open / restore it to the trigger on close.
   React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    if (!isOpen) return;
+    lockBodyScroll();
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Focus the panel so keyboard/screen-reader users land inside the dialog.
+    const focusTimer = setTimeout(() => sheetRef.current?.focus(), 0);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeOnRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.body.style.overflow = '';
+      clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown);
+      unlockBodyScroll();
+      previouslyFocused?.focus?.();
     };
   }, [isOpen]);
 
@@ -89,6 +112,10 @@ export function BottomSheet({
           <motion.div
             key="sheet"
             ref={sheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
+            tabIndex={-1}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -99,6 +126,7 @@ export function BottomSheet({
               mass: 0.8,
             }}
             style={{
+              outline: 'none',
               position: 'fixed',
               bottom: 0,
               left: edgeInset(0),
@@ -154,6 +182,7 @@ export function BottomSheet({
                   }}
                 >
                   <span
+                    id={titleId}
                     style={{
                       fontSize: '16px',
                       fontWeight: 600,
@@ -167,6 +196,7 @@ export function BottomSheet({
                     {headerAction}
                     <button
                       onClick={onClose}
+                      aria-label="Fechar"
                       style={{
                         width: '28px',
                         height: '28px',

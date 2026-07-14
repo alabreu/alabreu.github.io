@@ -31,7 +31,11 @@ export function Input({
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = React.useState(false);
-  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  // Unique per instance so two inputs with the same label don't collide on id
+  // (which would break <label htmlFor> association).
+  const generatedId = React.useId();
+  const inputId = id || generatedId;
+  const messageId = `${inputId}-msg`;
   const config = sizeConfig[size];
 
   const containerStyle: React.CSSProperties = {
@@ -101,6 +105,8 @@ export function Input({
         <input
           id={inputId}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || hint ? messageId : undefined}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={inputStyle}
@@ -110,6 +116,7 @@ export function Input({
       </div>
       {(error || hint) && (
         <span
+          id={messageId}
           style={{
             fontSize: '12px',
             color: error ? 'var(--error)' : 'var(--text-muted)',

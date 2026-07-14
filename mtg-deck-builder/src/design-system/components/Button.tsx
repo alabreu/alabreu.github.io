@@ -147,6 +147,7 @@ export function Button({
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       style={computedStyle}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -156,6 +157,8 @@ export function Button({
     >
       {isLoading ? (
         <span
+          role="status"
+          aria-label="Carregando"
           style={{
             width: '14px',
             height: '14px',
