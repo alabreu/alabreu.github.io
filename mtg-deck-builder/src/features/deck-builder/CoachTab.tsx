@@ -11,10 +11,11 @@ import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
 import { CardMentionRow } from './CoachCardPreviews';
-import { splitIntoParagraphs, extractBoldNames, useResolvedCardMentions } from './coachCardMentions';
+import { splitIntoParagraphs, extractBoldNames, useResolvedCardMentions, resolveCardMentions } from './coachCardMentions';
 import { getMarkdownComponents, TypingDots } from './coachMarkdown';
 import {
   PERSONAS,
+  Persona,
   buildTutorSystemPrompt,
   getCustomInstructions,
   setCustomInstructions,
@@ -116,6 +117,52 @@ ${deckList}`;
   });
 }
 
+const personaArtCache = new Map<string, string | null>();
+
+function PersonaAvatar({ persona }: { persona: Persona }) {
+  const [artUrl, setArtUrl] = React.useState<string | null>(() =>
+    persona.cardName ? personaArtCache.get(persona.cardName) ?? null : null
+  );
+
+  React.useEffect(() => {
+    if (!persona.cardName || personaArtCache.has(persona.cardName)) return;
+    let cancelled = false;
+    resolveCardMentions([persona.cardName]).then((map) => {
+      if (cancelled) return;
+      const card = map.get(persona.cardName!);
+      const url = card?.image_uris?.art_crop ?? card?.card_faces?.[0]?.image_uris?.art_crop ?? null;
+      personaArtCache.set(persona.cardName!, url);
+      setArtUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [persona.cardName]);
+
+  return (
+    <div
+      style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        overflow: 'hidden',
+        flexShrink: 0,
+        backgroundColor: '#0f0f0f',
+        border: '1px solid var(--border-default)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {artUrl ? (
+        <img src={artUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <WizardHatIcon size={17} style={{ color: 'var(--accent)' }} />
+      )}
+    </div>
+  );
+}
+
 export function PersonaPicker({
   selected,
   onChange,
@@ -146,6 +193,7 @@ export function PersonaPicker({
               transition: 'background-color 0.1s, border-color 0.1s',
             }}
           >
+            <PersonaAvatar persona={p} />
             <div style={{ flex: 1 }}>
               <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
                 {p.name}
