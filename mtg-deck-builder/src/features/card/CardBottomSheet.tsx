@@ -118,7 +118,7 @@ export function CardBottomSheet({
       return;
     }
     let cancelled = false;
-    fetch(`https://api.scryfall.com/cards/${cardProp.id}`)
+    fetch(`https://api.scryfall.com/cards/${encodeURIComponent(cardProp.id)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return;

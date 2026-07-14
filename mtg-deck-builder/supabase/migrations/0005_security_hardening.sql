@@ -47,3 +47,10 @@ alter table public.feedback
   add constraint feedback_email_len check (contact_email is null or char_length(contact_email) <= 320) not valid;
 alter table public.feedback
   add constraint feedback_context_len check (page_context is null or char_length(page_context) <= 500) not valid;
+
+-- 3) Size cap on decks.data. A logged-in user could otherwise insert rows with
+-- multi-MB `data` blobs (RLS allows writing your own rows) and exhaust the
+-- project's storage. 1 MB is far above any real 100-card deck. NOT VALID so it
+-- never fails on a pre-existing oversized row; new/updated rows are checked.
+alter table public.decks
+  add constraint decks_data_size check (pg_column_size(data) <= 1048576) not valid;

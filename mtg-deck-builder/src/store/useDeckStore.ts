@@ -29,6 +29,13 @@ type DeckStore = {
 };
 
 function generateId(): string {
+  // crypto.randomUUID is cryptographically random and collision-free — avoids
+  // the predictable Math.random()+timestamp ids (which enabled the cross-account
+  // deck-id squatting/oracle noted in the security review). Falls back for very
+  // old browsers.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 

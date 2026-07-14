@@ -15,11 +15,21 @@ import { LanguageProvider } from './lib/i18n';
 export default function App() {
   const { isPasswordRecovery, clearPasswordRecovery } = useSupabaseSession();
 
+  // During password recovery, render ONLY the gate — not the routes or
+  // DeckCloudSync — so the rest of the app doesn't run (and sync) behind the
+  // overlay in a recovery-mode session. The gate has no router dependency.
+  if (isPasswordRecovery) {
+    return (
+      <LanguageProvider>
+        <PasswordRecoveryGate onDone={clearPasswordRecovery} />
+      </LanguageProvider>
+    );
+  }
+
   return (
     <LanguageProvider>
       <BrowserRouter>
         <DeckCloudSync />
-        {isPasswordRecovery && <PasswordRecoveryGate onDone={clearPasswordRecovery} />}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/new-deck" element={<ChooseNewDeckMethod />} />

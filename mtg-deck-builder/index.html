@@ -2,6 +2,9 @@
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- Don't leak the URL (which briefly carries the auth token_hash on email
+         links) to cross-origin destinations via the Referer header. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Honored by Safari < 26 (dark base). Safari 26+ ignores theme-color and
