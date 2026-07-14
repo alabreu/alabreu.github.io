@@ -450,7 +450,12 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
       try {
         let acc = results;
         let next: string | null = nextPageUrl;
+        let first = true;
         while (acc.length < needed && next) {
+          // Scryfall asks for ~75-100ms between requests; space out the extra
+          // page fetches when jumping deep so a burst doesn't draw a 429.
+          if (!first) await new Promise((res) => setTimeout(res, 100));
+          first = false;
           const r: SearchPage = await fetchScryfallPage(next);
           if (seq !== searchSeqRef.current) return; // search changed mid-pagination
           acc = [...acc, ...r.cards];

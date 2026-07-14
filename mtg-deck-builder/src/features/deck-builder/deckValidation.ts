@@ -39,9 +39,12 @@ export function validateDeck(deck: Deck): DeckError[] {
   }
 
   const identity = deck.colorIdentity ?? [];
-  const outOfIdentity = deck.cards.filter((c) =>
-    (c.colorIdentity ?? []).some((color) => !identity.includes(color))
-  );
+  // Skip the color-identity check when there's no commander: identity is empty,
+  // so every colored card would be flagged — noise on top of the "no commander"
+  // error, which already covers that state.
+  const outOfIdentity = deck.commanderId
+    ? deck.cards.filter((c) => (c.colorIdentity ?? []).some((color) => !identity.includes(color)))
+    : [];
   if (outOfIdentity.length > 0) {
     errors.push({
       id: 'color-identity',

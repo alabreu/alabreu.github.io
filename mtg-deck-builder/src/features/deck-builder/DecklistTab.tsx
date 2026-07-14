@@ -345,24 +345,31 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
     }
   }, [editingName]);
 
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
-  const landCount = deck.cards
-    .filter((c) => c.typeLine?.includes('Land') || c.category === 'Terrenos')
-    .reduce((s, c) => s + c.quantity, 0);
-  const avgCmc =
-    deck.cards.length > 0
-      ? (
-          deck.cards
-            .filter((c) => !c.typeLine?.includes('Land'))
-            .reduce((s, c) => s + c.cmc * c.quantity, 0) /
-          Math.max(
-            deck.cards
-              .filter((c) => !c.typeLine?.includes('Land'))
-              .reduce((s, c) => s + c.quantity, 0),
-            1
-          )
-        ).toFixed(2)
-      : '0.00';
+  // One pass over deck.cards for all three header stats, recomputed only when
+  // the cards change (was ~4 full passes on every render, e.g. opening the
+  // card sheet).
+  const { totalCards, landCount, avgCmc } = React.useMemo(() => {
+    let total = 0;
+    let lands = 0;
+    let nonLandCmc = 0;
+    let nonLandCount = 0;
+    for (const c of deck.cards) {
+      total += c.quantity;
+      const isLandCard = c.typeLine?.includes('Land') || c.category === 'Terrenos';
+      if (isLandCard) {
+        lands += c.quantity;
+      }
+      if (!c.typeLine?.includes('Land')) {
+        nonLandCmc += c.cmc * c.quantity;
+        nonLandCount += c.quantity;
+      }
+    }
+    return {
+      totalCards: total,
+      landCount: lands,
+      avgCmc: deck.cards.length > 0 ? (nonLandCmc / Math.max(nonLandCount, 1)).toFixed(2) : '0.00',
+    };
+  }, [deck.cards]);
 
   const sortedCategories = React.useMemo(
     () => materializeCategories(deck),
@@ -370,8 +377,6 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
   );
 
   const grouped = React.useMemo(() => groupCardsByCategory(deck.cards), [deck.cards]);
-
-  const allExpanded = sortedCategories.every((c) => expandedSections[c] !== false);
 
   const isFirstRender = React.useRef(true);
   React.useEffect(() => {
@@ -382,7 +387,12 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
       for (const cat of sortedCategories) next[cat] = forcedExpandAll;
       return next;
     });
-  }, [forcedExpandAll, sortedCategories]);
+    // Intentionally depends ONLY on forcedExpandAll: this should fire when the
+    // user hits expand/collapse-all, NOT on every card mutation (sortedCategories
+    // is a fresh array each mutation, which was wiping manual per-section
+    // toggles). New categories default to expanded via expandedSections[cat] !== false.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedExpandAll]);
 
   const toggleSection = React.useCallback((cat: string) => {
     setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));

@@ -269,7 +269,15 @@ export default function DeckBuilder() {
 
           {/* Search pill */}
           <button
-            onClick={() => { setSearchOpenedFromCoach(false); setSearchOpen(true); }}
+            onClick={() => {
+              // Opening a fresh search from the pill must not replay the last
+              // Coach handoff query — clear it and bump the version so SearchTab
+              // starts blank.
+              setCoachSearchQuery('');
+              setCoachSearchQueryVersion((v) => v + 1);
+              setSearchOpenedFromCoach(false);
+              setSearchOpen(true);
+            }}
             style={{
               flex: 1,
               borderRadius: '999px',

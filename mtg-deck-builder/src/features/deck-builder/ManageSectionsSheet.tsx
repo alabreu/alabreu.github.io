@@ -216,6 +216,10 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
 
   const canAdd = newName.trim().length > 0 && !localCats.includes(newName.trim());
 
+  // Lands live in the 'Terrenos' section by convention (defaultCategoryFor puts
+  // them there, and DecklistTab's land count keys on it). "Loose" lands are any
+  // NOT already in that section; grouping moves them into it — using 'Lands'
+  // here created a second, inconsistent land bucket in the pt-BR UI.
   const looseLandCount = React.useMemo(
     () =>
       deck.cards
@@ -223,15 +227,15 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
           (c) =>
             c.typeLine?.includes('Land') &&
             c.category !== 'Comandante' &&
-            c.category !== 'Lands'
+            c.category !== 'Terrenos'
         )
         .reduce((s, c) => s + c.quantity, 0),
     [deck.cards]
   );
 
   function handleGroupLands() {
-    groupLandsIntoSection(deck.id, 'Lands');
-    setLocalCats((prev) => (prev.includes('Lands') ? prev : [...prev, 'Lands']));
+    groupLandsIntoSection(deck.id, 'Terrenos');
+    setLocalCats((prev) => (prev.includes('Terrenos') ? prev : [...prev, 'Terrenos']));
   }
 
   return (
