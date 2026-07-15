@@ -16,11 +16,24 @@ export function setPriceSource(source: PriceSource): void {
   safeSetItem(STORAGE_KEY, source);
 }
 
+/** Optional Impact.com deep-link template for the TCGplayer affiliate program
+ *  (docs.tcgplayer.com/docs/tcgplayer-affiliate-program). Set
+ *  VITE_TCGPLAYER_AFFILIATE_BASE to the tracking link Impact gives you for
+ *  deep-linking, ending in "?u=" (e.g.
+ *  "https://tcgplayer.pxf.io/c/1234567/654321/4321?u=") — the destination
+ *  TCGplayer URL is appended, URL-encoded, after that prefix. Unset by
+ *  default, in which case tcgplayerUrl() returns a plain (non-affiliate) link
+ *  — no behavior change until this is configured. */
+const AFFILIATE_BASE = import.meta.env.VITE_TCGPLAYER_AFFILIATE_BASE;
+
 /** TCGplayer search URL (front face name for DFCs) — Scryfall's own default
- *  price source, already shown in USD without needing a currency conversion. */
+ *  price source, already shown in USD without needing a currency conversion.
+ *  Wrapped as an Impact affiliate deep link when VITE_TCGPLAYER_AFFILIATE_BASE
+ *  is configured (see above), otherwise a plain link. */
 export function tcgplayerUrl(cardName: string): string {
   const front = cardName.split(' // ')[0];
-  return `https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(front)}`;
+  const destination = `https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(front)}`;
+  return AFFILIATE_BASE ? `${AFFILIATE_BASE}${encodeURIComponent(destination)}` : destination;
 }
 
 /** Unified clickable price label + link for a card, honoring the user's

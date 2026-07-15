@@ -40,6 +40,10 @@ jobs:
           # bring-your-own-key flow when these are absent.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Optional: only set once enrolled in TCGplayer's affiliate program
+          # (see the comment above tcgplayerUrl() in src/lib/priceSource.ts).
+          # Absent by default — price links stay plain (non-affiliate) links.
+          VITE_TCGPLAYER_AFFILIATE_BASE: ${{ secrets.VITE_TCGPLAYER_AFFILIATE_BASE }}
 
       - name: Prepare site
         run: |
