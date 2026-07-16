@@ -4,7 +4,9 @@ const NOISE_KEY = 'noise-overlay-enabled';
 const NOISE_CHANGE_EVENT = 'noise-overlay-change';
 
 export function getNoiseEnabled(): boolean {
-  return safeGetItem(NOISE_KEY) === '1';
+  // On by default — enabled unless the user explicitly turned it off ('0').
+  // (No stored value → on; '1' → on; '0' → off, respecting an explicit choice.)
+  return safeGetItem(NOISE_KEY) !== '0';
 }
 
 export function setNoiseEnabled(enabled: boolean): void {

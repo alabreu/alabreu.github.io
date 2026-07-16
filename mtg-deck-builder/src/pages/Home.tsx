@@ -688,6 +688,10 @@ export default function Home() {
             </div>
           </button>
 
+          {supabaseConfigured && (
+            <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+          )}
+
           {/* Feedback: bug report / feature suggestion */}
           {supabaseConfigured && (
             <button
