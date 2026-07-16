@@ -1,7 +1,8 @@
 import React from 'react';
 import { RetryImg } from '../features/card/RetryImg';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, Sparkles, Settings } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, Sparkles, Settings, Layers, Cloud } from 'lucide-react';
+import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -545,22 +546,71 @@ export default function Home() {
               textAlign: 'center',
             }}
           >
+            {/* Brand + value prop — the first-run "landing" for new visitors. */}
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: 'var(--radius-xl)',
+                backgroundColor: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <WizardHatIcon size={30} style={{ color: 'var(--accent)' }} />
+            </div>
             <div>
               <h2
                 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
+                  fontFamily: "'Fraunces', serif",
+                  fontVariationSettings: "'opsz' 144, 'wght' 800",
+                  fontSize: '26px',
+                  fontWeight: 800,
                   color: 'var(--text-primary)',
                   marginBottom: '8px',
-                  letterSpacing: '-0.02em',
+                  letterSpacing: '-0.01em',
                 }}
               >
-                {t('home.emptyTitle')}
+                Tutor Brew
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5 }}>
-                {t('home.emptyDescription')}
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.5, maxWidth: '300px' }}>
+                {t('home.heroTagline')}
               </p>
             </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '320px', textAlign: 'left' }}>
+              {[
+                { icon: <Layers size={16} />, title: t('home.heroFeature1Title'), desc: t('home.heroFeature1Desc') },
+                { icon: <Sparkles size={16} />, title: t('home.heroFeature2Title'), desc: t('home.heroFeature2Desc') },
+                { icon: <Cloud size={16} />, title: t('home.heroFeature3Title'), desc: t('home.heroFeature3Desc') },
+              ].map((f) => (
+                <div key={f.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <span
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      flexShrink: 0,
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'var(--surface-1)',
+                      border: '1px solid var(--border-default)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--accent)',
+                    }}
+                  >
+                    {f.icon}
+                  </span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.title}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Button
               variant="white"
               size="lg"
