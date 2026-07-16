@@ -1,4 +1,5 @@
 import { DeckCard, ManaColor, ScryfallCard } from '../../types';
+import { getAutoGroupEnabled } from '../../lib/deckSettings';
 
 const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C'];
 
@@ -32,9 +33,31 @@ export function scryfallToDeckCard(
   };
 }
 
+// Type-based categories (Archidekt-style), in precedence order — an "Artifact
+// Creature" files under Criaturas, a "Legendary Creature" under Criaturas, etc.
+// Lands always win (handled first) so mana rocks that are lands still go to
+// Terrenos. Used only when auto-grouping is enabled.
+const TYPE_CATEGORY_ORDER: { match: string; category: string }[] = [
+  { match: 'Creature', category: 'Criaturas' },
+  { match: 'Planeswalker', category: 'Planeswalkers' },
+  { match: 'Instant', category: 'Instantâneos' },
+  { match: 'Sorcery', category: 'Feitiços' },
+  { match: 'Artifact', category: 'Artefatos' },
+  { match: 'Enchantment', category: 'Encantamentos' },
+  { match: 'Battle', category: 'Batalhas' },
+];
+
+/** The category a freshly added card should land in. Lands → Terrenos always.
+ *  When auto-grouping is on, everything else is filed by card type; otherwise it
+ *  goes to Outros (so custom-group users organize by hand). */
 export function defaultCategoryFor(card: ScryfallCard): string {
   const typeLine = card.type_line ?? card.card_faces?.[0]?.type_line ?? '';
-  return typeLine.includes('Land') ? 'Terrenos' : 'Outros';
+  if (typeLine.includes('Land')) return 'Terrenos';
+  if (!getAutoGroupEnabled()) return 'Outros';
+  for (const { match, category } of TYPE_CATEGORY_ORDER) {
+    if (typeLine.includes(match)) return category;
+  }
+  return 'Outros';
 }
 
 /** Commander eligibility: legendary creature, or a planeswalker whose text allows it. */

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
@@ -12,6 +12,7 @@ import { CoachTab, MESSAGES_PREFIX, PersonaPicker, CustomInstructionsField } fro
 import { PERSONAS, getPersonaId, setPersonaId } from '../features/deck-builder/tutorPersona';
 import { DEFAULT_ACTIVE_MODEL } from '../features/deck-builder/tutorModels';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
+import { BulkListSheet } from '../features/deck-builder/BulkListSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
 import { supabase, supabaseConfigured } from '../lib/supabase';
@@ -96,6 +97,7 @@ export default function DeckBuilder() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [bulkListOpen, setBulkListOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
   const [edhrecOpen, setEdhrecOpen] = React.useState(false);
@@ -414,6 +416,13 @@ export default function DeckBuilder() {
           />
           {MENU_DIVIDER}
           <MenuRow
+            icon={<ListChecks size={17} />}
+            title="Editar por lista"
+            subtitle="Adicionar ou remover cartas em lote"
+            onClick={() => { setMenuOpen(false); setBulkListOpen(true); }}
+          />
+          {MENU_DIVIDER}
+          <MenuRow
             icon={<FileOutput size={17} />}
             title="Exportar cartas"
             subtitle="Copiar lista em texto"
@@ -536,6 +545,8 @@ export default function DeckBuilder() {
       />
 
       {/* Import cards sheet */}
+      <BulkListSheet isOpen={bulkListOpen} onClose={() => setBulkListOpen(false)} deck={deck} />
+
       <ImportCardsSheet
         isOpen={importOpen}
         onClose={() => setImportOpen(false)}

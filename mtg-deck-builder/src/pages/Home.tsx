@@ -1,7 +1,7 @@
 import React from 'react';
 import { RetryImg } from '../features/card/RetryImg';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, Sparkles } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, Sparkles, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -12,6 +12,7 @@ import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 import { AuthGate } from '../features/deck-builder/AuthGate';
 import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
 import { ChangelogSheet } from '../features/home/ChangelogSheet';
+import { SettingsSheet } from '../features/home/SettingsSheet';
 import { getUnreadCount, markChangelogSeen } from '../lib/changelog';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { supabase, supabaseConfigured } from '../lib/supabase';
@@ -412,6 +413,7 @@ export default function Home() {
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
   const [languageStoreOpen, setLanguageStoreOpen] = React.useState(false);
   const [changelogOpen, setChangelogOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [changelogUnread, setChangelogUnread] = React.useState(() => getUnreadCount() > 0);
   const [changelogNewCount, setChangelogNewCount] = React.useState(0);
   const [priceSource, setPriceSourceState] = React.useState<PriceSource>(() => getPriceSource());
@@ -644,6 +646,8 @@ export default function Home() {
 
       <ChangelogSheet isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} newCount={changelogNewCount} />
 
+      <SettingsSheet isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
       {/* Login sheet */}
       <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title={t('home.loginSheetTitle')}>
         <AuthGate />
@@ -856,6 +860,51 @@ export default function Home() {
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
                 {lang === 'pt' ? t('home.languagePortuguese') : t('home.languageEnglish')} ·{' '}
                 {priceSource === 'ligamagic' ? t('home.storeLigaMagic') : t('home.storeTCGplayer')}
+              </p>
+            </div>
+          </button>
+
+          {/* Settings */}
+          <button
+            onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Settings size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+                {t('home.settings')}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                {t('home.settingsDesc')}
               </p>
             </div>
           </button>

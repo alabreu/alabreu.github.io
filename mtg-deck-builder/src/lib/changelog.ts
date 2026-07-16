@@ -15,6 +15,26 @@ export interface ChangelogEntry {
 // at the TOP when shipping something worth announcing.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: '2026-07-16-deck',
+    date: '2026-07-16',
+    pt: {
+      title: 'Edição de deck mais rápida',
+      items: [
+        'Botões de + e − direto nas cartas do deck, em qualquer modo de visualização (o + aparece só em terrenos básicos).',
+        'Adicione ou remova várias cartas de uma vez colando uma lista — no menu do deck, em "Editar por lista".',
+        'Agrupamento automático por tipo ao adicionar cartas (Criaturas, Feitiços, Terrenos…). Ligue ou desligue em Configurações.',
+      ],
+    },
+    en: {
+      title: 'Faster deck editing',
+      items: [
+        'Quick + and − buttons right on the cards in your deck, in every view mode (+ shows only on basic lands).',
+        'Add or remove many cards at once by pasting a list — in the deck menu, under "Edit by list".',
+        'Auto-grouping by card type when you add cards (Creatures, Sorceries, Lands…). Toggle it in Settings.',
+      ],
+    },
+  },
+  {
     id: '2026-07-16',
     date: '2026-07-16',
     pt: {
