@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Loader2, Check } from 'lucide-react';
+import { RefreshCw, Loader2, Check, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { TUTOR_MODELS, ACTIVE_MODEL_SETTING_KEY, TutorModel } from '../features/deck-builder/tutorModels';
@@ -397,6 +397,26 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 )}
+              </Section>
+
+              <Section title="Documentos">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {[
+                    { label: 'Termos de Uso', path: '#/termos' },
+                    { label: 'Política de Privacidade', path: '#/privacidade' },
+                  ].map((doc) => (
+                    <a
+                      key={doc.path}
+                      href={`${import.meta.env.BASE_URL}${doc.path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 2px', color: 'var(--text-primary)', textDecoration: 'none', fontSize: '13px', borderBottom: '1px solid var(--border-subtle)' }}
+                    >
+                      <span>{doc.label}</span>
+                      <ExternalLink size={14} style={{ color: 'var(--text-muted)' }} />
+                    </a>
+                  ))}
+                </div>
               </Section>
 
               <p style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px' }}>
