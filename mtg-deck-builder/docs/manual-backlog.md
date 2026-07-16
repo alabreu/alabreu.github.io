@@ -1,8 +1,30 @@
 # Backlog manual (coisas que dependem de você)
 
 Passos que só você consegue fazer (têm segredos, acesso ao painel do Supabase/
-OpenRouter, contas externas). Estão em ordem de dependência. Tudo é seguro de
-rodar mais de uma vez (migrações usam `if not exists` / `on conflict do nothing`).
+OpenRouter, contas externas). Tudo é seguro de rodar mais de uma vez (migrações
+usam `if not exists` / `on conflict do nothing`).
+
+## ⭐ Ordem recomendada (faça de cima pra baixo)
+
+**Agora — ligar o que já está construído:**
+1. Rodar migrações `0005 → 0006 → 0007` + virar admin + excluir testers → **seção A**.
+2. Redeploy `coach-proxy` + deploy `admin-openrouter-status` → **seção B**.
+3. **Teto de gasto rígido no OpenRouter** → **seção C**. (crítico antes de qualquer público)
+4. (Opcional) Popular o snapshot "Por função" → **seção E**.
+
+**Antes de divulgar publicamente (ainda grátis):**
+5. Ativar **Cloudflare Email Routing** (e-mail de suporte) → **seção D** → eu faço o Worker.
+6. **Deploy da Edge Function de exclusão de conta** → **seção G** (depois que eu construir o código).
+7. (Opcional) Criar conta de **monitoramento de erros / analytics** → **seção H** → eu ligo.
+
+**Antes de cobrar (monetização):**
+8. Definir **preços/trial/reembolso** e criar **conta Stripe** → **seção I** → eu construo pagamento + gating.
+9. **Revisão jurídica** + aperto dos termos → **seção F**.
+10. **Nota fiscal / tributação** → **seção I**.
+
+> O que **não depende de você** (landing + OG, exclusão de conta no app, onboarding/
+> deck de exemplo, FAQ, página de preços) eu construo e faço o deploy sozinho — só
+> aparecem aqui os passos que exigem sua conta/segredo/deploy.
 
 ## A. Banco de dados — rodar migrações no SQL Editor do Supabase
 
@@ -83,6 +105,36 @@ app realmente faz — mas antes de **cobrar** (monetização), faça:
 14. Preencher o **contato oficial** (e-mail de suporte, quando o Email Routing sair)
     e a identidade do controlador nos documentos — hoje o contato aponta para o
     "Enviar feedback".
+
+## G. Exclusão de conta — publicar a Edge Function
+
+Direito do titular (LGPD) e requisito de confiança pra abrir ao público. **Eu
+construo a tela no app + o código da função**; você só faz o deploy (ela precisa
+da service role pra apagar o usuário de `auth.users`, então roda como Edge
+Function, igual ao `coach-proxy`).
+
+15. Depois que eu entregar o código: `supabase functions deploy delete-account`
+    (o nome final eu confirmo no commit). Sem segredos novos.
+
+## H. Monitoramento de erros e analytics (opcional, recomendado antes de escalar)
+
+Precisam de conta externa; **a fiação no app eu faço** assim que você me passar a chave.
+
+16. **Erros:** criar projeto no Sentry (ou GlitchTip) → me passar o DSN. Eu ligo
+    o SDK (tem free tier).
+17. **Analytics de produto (privacy-friendly):** criar conta no Plausible (ou
+    Umami) pro domínio `tutor-brew.com` → me passar o script/domínio. Eu ligo.
+
+## I. Monetização (antes de cobrar)
+
+18. **Definir o pacote comercial:** preço da assinatura, duração do trial, política
+    de reembolso, e o que é grátis vs pago. (Eu já tenho o plano desenhado; preciso
+    dos números.)
+19. **Criar conta Stripe** (PF/CPF serve pra recorrência no Brasil) → me passar as
+    chaves (via secret, nunca no código). Aí **eu construo** checkout, webhooks,
+    portal de gerenciamento, estado de assinante no banco e o gating do Tutor.
+20. **Nota fiscal / tributação:** definir com um contador como receber e declarar
+    (MEI/PF) e se/como emitir NF. Decisão sua/contábil.
 
 ## D. Opcionais (quando quiser)
 
