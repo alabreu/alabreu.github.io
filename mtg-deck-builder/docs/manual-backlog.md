@@ -47,6 +47,27 @@ e o painel **OpenRouter (gasto/restante)**, e trocar o modelo lá vale pra todos
    Tutor. O código já tem caps (40/dia por usuário, 2000/dia global), mas o teto na
    própria chave é a última linha de defesa contra custo inesperado.
 
+## E. Agrupamento "Por função" — popular o snapshot (uma vez + refresh)
+
+O modo **Por função** (Configurações → Agrupar cartas) usa um snapshot
+`mtg-deck-builder/public/functionTags.json` gerado das tags da comunidade do
+Scryfall. Ele **vem vazio** no repo — até popular, "Por função" joga tudo em
+"Outros" (o fallback), sem quebrar nada.
+
+9. Popular pela primeira vez (escolha um):
+   - **Manual:** `cd mtg-deck-builder && node scripts/build-function-tags.mjs`
+     (precisa de internet; sem chave de API), depois commitar o
+     `public/functionTags.json` atualizado.
+   - **Automático:** no GitHub, aba Actions → "Refresh function tags" →
+     *Run workflow*. Ele gera e commita sozinho (o deploy horário publica).
+10. Conferir os números que o script imprime por categoria (Ramp, Remoção,
+    Compra de Cartas, Proteção, Wincons). **Chutei alguns slugs de tag do
+    Scryfall** — se algum vier 0 ou muito baixo, me avise que eu ajusto a query
+    em `scripts/build-function-tags.mjs`.
+
+Depois disso, o refresh mensal é automático (cron no dia 1º). Quando sair um set
+novo e você quiser atualizar na hora, é só rodar o workflow manualmente.
+
 ## D. Opcionais (quando quiser)
 
 - **Reduzir expiração do OTP** (Auth → Email → OTP expiry) pra endurecer o magic link.

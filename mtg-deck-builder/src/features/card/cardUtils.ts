@@ -1,5 +1,6 @@
 import { DeckCard, ManaColor, ScryfallCard } from '../../types';
-import { getAutoGroupEnabled } from '../../lib/deckSettings';
+import { getGroupMode } from '../../lib/deckSettings';
+import { getFunctionCategorySync } from '../../lib/functionTags';
 
 const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C'];
 
@@ -17,6 +18,7 @@ export function scryfallToDeckCard(
   const face1 = card.card_faces?.[1];
   return {
     scryfallId: card.id,
+    oracleId: card.oracle_id ?? null,
     name: card.name,
     quantity,
     category,
@@ -47,17 +49,28 @@ const TYPE_CATEGORY_ORDER: { match: string; category: string }[] = [
   { match: 'Battle', category: 'Batalhas' },
 ];
 
-/** The category a freshly added card should land in. Lands → Terrenos always.
- *  When auto-grouping is on, everything else is filed by card type; otherwise it
- *  goes to Outros (so custom-group users organize by hand). */
-export function defaultCategoryFor(card: ScryfallCard): string {
-  const typeLine = card.type_line ?? card.card_faces?.[0]?.type_line ?? '';
-  if (typeLine.includes('Land')) return 'Terrenos';
-  if (!getAutoGroupEnabled()) return 'Outros';
+function typeCategoryFor(typeLine: string): string {
   for (const { match, category } of TYPE_CATEGORY_ORDER) {
     if (typeLine.includes(match)) return category;
   }
   return 'Outros';
+}
+
+/** The category a freshly added card should land in. Lands → Terrenos always.
+ *  Then depends on the grouping mode: 'off' → Outros; 'type' → by card type;
+ *  'function' → by community function tag (Ramp/Remoção/…), falling back to
+ *  Outros for cards not in the snapshot. */
+export function defaultCategoryFor(card: ScryfallCard): string {
+  const typeLine = card.type_line ?? card.card_faces?.[0]?.type_line ?? '';
+  if (typeLine.includes('Land')) return 'Terrenos';
+
+  const mode = getGroupMode();
+  if (mode === 'off') return 'Outros';
+  if (mode === 'function') {
+    const oid = card.oracle_id ?? undefined;
+    return getFunctionCategorySync(oid) ?? 'Outros';
+  }
+  return typeCategoryFor(typeLine);
 }
 
 /** Commander eligibility: legendary creature, or a planeswalker whose text allows it. */

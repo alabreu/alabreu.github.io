@@ -1,0 +1,5 @@
+{
+  "generatedAt": null,
+  "note": "Empty seed. Run scripts/build-function-tags.mjs (or the refresh-function-tags GitHub Action) to populate from Scryfall's oracle tags.",
+  "tags": {}
+}

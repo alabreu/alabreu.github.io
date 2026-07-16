@@ -30,6 +30,7 @@ function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
 function deckCardToScryfall(card: DeckCard): ScryfallCard {
   return {
     id: card.scryfallId,
+    oracle_id: card.oracleId ?? undefined,
     name: card.name,
     mana_cost: card.manaCost,
     cmc: card.cmc,

@@ -1,79 +1,84 @@
 import React from 'react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { useT } from '../../lib/i18n';
-import { getAutoGroupEnabled, setAutoGroupEnabled } from '../../lib/deckSettings';
+import { getGroupMode, setGroupMode, GroupMode } from '../../lib/deckSettings';
+import { ensureFunctionTagsLoaded } from '../../lib/functionTags';
 
 interface SettingsSheetProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-/** iOS-style toggle switch. */
-function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      style={{
-        width: '46px',
-        height: '28px',
-        flexShrink: 0,
-        borderRadius: '999px',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '2px',
-        backgroundColor: checked ? 'var(--accent)' : 'var(--surface-3)',
-        transition: 'background-color 0.18s',
-        WebkitTapHighlightColor: 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <span
-        style={{
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          backgroundColor: '#fff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-          transform: checked ? 'translateX(18px)' : 'translateX(0)',
-          transition: 'transform 0.18s',
-        }}
-      />
-    </button>
-  );
-}
-
 export function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
   const t = useT();
-  const [autoGroup, setAutoGroup] = React.useState(() => getAutoGroupEnabled());
+  const [mode, setMode] = React.useState<GroupMode>(() => getGroupMode());
 
-  // Re-read on each open in case another surface changed it.
   React.useEffect(() => {
-    if (isOpen) setAutoGroup(getAutoGroupEnabled());
+    if (isOpen) setMode(getGroupMode());
   }, [isOpen]);
 
-  function toggleAutoGroup(v: boolean) {
-    setAutoGroup(v);
-    setAutoGroupEnabled(v);
+  function pick(next: GroupMode) {
+    setMode(next);
+    setGroupMode(next);
+    // Warm the (lazy) function-tag snapshot now, so it's ready before the user
+    // adds their next card.
+    if (next === 'function') ensureFunctionTagsLoaded();
   }
+
+  const options: { value: GroupMode; label: string }[] = [
+    { value: 'off', label: t('settings.groupOff') },
+    { value: 'type', label: t('settings.groupType') },
+    { value: 'function', label: t('settings.groupFunction') },
+  ];
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t('settings.title')}>
-      <div style={{ padding: '8px 20px 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-              {t('settings.autoGroup')}
-            </p>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.5 }}>
-              {t('settings.autoGroupDesc')}
-            </p>
-          </div>
-          <Switch checked={autoGroup} onChange={toggleAutoGroup} label={t('settings.autoGroup')} />
+      <div style={{ padding: '8px 20px 28px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
+          {t('settings.autoGroup')}
+        </p>
+
+        {/* Segmented control */}
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: 'var(--surface-1)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            overflow: 'hidden',
+          }}
+        >
+          {options.map((opt, i) => {
+            const active = mode === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => pick(opt.value)}
+                style={{
+                  flex: 1,
+                  padding: '9px 6px',
+                  fontSize: '13px',
+                  fontWeight: active ? 700 : 500,
+                  fontFamily: 'inherit',
+                  border: 'none',
+                  borderLeft: i > 0 ? '1px solid var(--border-default)' : 'none',
+                  backgroundColor: active ? 'var(--accent-subtle)' : 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
+
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', lineHeight: 1.5 }}>
+          {mode === 'off' && t('settings.groupOffDesc')}
+          {mode === 'type' && t('settings.groupTypeDesc')}
+          {mode === 'function' && t('settings.groupFunctionDesc')}
+        </p>
       </div>
     </BottomSheet>
   );

@@ -18,6 +18,9 @@ export type Deck = {
 
 export type DeckCard = {
   scryfallId: string;
+  /** Scryfall oracle_id (stable across printings) — used for function-tag
+   *  grouping. Optional: older stored cards won't have it. */
+  oracleId?: string | null;
   name: string;
   quantity: number;
   category: string;
@@ -33,6 +36,9 @@ export type DeckCard = {
 
 export type ScryfallCard = {
   id: string;
+  /** Stable id shared by all printings of a card — the key used to look up
+   *  community function tags (see functionTags). */
+  oracle_id?: string;
   name: string;
   mana_cost: string | null;
   cmc: number;

@@ -1,0 +1,41 @@
+name: Refresh function tags
+
+# Regenerates the function-grouping snapshot (mtg-deck-builder/public/functionTags.json)
+# from Scryfall's community oracle tags. Runs monthly, and can be triggered by
+# hand right after a new set releases. The commit lands on master and the
+# existing hourly Pages deploy picks it up.
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of each month.
+    - cron: '0 6 1 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build snapshot from Scryfall
+        working-directory: mtg-deck-builder
+        run: node scripts/build-function-tags.mjs
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- mtg-deck-builder/public/functionTags.json; then
+            echo "No changes to function tags."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mtg-deck-builder/public/functionTags.json
+          git commit -m "chore: refresh function-tag snapshot from Scryfall"
+          git push
