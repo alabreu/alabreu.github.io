@@ -6,6 +6,7 @@ import { useDeckStore } from '../store/useDeckStore';
 import { ScryfallCard } from '../types';
 import { Button } from '../design-system/components/Button';
 import { scryfallToDeckCard } from '../features/card/cardUtils';
+import { RetryImg } from '../features/card/RetryImg';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 export default function NewDeck() {
@@ -250,7 +251,7 @@ export default function NewDeck() {
                   border: '1px solid var(--border-default)',
                 }}
               >
-                <img
+                <RetryImg
                   src={selectedArt}
                   alt={selected.name}
                   style={{
@@ -259,6 +260,7 @@ export default function NewDeck() {
                     objectFit: 'cover',
                     objectPosition: 'top center',
                   }}
+                  fallback={<div style={{ width: '100%', height: '100%', backgroundColor: 'var(--surface-2)' }} />}
                 />
                 <div
                   style={{
@@ -441,7 +443,7 @@ export default function NewDeck() {
                       }}
                     >
                       {thumb ? (
-                        <img
+                        <RetryImg
                           src={thumb}
                           alt={card.name}
                           style={{
@@ -452,6 +454,17 @@ export default function NewDeck() {
                             borderRadius: '4px',
                             flexShrink: 0,
                           }}
+                          fallback={
+                            <div
+                              style={{
+                                width: '46px',
+                                height: '33px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--surface-2)',
+                                flexShrink: 0,
+                              }}
+                            />
+                          }
                         />
                       ) : (
                         <div

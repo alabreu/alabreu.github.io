@@ -11,6 +11,7 @@ import { supabase, supabaseConfigured } from '../../lib/supabase';
 import { useSupabaseSession } from '../../lib/useSupabaseSession';
 import { AuthGate } from './AuthGate';
 import { CardMentionRow } from './CoachCardPreviews';
+import { RetryImg } from '../card/RetryImg';
 import { splitIntoParagraphs, extractBoldNames, useResolvedCardMentions, resolveCardMentions } from './coachCardMentions';
 import { getMarkdownComponents, TypingDots } from './coachMarkdown';
 import { streamTutorReply } from './tutorChatStream';
@@ -140,9 +141,8 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
       }}
     >
       {artUrl ? (
-        <img
+        <RetryImg
           src={artUrl}
-          alt=""
           style={{
             width: '100%',
             height: '100%',
@@ -151,6 +151,7 @@ function PersonaAvatar({ persona }: { persona: Persona }) {
             transform: `scale(${persona.faceZoom ?? 1})`,
             transformOrigin: facePosition,
           }}
+          fallback={<WizardHatIcon size={19} style={{ color: 'var(--accent)' }} />}
         />
       ) : (
         <WizardHatIcon size={19} style={{ color: 'var(--accent)' }} />

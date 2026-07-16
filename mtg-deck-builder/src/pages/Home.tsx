@@ -1,4 +1,5 @@
 import React from 'react';
+import { RetryImg } from '../features/card/RetryImg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -183,15 +184,17 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
       {commanderArtUrl && partnerArtUrl ? (
         <>
           <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-            <img
+            <RetryImg
               src={commanderArtUrl}
               alt={deck.commanderName ?? ''}
               style={{ width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+              fallback={<div style={{ width: '50%', height: '100%', backgroundColor: 'var(--surface-2)' }} />}
             />
-            <img
+            <RetryImg
               src={partnerArtUrl}
               alt={deck.partnerName ?? ''}
               style={{ width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+              fallback={<div style={{ width: '50%', height: '100%', backgroundColor: 'var(--surface-2)' }} />}
             />
           </div>
           <div
@@ -216,7 +219,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
         </>
       ) : commanderArtUrl ? (
         <>
-          <img
+          <RetryImg
             src={commanderArtUrl}
             alt={deck.commanderName ?? ''}
             style={{

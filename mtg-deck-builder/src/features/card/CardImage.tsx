@@ -1,5 +1,6 @@
 import React from 'react';
 import { Skeleton } from '../../design-system/components/Skeleton';
+import { useRetryingImage } from './cardImageFallback';
 
 interface CardImageProps {
   imageUrl: string | null;
@@ -26,22 +27,16 @@ export function CardImage({
   highlightInDeck,
   highlightError,
 }: CardImageProps) {
-  const [loaded, setLoaded] = React.useState(false);
-  const [error, setError] = React.useState(false);
-  // Reset load/error state when the URL changes on a reused instance (e.g. the
-  // card sheet swaps the slim stored image for the full fetched one) — without
-  // this, a previous URL that errored keeps the 🃏 fallback showing for the new
-  // valid URL, and a new URL would flash in with no skeleton.
-  React.useEffect(() => {
-    setLoaded(false);
-    setError(false);
-  }, [imageUrl]);
+  // Resilient image: retries a transient Scryfall CDN miss and falls back
+  // across size buckets before giving up to the placeholder below. State reset
+  // on URL change is handled inside the hook.
+  const { src, loaded, failed, onLoad, onError } = useRetryingImage(imageUrl);
   // "Already in deck" reads as a success state, not a brand/accent one — it
   // shouldn't shift color every time someone tweaks the accent (see the
   // Design System accent picker).
   const ringColor = highlightError ? 'var(--error)' : highlightInDeck ? 'var(--success)' : null;
 
-  if (!imageUrl || error) {
+  if (!imageUrl || failed) {
     return (
       <div
         onClick={onClick}
@@ -97,10 +92,10 @@ export function CardImage({
         />
       )}
       <img
-        src={imageUrl}
+        src={src}
         alt={name}
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
+        onLoad={onLoad}
+        onError={onError}
         style={{
           position: 'absolute',
           inset: 0,
