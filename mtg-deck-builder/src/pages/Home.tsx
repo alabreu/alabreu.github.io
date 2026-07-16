@@ -1,7 +1,7 @@
 import React from 'react';
 import { RetryImg } from '../features/card/RetryImg';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -11,6 +11,8 @@ import { ManaGroup } from '../design-system/components/ManaSymbol';
 import { ImportDeckSheet } from '../features/deck-builder/ImportDeckSheet';
 import { AuthGate } from '../features/deck-builder/AuthGate';
 import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
+import { ChangelogSheet } from '../features/home/ChangelogSheet';
+import { getUnreadCount, markChangelogSeen } from '../lib/changelog';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
@@ -409,6 +411,9 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
   const [languageStoreOpen, setLanguageStoreOpen] = React.useState(false);
+  const [changelogOpen, setChangelogOpen] = React.useState(false);
+  const [changelogUnread, setChangelogUnread] = React.useState(() => getUnreadCount() > 0);
+  const [changelogNewCount, setChangelogNewCount] = React.useState(0);
   const [priceSource, setPriceSourceState] = React.useState<PriceSource>(() => getPriceSource());
   const versionTapCountRef = React.useRef(0);
   const lastVersionTapRef = React.useRef(0);
@@ -637,6 +642,8 @@ export default function Home() {
       {/* Feedback sheet */}
       <FeedbackSheet isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
 
+      <ChangelogSheet isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} newCount={changelogNewCount} />
+
       {/* Login sheet */}
       <BottomSheet isOpen={loginOpen} onClose={() => setLoginOpen(false)} title={t('home.loginSheetTitle')}>
         <AuthGate />
@@ -741,6 +748,69 @@ export default function Home() {
               </div>
             </button>
           )}
+
+          {/* What's new / changelog */}
+          <button
+            onClick={() => {
+              setChangelogNewCount(getUnreadCount());
+              markChangelogSeen();
+              setChangelogUnread(false);
+              setMenuOpen(false);
+              setChangelogOpen(true);
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--surface-1)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <Sparkles size={17} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {t('home.whatsNew')}
+                {changelogUnread && (
+                  <span
+                    aria-label="novidades não lidas"
+                    style={{
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--accent)',
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+                {t('home.whatsNewDesc')}
+              </p>
+            </div>
+          </button>
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
 
