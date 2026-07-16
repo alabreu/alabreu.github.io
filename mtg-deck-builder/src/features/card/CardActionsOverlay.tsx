@@ -5,6 +5,9 @@ interface Props {
   qty: number;
   onAdd: (e: React.MouseEvent) => void;
   onRemove: (e: React.MouseEvent) => void;
+  /** Hide the [+] button — used in the decklist, where only basic lands may
+   *  have more than one copy (Commander singleton rule). Defaults to true. */
+  showAdd?: boolean;
 }
 
 const btnStyle: React.CSSProperties = {
@@ -27,7 +30,7 @@ const btnStyle: React.CSSProperties = {
  * bottom-right corner of the card's art box (~55% of the frame height),
  * so the position scales with any tile size.
  */
-export function CardActionsOverlay({ qty, onAdd, onRemove }: Props) {
+export function CardActionsOverlay({ qty, onAdd, onRemove, showAdd = true }: Props) {
   return (
     <div
       style={{
@@ -45,9 +48,11 @@ export function CardActionsOverlay({ qty, onAdd, onRemove }: Props) {
           <Minus size={14} />
         </button>
       )}
-      <button onClick={onAdd} aria-label="Adicionar" style={{ ...btnStyle, color: 'var(--accent)' }}>
-        <Plus size={14} />
-      </button>
+      {showAdd && (
+        <button onClick={onAdd} aria-label="Adicionar" style={{ ...btnStyle, color: 'var(--accent)' }}>
+          <Plus size={14} />
+        </button>
+      )}
     </div>
   );
 }

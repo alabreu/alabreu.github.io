@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle, Minus, Plus } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { CardImage } from '../card/CardImage';
+import { CardActionsOverlay } from '../card/CardActionsOverlay';
 import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
@@ -55,13 +56,39 @@ function deckCardToScryfall(card: DeckCard): ScryfallCard {
   };
 }
 
+/** In Commander only basic lands may exceed one copy, so the quick [+] button
+ *  is offered only for them; every other card just gets a [-] (remove). */
+function isBasicLand(card: DeckCard): boolean {
+  const t = card.typeLine ?? '';
+  return t.includes('Basic') && t.includes('Land');
+}
+
+const rowActionBtnStyle = (color: string): React.CSSProperties => ({
+  width: '26px',
+  height: '26px',
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'var(--surface-1)',
+  border: '1px solid var(--border-default)',
+  borderRadius: 'var(--radius-sm)',
+  cursor: 'pointer',
+  color,
+  WebkitTapHighlightColor: 'transparent',
+});
+
 const FlippableCard = React.memo(function FlippableCard({
   card,
   onCardClick,
+  onQuickAdd,
+  onQuickRemove,
   hasError,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
+  onQuickAdd: (card: DeckCard) => void;
+  onQuickRemove: (card: DeckCard) => void;
   hasError?: boolean;
 }) {
   const [flipped, setFlipped] = React.useState(false);
@@ -84,7 +111,7 @@ const FlippableCard = React.memo(function FlippableCard({
           style={{ position: 'relative', transformStyle: 'preserve-3d' }}
         >
           {/* Front face */}
-          <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+          <div style={{ position: 'relative', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
             <CardImage
               imageUrl={card.imageUrl}
               name={card.name}
@@ -92,6 +119,12 @@ const FlippableCard = React.memo(function FlippableCard({
               onClick={() => onCardClick(card)}
               showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
               highlightError={hasError}
+            />
+            <CardActionsOverlay
+              qty={card.quantity}
+              showAdd={isBasicLand(card)}
+              onAdd={(e) => { e.stopPropagation(); onQuickAdd(card); }}
+              onRemove={(e) => { e.stopPropagation(); onQuickRemove(card); }}
             />
           </div>
           {/* Back face */}
@@ -172,49 +205,75 @@ const FlippableCard = React.memo(function FlippableCard({
 const ListCardRow = React.memo(function ListCardRow({
   card,
   onCardClick,
+  onQuickAdd,
+  onQuickRemove,
   hasError,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
+  onQuickAdd: (card: DeckCard) => void;
+  onQuickRemove: (card: DeckCard) => void;
   hasError?: boolean;
 }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.985 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      onClick={() => onCardClick(card)}
+    <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '8px',
         padding: '7px 4px',
         width: '100%',
-        backgroundColor: 'transparent',
-        border: 'none',
         borderBottom: '1px solid var(--border-subtle)',
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: 'inherit',
-        WebkitTapHighlightColor: 'transparent',
       }}
     >
-      <div style={{ width: '36px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
-        <CardImage imageUrl={card.imageUrl} name={card.name} size="small" highlightError={hasError} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-          {card.name}
-        </p>
-        {card.typeLine && (
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>
-            {card.typeLine}
+      {/* Tappable info area — opens the card sheet */}
+      <motion.button
+        whileTap={{ scale: 0.985 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        onClick={() => onCardClick(card)}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: 0,
+          backgroundColor: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <div style={{ width: '36px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
+          <CardImage imageUrl={card.imageUrl} name={card.name} size="small" highlightError={hasError} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+            {card.name}
           </p>
+          {card.typeLine && (
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>
+              {card.typeLine}
+            </p>
+          )}
+        </div>
+      </motion.button>
+
+      {/* Quantity + quick actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        {card.quantity > 1 && <Badge variant="default" size="sm">{card.quantity}</Badge>}
+        <button onClick={() => onQuickRemove(card)} aria-label="Remover uma cópia" style={rowActionBtnStyle('#f87171')}>
+          <Minus size={14} />
+        </button>
+        {isBasicLand(card) && (
+          <button onClick={() => onQuickAdd(card)} aria-label="Adicionar uma cópia" style={rowActionBtnStyle('var(--accent)')}>
+            <Plus size={14} />
+          </button>
         )}
       </div>
-      {card.quantity > 1 && (
-        <Badge variant="default" size="sm">{card.quantity}</Badge>
-      )}
-    </motion.button>
+    </div>
   );
 });
 
@@ -224,11 +283,13 @@ interface CategorySectionProps {
   expanded: boolean;
   onToggle: (category: string) => void;
   onCardClick: (card: DeckCard) => void;
+  onQuickAdd: (card: DeckCard) => void;
+  onQuickRemove: (card: DeckCard) => void;
   viewMode: ViewMode;
   errorCardIds: Set<string>;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, viewMode, errorCardIds }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
@@ -278,6 +339,8 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
+                    onQuickAdd={onQuickAdd}
+                    onQuickRemove={onQuickRemove}
                     hasError={errorCardIds.has(card.scryfallId)}
                   />
                 ))}
@@ -296,6 +359,8 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     key={card.scryfallId}
                     card={card}
                     onCardClick={onCardClick}
+                    onQuickAdd={onQuickAdd}
+                    onQuickRemove={onQuickRemove}
                     hasError={errorCardIds.has(card.scryfallId)}
                   />
                 ))}
@@ -309,7 +374,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
 });
 
 export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
-  const { updateDeck } = useDeckStore();
+  const { updateDeck, addCard, removeCard } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
@@ -402,6 +467,10 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
     setSelectedCard(card);
     setSheetOpen(true);
   }, []);
+
+  // Quick add (basic lands only) / remove one copy, straight from the decklist.
+  const handleQuickAdd = React.useCallback((card: DeckCard) => addCard(deck.id, card), [addCard, deck.id]);
+  const handleQuickRemove = React.useCallback((card: DeckCard) => removeCard(deck.id, card.scryfallId), [removeCard, deck.id]);
 
   if (deck.cards.length === 0) {
     return (
@@ -591,6 +660,8 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             expanded={expandedSections[cat] !== false}
             onToggle={toggleSection}
             onCardClick={handleCardClick}
+            onQuickAdd={handleQuickAdd}
+            onQuickRemove={handleQuickRemove}
             viewMode={viewMode}
             errorCardIds={errorCardIds}
           />
