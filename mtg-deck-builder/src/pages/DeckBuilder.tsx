@@ -171,7 +171,10 @@ export default function DeckBuilder() {
 
   const floatingBtnStyle: React.CSSProperties = {
     position: 'fixed',
-    top: 'max(12px, env(safe-area-inset-top))',
+    // Gap BELOW the status bar equal to the 16px side inset, so the buttons
+    // don't touch the (now opaque, iOS 26.1+) status-bar band and sit with a
+    // symmetric margin all around.
+    top: 'calc(env(safe-area-inset-top) + 16px)',
     zIndex: 50,
     width: '36px',
     height: '36px',
@@ -199,6 +202,23 @@ export default function DeckBuilder() {
         overflow: 'hidden',
       }}
     >
+      {/* Soft translucent top scrim: since iOS now forces an opaque status-bar
+          band, fade content that scrolls up beneath the floating buttons into a
+          consistent dark, semi-transparent top zone (instead of a hard clip). */}
+      <div
+        aria-hidden
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 'calc(env(safe-area-inset-top) + 70px)',
+          background: 'linear-gradient(to bottom, var(--bg-base) 38%, rgba(15,15,15,0.55) 68%, transparent)',
+          zIndex: 40,
+          pointerEvents: 'none',
+        }}
+      />
+
       {/* Floating back button — closes overlays first, then goes home */}
       <button
         style={{ ...floatingBtnStyle, left: edgeInset(16) }}
@@ -242,7 +262,7 @@ export default function DeckBuilder() {
             position: 'absolute',
             inset: 0,
             overflowY: 'auto',
-            paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+            paddingTop: 'calc(env(safe-area-inset-top) + 64px)',
             paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
           }}
         >
@@ -261,7 +281,7 @@ export default function DeckBuilder() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+                paddingTop: 'calc(env(safe-area-inset-top) + 64px)',
                 paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
                 backgroundColor: 'var(--bg-base)',
               }}

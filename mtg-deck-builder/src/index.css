@@ -142,13 +142,13 @@ body {
   overflow: hidden;
   z-index: -1;
   pointer-events: none;
-  /* iOS 26 Safari (Liquid Glass) dropped theme-color and instead samples the
-     background-color of a fixed/sticky element at the top of the page to tint
-     the status-bar area. This is that sample color — the mesh's own darkest
-     ember tone — so the status bar blends into the gradient instead of showing
-     an opaque black band. (Safari can only sample one solid color, not the
-     live gradient, so this is the closest achievable to "content behind".) */
-  background-color: #2a1410;
+  /* iOS 26.1+ Safari (Liquid Glass) dropped theme-color AND the transparent
+     status bar for installed web apps; it now draws an opaque band whose color
+     it samples from the background-color of the top fixed/sticky element. We
+     use the app's base dark here (same as every other screen's <body>/header)
+     so the status-bar band is one CONSISTENT dark color app-wide instead of an
+     ember tone on Home and dark elsewhere. */
+  background-color: var(--bg-base);
 }
 
 .home-mesh-blobs {

@@ -646,7 +646,7 @@ export function CoachTab({ deck, model, personaId, onKeyboardChange, onOpenSearc
           // Top inset clears the floating back/menu buttons (matching the
           // Decklist), but lives INSIDE the scroller so messages scroll up
           // under the buttons/status bar instead of hard-clipping below them.
-          paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+          paddingTop: 'calc(env(safe-area-inset-top) + 64px)',
           paddingRight: '16px',
           paddingBottom: '12px',
           paddingLeft: '16px',
