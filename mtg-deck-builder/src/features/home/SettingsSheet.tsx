@@ -1,8 +1,12 @@
 import React from 'react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
+import { Button } from '../../design-system/components/Button';
 import { useT } from '../../lib/i18n';
 import { getGroupMode, setGroupMode, GroupMode } from '../../lib/deckSettings';
 import { ensureFunctionTagsLoaded } from '../../lib/functionTags';
+import { supabase, supabaseConfigured } from '../../lib/supabase';
+import { useSupabaseSession } from '../../lib/useSupabaseSession';
 
 interface SettingsSheetProps {
   isOpen: boolean;
@@ -11,11 +15,35 @@ interface SettingsSheetProps {
 
 export function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
   const t = useT();
+  const { session } = useSupabaseSession();
   const [mode, setMode] = React.useState<GroupMode>(() => getGroupMode());
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (isOpen) setMode(getGroupMode());
+    if (isOpen) {
+      setMode(getGroupMode());
+      setConfirmingDelete(false);
+      setDeleteError(null);
+    }
   }, [isOpen]);
+
+  async function handleDeleteAccount() {
+    if (!supabase || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const { error } = await supabase.functions.invoke('delete-account');
+    if (error) {
+      setDeleting(false);
+      setDeleteError(t('settings.deleteAccountError'));
+      return;
+    }
+    // Account gone — end the local session and close.
+    await supabase.auth.signOut();
+    setDeleting(false);
+    onClose();
+  }
 
   function pick(next: GroupMode) {
     setMode(next);
@@ -79,6 +107,53 @@ export function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
           {mode === 'type' && t('settings.groupTypeDesc')}
           {mode === 'function' && t('settings.groupFunctionDesc')}
         </p>
+
+        {/* Account — delete account (LGPD). Only for logged-in users. */}
+        {supabaseConfigured && session && (
+          <div style={{ marginTop: '10px', paddingTop: '18px', borderTop: '1px solid var(--border-subtle)' }}>
+            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+              {t('settings.account')}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
+              {t('settings.deleteAccountDesc')}
+            </p>
+
+            {!confirmingDelete ? (
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                leftIcon={<Trash2 size={15} />}
+                onClick={() => { setDeleteError(null); setConfirmingDelete(true); }}
+                style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+              >
+                {t('settings.deleteAccount')}
+              </Button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--error)', margin: 0, fontWeight: 600 }}>
+                  {t('settings.deleteAccountConfirm')}
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button variant="secondary" size="md" style={{ flex: 1 }} disabled={deleting} onClick={() => setConfirmingDelete(false)}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    style={{ flex: 1 }}
+                    disabled={deleting}
+                    leftIcon={deleting ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : undefined}
+                    onClick={handleDeleteAccount}
+                  >
+                    {deleting ? t('settings.deleting') : t('settings.deleteAccountBtn')}
+                  </Button>
+                </div>
+                {deleteError && <p style={{ fontSize: '12px', color: 'var(--error)', margin: 0 }}>{deleteError}</p>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </BottomSheet>
   );
