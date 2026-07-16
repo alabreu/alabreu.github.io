@@ -1,15 +1,16 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Cpu, Sparkles, History, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
 import { SearchTab } from '../features/deck-builder/SearchTab';
-import { CoachTab, MODELS, ModelPicker, MODEL_KEY, MESSAGES_PREFIX, PersonaPicker, CustomInstructionsField } from '../features/deck-builder/CoachTab';
+import { CoachTab, MESSAGES_PREFIX, PersonaPicker, CustomInstructionsField } from '../features/deck-builder/CoachTab';
 import { PERSONAS, getPersonaId, setPersonaId } from '../features/deck-builder/tutorPersona';
+import { DEFAULT_ACTIVE_MODEL } from '../features/deck-builder/tutorModels';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
 import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
@@ -98,13 +99,6 @@ export default function DeckBuilder() {
   const [exportOpen, setExportOpen] = React.useState(false);
   const [manageSectionsOpen, setManageSectionsOpen] = React.useState(false);
   const [edhrecOpen, setEdhrecOpen] = React.useState(false);
-  const [coachModelOpen, setCoachModelOpen] = React.useState(false);
-  const [coachModel, setCoachModel] = React.useState(() => {
-    const stored = localStorage.getItem(MODEL_KEY);
-    if (stored && MODELS.some((m) => m.id === stored)) return stored;
-    localStorage.setItem(MODEL_KEY, MODELS[0].id);
-    return MODELS[0].id;
-  });
   const [personaOpen, setPersonaOpen] = React.useState(false);
   const [personaId, setPersonaIdState] = React.useState(() => getPersonaId());
   const [tutorMenuOpen, setTutorMenuOpen] = React.useState(false);
@@ -294,7 +288,7 @@ export default function DeckBuilder() {
                 backgroundColor: 'var(--bg-base)',
               }}
             >
-              <CoachTab key={deck.id} deck={deck} model={coachModel} personaId={personaId} onOpenSearch={handleOpenSearchFromCoach} />
+              <CoachTab key={deck.id} deck={deck} model={DEFAULT_ACTIVE_MODEL} personaId={personaId} onOpenSearch={handleOpenSearchFromCoach} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -435,13 +429,6 @@ export default function DeckBuilder() {
       <BottomSheet isOpen={tutorMenuOpen} onClose={() => setTutorMenuOpen(false)} title="Opções do Tutor">
         <div style={{ padding: '8px 0 24px' }}>
           <MenuRow
-            icon={<Cpu size={17} />}
-            title="Modelo do Tutor"
-            subtitle={MODELS.find((m) => m.id === coachModel)?.label ?? 'GPT-4o mini'}
-            onClick={() => { setTutorMenuOpen(false); setCoachModelOpen(true); }}
-          />
-          {MENU_DIVIDER}
-          <MenuRow
             icon={<Sparkles size={17} />}
             title="Personalidade do Tutor"
             subtitle={PERSONAS.find((p) => p.id === personaId)?.name ?? 'Tutor'}
@@ -453,23 +440,6 @@ export default function DeckBuilder() {
             title="Gerenciar sessões"
             subtitle="Limpar histórico ou sair da conta"
             onClick={() => { setTutorMenuOpen(false); setTutorSessionsOpen(true); }}
-          />
-        </div>
-      </BottomSheet>
-
-      {/* Coach model sheet */}
-      <BottomSheet isOpen={coachModelOpen} onClose={() => setCoachModelOpen(false)} title="Modelo do Tutor">
-        <div style={{ padding: '8px 20px 32px' }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-            Modelos disponíveis via OpenRouter.
-          </p>
-          <ModelPicker
-            selected={coachModel}
-            onChange={(id) => {
-              localStorage.setItem(MODEL_KEY, id);
-              setCoachModel(id);
-              setCoachModelOpen(false);
-            }}
           />
         </div>
       </BottomSheet>

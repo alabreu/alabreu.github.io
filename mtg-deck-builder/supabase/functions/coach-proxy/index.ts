@@ -22,17 +22,22 @@ const DAILY_LIMIT = 40;
 // OpenRouter key itself in the OpenRouter dashboard.
 const GLOBAL_DAILY_LIMIT = 2000;
 
-// Guard rails against prompt-injection / token-abuse (e.g. someone treating
-// the Tutor as a free general-purpose LLM proxy). Keep in sync with
-// src/features/deck-builder/CoachTab.tsx's MODELS list.
+// Safety allowlist for the server-chosen active model (defense-in-depth: a bad
+// value in app_settings.active_model falls back to the default below instead of
+// routing to an arbitrary, possibly expensive, model). Keep in sync with
+// src/features/deck-builder/tutorModels.ts.
 const ALLOWED_MODELS = new Set([
   'openai/gpt-4o-mini',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
   'meta-llama/llama-3.3-70b-instruct:free',
   'deepseek/deepseek-r1:free',
   'google/gemma-3-27b-it:free',
   'qwen/qwq-32b:free',
   'mistralai/mistral-7b-instruct:free',
 ]);
+// Fallback when app_settings has no (or an invalid) active_model row.
+const DEFAULT_MODEL = 'openai/gpt-4o-mini';
 const MAX_MESSAGES = 60;
 // The system prompt (deck list + persona + rules + guard rails + custom
 // instructions) can legitimately run ~6.5k chars for a full 100-card deck —
@@ -71,19 +76,33 @@ Deno.serve(async (req: Request) => {
   const today = new Date().toISOString().slice(0, 10);
 
   // Validate the request body BEFORE touching the counter, so a malformed
-  // request never consumes a user's daily quota.
-  let body: { model?: string; messages?: unknown };
+  // request never consumes a user's daily quota. Note: the client-sent `model`
+  // (if any) is IGNORED — the model is a product decision resolved server-side
+  // from app_settings below, so a user can't force a pricier model.
+  let body: { messages?: unknown };
   try {
     body = await req.json();
   } catch {
     return jsonError(400, 'bad_request', 'Corpo da requisição inválido.');
   }
-  if (!body.model || !Array.isArray(body.messages)) {
-    return jsonError(400, 'bad_request', 'model e messages são obrigatórios.');
+  if (!Array.isArray(body.messages)) {
+    return jsonError(400, 'bad_request', 'messages é obrigatório.');
   }
-  if (!ALLOWED_MODELS.has(body.model)) {
-    return jsonError(400, 'bad_request', 'Modelo não suportado.');
-  }
+
+  // Resolve the admin-chosen active model (migration 0007). Falls back to the
+  // default on any miss, and re-validates against the allowlist so a stray DB
+  // value can never route to an unbounded model.
+  let model = DEFAULT_MODEL;
+  try {
+    const { data: setting } = await admin
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'active_model')
+      .maybeSingle();
+    if (typeof setting?.value === 'string' && ALLOWED_MODELS.has(setting.value)) {
+      model = setting.value;
+    }
+  } catch { /* keep default */ }
 
   const messages = body.messages as unknown[];
   if (messages.length === 0 || messages.length > MAX_MESSAGES) {
@@ -180,7 +199,7 @@ Deno.serve(async (req: Request) => {
       // usage.include asks OpenRouter to append a final chunk with token counts
       // and actual cost, which we tee off for telemetry (see below).
       body: JSON.stringify({
-        model: body.model,
+        model,
         stream: true,
         messages: safeMessages,
         max_tokens: MAX_TOKENS,
@@ -202,7 +221,7 @@ Deno.serve(async (req: Request) => {
     // status to a generic client-safe message instead.
     let msg: string;
     if (upstream.status === 429) msg = 'Modelo sobrecarregado — aguarde alguns segundos e tente novamente.';
-    else if (upstream.status === 404) msg = 'Modelo indisponível. Escolha outro no menu ···.';
+    else if (upstream.status === 404) msg = 'Modelo do Tutor indisponível no momento. Tente novamente mais tarde.';
     else if (upstream.status === 401 || upstream.status === 403 || upstream.status === 402)
       msg = 'Serviço do Tutor temporariamente indisponível. Tente novamente mais tarde.';
     else msg = 'Erro no serviço do Tutor. Tente novamente.';
@@ -247,7 +266,7 @@ Deno.serve(async (req: Request) => {
     try {
       await admin.from('coach_message_log').insert({
         user_id: userId,
-        model: body.model,
+        model,
         prompt_tokens: typeof usage?.prompt_tokens === 'number' ? usage.prompt_tokens : null,
         completion_tokens: typeof usage?.completion_tokens === 'number' ? usage.completion_tokens : null,
         cost_micro_usd: typeof usage?.cost === 'number' ? Math.round(usage.cost * 1_000_000) : null,

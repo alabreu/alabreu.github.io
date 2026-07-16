@@ -1,7 +1,8 @@
 import React from 'react';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
+import { TUTOR_MODELS, ACTIVE_MODEL_SETTING_KEY, TutorModel } from '../features/deck-builder/tutorModels';
 
 interface DayCount { day: string; count: number }
 interface DayCost { day: string; count: number; cost_micro: number }
@@ -125,6 +126,157 @@ function Inbox() {
   );
 }
 
+/** Admin-only control that picks which model the Tutor runs on for everyone.
+ *  Writes go through the admin_set_active_model SQL function (migration 0007);
+ *  the coach-proxy reads the value server-side, so users never choose. */
+function ActiveModelControl() {
+  const [active, setActive] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState<string | null>(null);
+  const [err, setErr] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', ACTIVE_MODEL_SETTING_KEY)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          setErr(
+            error.code === 'PGRST205' || error.message?.includes('app_settings')
+              ? 'Rode a migração 0007 no Supabase para habilitar o controle de modelo.'
+              : error.message
+          );
+          return;
+        }
+        if (typeof data?.value === 'string') setActive(data.value);
+      });
+  }, []);
+
+  async function pick(id: string) {
+    if (!supabase || saving || id === active) return;
+    setSaving(id);
+    setErr(null);
+    const prev = active;
+    setActive(id); // optimistic
+    const { error } = await supabase.rpc('admin_set_active_model', { p_model: id });
+    setSaving(null);
+    if (error) {
+      setActive(prev);
+      setErr(
+        error.message?.includes('Could not find the function') || error.code === 'PGRST202'
+          ? 'Rode a migração 0007 no Supabase para habilitar o controle de modelo.'
+          : error.message?.includes('not authorized')
+          ? 'Acesso negado.'
+          : error.message
+      );
+    }
+  }
+
+  const groups: { tier: TutorModel['tier']; label: string }[] = [
+    { tier: 'paid', label: 'Pagos' },
+    { tier: 'free', label: 'Grátis' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+        Vale para TODOS os usuários. Modelos pagos custam dinheiro por mensagem; grátis podem ficar sobrecarregados.
+      </p>
+      {err && <p style={{ fontSize: '12px', color: 'var(--error)', margin: 0 }}>{err}</p>}
+      {groups.map((g) => (
+        <div key={g.tier} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{g.label}</span>
+          {TUTOR_MODELS.filter((mm) => mm.tier === g.tier).map((mm) => {
+            const isActive = active === mm.id;
+            return (
+              <button
+                key={mm.id}
+                onClick={() => pick(mm.id)}
+                disabled={!!saving}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                  backgroundColor: isActive ? 'var(--accent-subtle)' : 'var(--surface-2)',
+                  border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border-default)'}`,
+                  borderRadius: 'var(--radius-md)', cursor: saving ? 'wait' : 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit', width: '100%',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>
+                    {mm.label}
+                    {mm.tier === 'paid' && <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--error)', marginLeft: '6px' }}>$</span>}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>{mm.provider}{mm.note ? ` · ${mm.note}` : ''}</p>
+                </div>
+                {saving === mm.id ? (
+                  <Loader2 size={15} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
+                ) : isActive ? (
+                  <Check size={15} style={{ color: 'var(--accent)' }} />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface ORStatus {
+  key: { usage?: number; limit?: number | null; limit_remaining?: number | null; is_free_tier?: boolean };
+  credits: { total_credits?: number; total_usage?: number };
+}
+
+/** Live OpenRouter spend/credit for the shared key, via the admin-gated
+ *  admin-openrouter-status edge function (the key never reaches the browser). */
+function OpenRouterStatus() {
+  const [data, setData] = React.useState<ORStatus | null>(null);
+  const [err, setErr] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!supabase) return;
+    supabase.functions.invoke('admin-openrouter-status').then(({ data, error }) => {
+      if (error) {
+        setErr('Função admin-openrouter-status não implantada ainda (veja o backlog).');
+        return;
+      }
+      setData(data as ORStatus);
+    });
+  }, []);
+
+  if (err) return <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{err}</p>;
+  if (!data) return <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Carregando…</p>;
+
+  const usage = data.credits?.total_usage ?? data.key?.usage ?? 0;
+  const totalCredits = data.credits?.total_credits;
+  const remaining =
+    typeof totalCredits === 'number' ? totalCredits - usage : data.key?.limit_remaining ?? null;
+  const limit = typeof totalCredits === 'number' ? totalCredits : data.key?.limit ?? null;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Gasto</span>
+        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>US$ {usage.toFixed(2)}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Restante</span>
+        <span style={{ fontSize: '16px', fontWeight: 700, color: remaining !== null && remaining < 5 ? 'var(--error)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+          {remaining !== null ? `US$ ${remaining.toFixed(2)}` : '—'}
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Crédito total</span>
+        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+          {limit !== null ? `US$ ${limit.toFixed(2)}` : 'sem limite'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
@@ -202,6 +354,13 @@ export default function AdminDashboard() {
                 <Tile label="Ativos (DAU)" value={m.active_users.dau} sub={`WAU ${m.active_users.wau} · MAU ${m.active_users.mau}`} />
                 <Tile label="Feedback" value={m.feedback.reduce((s, f) => s + f.count, 0)} sub={m.feedback.map((f) => `${f.count} ${f.type}`).join(' · ') || '—'} />
               </div>
+
+              <Section title="Modelo ativo do Tutor">
+                <ActiveModelControl />
+              </Section>
+              <Section title="OpenRouter (chave do Tutor)">
+                <OpenRouterStatus />
+              </Section>
 
               <Section title="Novos usuários / dia (30d)">
                 <BarChart data={m.new_users_by_day.map((d) => ({ label: shortDay(d.day), value: d.count }))} />

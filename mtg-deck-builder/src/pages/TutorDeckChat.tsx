@@ -10,13 +10,12 @@ import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { AuthGate } from '../features/deck-builder/AuthGate';
 import {
-  MODELS,
-  MODEL_KEY,
   API_KEY_KEY,
   ApiKeySetup,
 } from '../features/deck-builder/CoachTab';
 import { getMarkdownComponents, TypingDots } from '../features/deck-builder/coachMarkdown';
 import { streamTutorReply } from '../features/deck-builder/tutorChatStream';
+import { DEFAULT_ACTIVE_MODEL } from '../features/deck-builder/tutorModels';
 import { getPersonaId, getCustomInstructions, buildTutorSystemPrompt } from '../features/deck-builder/tutorPersona';
 import {
   splitIntoParagraphs,
@@ -76,10 +75,10 @@ export default function TutorDeckChat() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [streamingId, setStreamingId] = React.useState<string | null>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
-  const model = React.useMemo(() => {
-    const stored = localStorage.getItem(MODEL_KEY);
-    return stored && MODELS.some((m) => m.id === stored) ? stored : MODELS[0].id;
-  }, []);
+  // The model is a product decision made by the admin (server-side); on the
+  // proxy path the coach-proxy overrides this with the active model, so this
+  // constant only matters on the legacy bring-your-own-key path.
+  const model = DEFAULT_ACTIVE_MODEL;
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

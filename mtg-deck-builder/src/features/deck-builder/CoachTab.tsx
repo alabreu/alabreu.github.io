@@ -23,24 +23,6 @@ import {
   CUSTOM_INSTRUCTIONS_MAX_LEN,
 } from './tutorPersona';
 
-export interface ModelOption {
-  id: string;
-  label: string;
-  provider: string;
-  note?: string;
-}
-
-export const MODELS: ModelOption[] = [
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini', provider: 'OpenAI', note: 'Pago (barato) · sem fila de sobrecarga' },
-  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', note: 'Grátis · pode ficar sobrecarregado' },
-  { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', note: 'Grátis · raciocínio avançado' },
-  { id: 'google/gemma-3-27b-it:free', label: 'Gemma 3 27B', provider: 'Google', note: 'Grátis · rápido e capaz' },
-  { id: 'qwen/qwq-32b:free', label: 'QwQ 32B', provider: 'Alibaba', note: 'Grátis · raciocínio passo a passo' },
-  { id: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B', provider: 'Mistral', note: 'Grátis · leve e rápido' },
-];
-
-export const MODEL_KEY = 'openrouter-model';
-
 interface CoachTabProps {
   deck: Deck;
   model: string;
@@ -225,53 +207,6 @@ export function PersonaPicker({
   );
 }
 
-export function ModelPicker({
-  selected,
-  onChange,
-}: {
-  selected: string;
-  onChange: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {MODELS.map((m) => {
-        const active = selected === m.id;
-        return (
-          <button
-            key={m.id}
-            onClick={() => onChange(m.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '11px 14px',
-              backgroundColor: active ? 'var(--accent-subtle)' : 'var(--surface-1)',
-              border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-default)'}`,
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              WebkitTapHighlightColor: 'transparent',
-              transition: 'background-color 0.1s, border-color 0.1s',
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text-primary)' }}>
-                {m.label}
-              </p>
-              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                {m.provider}
-                {m.note ? ` · ${m.note}` : ''}
-              </p>
-            </div>
-            {active && <Check size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export function CustomInstructionsField() {
   const [value, setValue] = React.useState(() => getCustomInstructions());
 
@@ -374,7 +309,7 @@ export function ApiKeySetup({ onSave }: { onSave: (key: string) => void }) {
           Ativar Tutor
         </Button>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-          Crie sua chave em openrouter.ai/keys · Modelo configurável no menu ···
+          Crie sua chave em openrouter.ai/keys
         </p>
       </motion.div>
     </div>
@@ -659,7 +594,7 @@ export function CoachTab({ deck, model, personaId, onKeyboardChange, onOpenSearc
       if (!final.trim()) {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === aId ? { ...m, content: 'O modelo não retornou uma resposta. Tente novamente ou troque de modelo no menu ···.' } : m
+            m.id === aId ? { ...m, content: 'O modelo não retornou uma resposta. Tente novamente em instantes.' } : m
           )
         );
       }
