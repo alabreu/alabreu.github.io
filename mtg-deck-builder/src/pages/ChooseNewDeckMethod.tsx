@@ -70,7 +70,7 @@ export default function ChooseNewDeckMethod() {
           top: 0,
           zIndex: 10,
           backgroundColor: 'var(--bg-base)',
-          paddingTop: 'max(14px, env(safe-area-inset-top))',
+          paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
           paddingBottom: '14px',
           paddingLeft: '16px',
           paddingRight: '16px',
