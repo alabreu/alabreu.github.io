@@ -1,6 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
@@ -138,7 +137,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   const [state, setState] = React.useState<{ kind: 'loading' } | { kind: 'error'; msg: string } | { kind: 'ok'; data: Metrics }>({ kind: 'loading' });
 
   const load = React.useCallback(async () => {
@@ -176,9 +174,6 @@ export default function AdminDashboard() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: CONTENT_MAX_WIDTH, margin: '0 auto' }}>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}>
-            <ArrowLeft size={20} />
-          </button>
           <h1 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>Painel</h1>
           <button onClick={load} aria-label="Atualizar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', padding: '4px' }}>
             <RefreshCw size={18} />
