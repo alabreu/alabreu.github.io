@@ -149,7 +149,16 @@ export default function AdminDashboard() {
     setState({ kind: 'loading' });
     const { data, error } = await supabase.rpc('admin_metrics');
     if (error) {
-      setState({ kind: 'error', msg: error.message.includes('not authorized') ? 'Acesso negado — sua conta não é administradora.' : error.message });
+      const m = error.message || '';
+      let friendly: string;
+      if (m.includes('not authorized')) {
+        friendly = 'Acesso negado — sua conta não está na tabela de administradores.';
+      } else if (m.includes('Could not find the function') || m.includes('schema cache') || error.code === 'PGRST202') {
+        friendly = 'Painel ainda não configurado. Rode a migração 0006 no Supabase e adicione seu usuário na tabela public.admins.';
+      } else {
+        friendly = m;
+      }
+      setState({ kind: 'error', msg: friendly });
       return;
     }
     setState({ kind: 'ok', data: data as Metrics });
