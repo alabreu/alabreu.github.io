@@ -68,6 +68,22 @@ Scryfall. Ele **vem vazio** no repo — até popular, "Por função" joga tudo e
 Depois disso, o refresh mensal é automático (cron no dia 1º). Quando sair um set
 novo e você quiser atualizar na hora, é só rodar o workflow manualmente.
 
+## F. Jurídico — Termos e Privacidade (rascunho no ar; endurecer antes de cobrar)
+
+Já estão publicados (`/#/termos` e `/#/privacidade`) e linkados na tela de login
+com um aviso de aceite. São **rascunhos sob medida**, redigidos conforme o que o
+app realmente faz — mas antes de **cobrar** (monetização), faça:
+
+11. **Revisão jurídica** dos dois textos (LGPD + Código de Defesa do Consumidor).
+    Não sou advogado; para cobrança de consumidor no Brasil vale um profissional.
+12. **Aceite explícito**: trocar o aviso por um checkbox obrigatório no cadastro e
+    registrar no banco qual versão foi aceita (auditável). Eu construo quando disser.
+13. **Termos de assinatura/cobrança/reembolso** (o Stripe exige links de Termos +
+    Privacidade + política de reembolso).
+14. Preencher o **contato oficial** (e-mail de suporte, quando o Email Routing sair)
+    e a identidade do controlador nos documentos — hoje o contato aponta para o
+    "Enviar feedback".
+
 ## D. Opcionais (quando quiser)
 
 - **Reduzir expiração do OTP** (Auth → Email → OTP expiry) pra endurecer o magic link.

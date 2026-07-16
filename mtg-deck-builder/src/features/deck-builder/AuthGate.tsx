@@ -284,10 +284,28 @@ export function AuthGate() {
             </button>
           )}
         </div>
+
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, margin: '4px 0 0', textAlign: 'center' }}>
+          Ao continuar, você concorda com os{' '}
+          <a href={legalUrl('/termos')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Termos de Uso</a>
+          {' '}e a{' '}
+          <a href={legalUrl('/privacidade')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Política de Privacidade</a>.
+        </p>
       </div>
     </div>
   );
 }
+
+/** Absolute hash URL so the legal page opens in a new tab without disturbing the
+ *  login flow (and works under the app's HashRouter). */
+function legalUrl(path: string): string {
+  return `${window.location.origin}${import.meta.env.BASE_URL}#${path}`;
+}
+
+const legalLinkStyle: React.CSSProperties = {
+  color: 'var(--accent)',
+  textDecoration: 'underline',
+};
 
 const centeredStyle: React.CSSProperties = {
   flex: 1,
