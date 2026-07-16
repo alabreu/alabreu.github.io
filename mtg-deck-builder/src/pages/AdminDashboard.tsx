@@ -6,6 +6,16 @@ import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 
 interface DayCount { day: string; count: number }
 interface DayCost { day: string; count: number; cost_micro: number }
+interface InboxMsg {
+  id: string | number;
+  source: string;
+  type: string;
+  message: string;
+  contact_email: string | null;
+  page_context: string | null;
+  user_email: string | null;
+  created_at: string;
+}
 interface Metrics {
   generated_at: string;
   totals: { users: number; decks: number; coach_messages: number; coach_messages_today: number; cost_micro_usd_30d: number };
@@ -67,6 +77,52 @@ function BarChart({ data, color = 'var(--accent)' }: { data: { label: string; va
       <text x={0} y={H + 12} fontSize={8} fill="var(--text-muted)">{data[0]?.label}</text>
       <text x={W} y={H + 12} fontSize={8} fill="var(--text-muted)" textAnchor="end">{data[data.length - 1]?.label}</text>
     </svg>
+  );
+}
+
+function Inbox() {
+  const [msgs, setMsgs] = React.useState<InboxMsg[] | null>(null);
+  const [err, setErr] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!supabase) return;
+    supabase.rpc('admin_feedback', { p_limit: 50, p_offset: 0 }).then(({ data, error }) => {
+      if (error) setErr(error.message);
+      else setMsgs((data as InboxMsg[]) ?? []);
+    });
+  }, []);
+
+  if (err) return <p style={{ fontSize: '12px', color: 'var(--error)', margin: 0 }}>{err}</p>;
+  if (!msgs) return <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Carregando…</p>;
+  if (msgs.length === 0) return <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Nenhuma mensagem ainda.</p>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {msgs.map((m) => {
+        const isBug = m.type === 'bug';
+        const contact = m.contact_email || m.user_email;
+        return (
+          <div key={m.id} style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: isBug ? 'var(--error)' : 'var(--success)', backgroundColor: isBug ? 'rgba(248,113,113,0.12)' : 'rgba(47,174,121,0.12)', padding: '1px 6px', borderRadius: '4px' }}>
+                {isBug ? 'bug' : 'ideia'}
+              </span>
+              {m.source !== 'in_app' && (
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', backgroundColor: 'var(--surface-3)', padding: '1px 6px', borderRadius: '4px' }}>{m.source}</span>
+              )}
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto' }}>{new Date(m.created_at).toLocaleString('pt-BR')}</span>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.message}</p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '4px', flexWrap: 'wrap' }}>
+              {contact && (
+                <a href={`mailto:${contact}`} style={{ fontSize: '11px', color: 'var(--accent)', textDecoration: 'none' }}>{contact}</a>
+              )}
+              {m.page_context && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.page_context}</span>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -154,6 +210,9 @@ export default function AdminDashboard() {
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '8px 0 0' }}>
                   Custo no período: {usd(m.messages_by_day.reduce((s, d) => s + d.cost_micro, 0))}
                 </p>
+              </Section>
+              <Section title="Caixa de entrada">
+                <Inbox />
               </Section>
               <Section title="Modelos usados (30d)">
                 {m.model_mix.length === 0 ? (

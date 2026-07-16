@@ -98,3 +98,49 @@ $$;
 
 revoke all on function public.admin_metrics() from public, anon;
 grant execute on function public.admin_metrics() to authenticated;
+
+-- 4) Unified inbox source tag. In-app feedback and (later) support emails —
+-- routed via Cloudflare Email Routing → a Worker → this table — all land in the
+-- same admin inbox. Existing rows default to 'in_app'.
+alter table public.feedback add column if not exists source text not null default 'in_app';
+
+-- 5) Recent messages for the dashboard inbox (feedback now, +email later),
+-- paginated, with the submitter's email joined in. Admin-gated like admin_metrics.
+create or replace function public.admin_feedback(p_limit integer default 50, p_offset integer default 0)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  result jsonb;
+begin
+  if not exists (select 1 from public.admins where user_id = auth.uid()) then
+    raise exception 'not authorized';
+  end if;
+
+  select coalesce(jsonb_agg(t.row order by t.created_at desc), '[]'::jsonb) into result
+  from (
+    select jsonb_build_object(
+      'id', f.id,
+      'source', f.source,
+      'type', f.type,
+      'message', f.message,
+      'contact_email', f.contact_email,
+      'page_context', f.page_context,
+      'user_email', u.email,
+      'created_at', f.created_at
+    ) as row, f.created_at
+    from public.feedback f
+    left join auth.users u on u.id = f.user_id
+    order by f.created_at desc
+    limit greatest(1, least(p_limit, 200))
+    offset greatest(0, p_offset)
+  ) t;
+
+  return result;
+end;
+$$;
+
+revoke all on function public.admin_feedback(integer, integer) from public, anon;
+grant execute on function public.admin_feedback(integer, integer) to authenticated;

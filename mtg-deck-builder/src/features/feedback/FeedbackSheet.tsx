@@ -52,6 +52,7 @@ export function FeedbackSheet({ isOpen, onClose }: FeedbackSheetProps) {
       contact_email: (contactEmail.trim() || session?.user.email || '').slice(0, 320) || null,
       user_id: session?.user.id ?? null,
       page_context: (window.location.hash || window.location.pathname).slice(0, 500),
+      source: 'in_app',
     });
     setSending(false);
     if (err) {
