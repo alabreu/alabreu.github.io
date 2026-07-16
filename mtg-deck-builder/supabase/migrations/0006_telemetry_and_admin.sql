@@ -27,14 +27,32 @@ create table if not exists public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade
 );
 alter table public.admins enable row level security;
--- A user may read ONLY their own admin row, so the client can decide whether to
--- show the dashboard entry. It reveals nothing about other users.
+-- A user may read ONLY their own admin row. Reveals nothing about other users.
 create policy "read own admin row" on public.admins for select using (auth.uid() = user_id);
 
--- 3) Aggregated metrics for the private admin dashboard. SECURITY DEFINER so it
--- can read across all users' data (auth.users, decks, telemetry) — but it
--- self-gates on the admins allowlist, so a non-admin calling it via rpc gets an
--- error, not data. Returns one JSON blob the dashboard renders directly.
+-- 3) Internal users to EXCLUDE from all dashboard numbers, so the owner's own
+-- usage and testers' usage don't pollute the (early, sparse) real signal. Add
+-- each tester here:  insert into public.excluded_users (user_id, note) values ('<uuid>', 'tester João');
+-- Admins are auto-excluded (see the internal_user_ids view), so the owner only
+-- needs to be in `admins`.
+create table if not exists public.excluded_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  note text
+);
+alter table public.excluded_users enable row level security; -- service-role only, no policies
+
+-- The union of admins + explicitly-excluded users. Referenced by the metric
+-- functions below (which are SECURITY DEFINER, so they read it bypassing RLS).
+create or replace view public.internal_user_ids as
+  select user_id from public.admins
+  union
+  select user_id from public.excluded_users;
+
+-- 4) Aggregated metrics for the private admin dashboard. SECURITY DEFINER so it
+-- can read across all users' data — but it self-gates on the admins allowlist,
+-- so a non-admin calling it via rpc gets an error, not data. All counts EXCLUDE
+-- internal_user_ids (owner + testers). Anonymous feedback (null user_id) is
+-- kept, since that's a real external submission.
 create or replace function public.admin_metrics()
 returns jsonb
 language plpgsql
@@ -51,44 +69,56 @@ begin
   select jsonb_build_object(
     'generated_at', now(),
     'totals', jsonb_build_object(
-      'users', (select count(*) from auth.users),
-      'decks', (select count(*) from public.decks),
-      'coach_messages', (select count(*) from public.coach_message_log),
+      'users', (select count(*) from auth.users u where u.id not in (select user_id from internal_user_ids)),
+      'decks', (select count(*) from public.decks where user_id not in (select user_id from internal_user_ids)),
+      'coach_messages', (select count(*) from public.coach_message_log
+        where user_id not in (select user_id from internal_user_ids)),
       'coach_messages_today', (select count(*) from public.coach_message_log
-        where created_at >= date_trunc('day', now())),
+        where created_at >= date_trunc('day', now())
+          and user_id not in (select user_id from internal_user_ids)),
       'cost_micro_usd_30d', (select coalesce(sum(cost_micro_usd), 0) from public.coach_message_log
-        where created_at >= now() - interval '30 days')
+        where created_at >= now() - interval '30 days'
+          and user_id not in (select user_id from internal_user_ids))
     ),
     'active_users', jsonb_build_object(
-      'dau', (select count(distinct user_id) from public.coach_message_log where created_at >= now() - interval '1 day'),
-      'wau', (select count(distinct user_id) from public.coach_message_log where created_at >= now() - interval '7 days'),
-      'mau', (select count(distinct user_id) from public.coach_message_log where created_at >= now() - interval '30 days')
+      'dau', (select count(distinct user_id) from public.coach_message_log
+        where created_at >= now() - interval '1 day' and user_id not in (select user_id from internal_user_ids)),
+      'wau', (select count(distinct user_id) from public.coach_message_log
+        where created_at >= now() - interval '7 days' and user_id not in (select user_id from internal_user_ids)),
+      'mau', (select count(distinct user_id) from public.coach_message_log
+        where created_at >= now() - interval '30 days' and user_id not in (select user_id from internal_user_ids))
     ),
     'new_users_by_day', (
       select coalesce(jsonb_agg(jsonb_build_object('day', d, 'count', c) order by d), '[]'::jsonb)
       from (select date_trunc('day', created_at)::date as d, count(*) as c
-            from auth.users where created_at >= now() - interval '30 days' group by 1) t
+            from auth.users where created_at >= now() - interval '30 days'
+              and id not in (select user_id from internal_user_ids) group by 1) t
     ),
     'decks_by_day', (
       select coalesce(jsonb_agg(jsonb_build_object('day', d, 'count', c) order by d), '[]'::jsonb)
       from (select to_timestamp((data->>'createdAt')::bigint / 1000)::date as d, count(*) as c
             from public.decks where (data->>'createdAt') ~ '^[0-9]+$'
+              and user_id not in (select user_id from internal_user_ids)
               and to_timestamp((data->>'createdAt')::bigint / 1000) >= now() - interval '30 days'
             group by 1) t
     ),
     'messages_by_day', (
       select coalesce(jsonb_agg(jsonb_build_object('day', d, 'count', c, 'cost_micro', cost) order by d), '[]'::jsonb)
       from (select date_trunc('day', created_at)::date as d, count(*) as c, coalesce(sum(cost_micro_usd), 0) as cost
-            from public.coach_message_log where created_at >= now() - interval '30 days' group by 1) t
+            from public.coach_message_log where created_at >= now() - interval '30 days'
+              and user_id not in (select user_id from internal_user_ids) group by 1) t
     ),
     'model_mix', (
       select coalesce(jsonb_agg(jsonb_build_object('model', model, 'count', c) order by c desc), '[]'::jsonb)
       from (select model, count(*) as c from public.coach_message_log
-            where created_at >= now() - interval '30 days' group by 1) t
+            where created_at >= now() - interval '30 days'
+              and user_id not in (select user_id from internal_user_ids) group by 1) t
     ),
     'feedback', (
       select coalesce(jsonb_agg(jsonb_build_object('type', type, 'count', c)), '[]'::jsonb)
-      from (select type, count(*) as c from public.feedback group by 1) t
+      from (select type, count(*) as c from public.feedback
+            where user_id is null or user_id not in (select user_id from internal_user_ids)
+            group by 1) t
     )
   ) into result;
 
@@ -99,13 +129,14 @@ $$;
 revoke all on function public.admin_metrics() from public, anon;
 grant execute on function public.admin_metrics() to authenticated;
 
--- 4) Unified inbox source tag. In-app feedback and (later) support emails —
+-- 5) Unified inbox source tag. In-app feedback and (later) support emails —
 -- routed via Cloudflare Email Routing → a Worker → this table — all land in the
 -- same admin inbox. Existing rows default to 'in_app'.
 alter table public.feedback add column if not exists source text not null default 'in_app';
 
--- 5) Recent messages for the dashboard inbox (feedback now, +email later),
--- paginated, with the submitter's email joined in. Admin-gated like admin_metrics.
+-- 6) Recent messages for the dashboard inbox (feedback now, +email later),
+-- paginated, with the submitter's email joined in. Admin-gated, and excludes
+-- internal users (owner + testers) so the inbox stays clean during early use.
 create or replace function public.admin_feedback(p_limit integer default 50, p_offset integer default 0)
 returns jsonb
 language plpgsql
@@ -133,6 +164,7 @@ begin
     ) as row, f.created_at
     from public.feedback f
     left join auth.users u on u.id = f.user_id
+    where f.user_id is null or f.user_id not in (select user_id from internal_user_ids)
     order by f.created_at desc
     limit greatest(1, least(p_limit, 200))
     offset greatest(0, p_offset)
