@@ -283,7 +283,9 @@ export default function DeckBuilder() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                paddingTop: 'calc(max(12px, env(safe-area-inset-top)) + 52px)',
+                // No paddingTop here: CoachTab's own scroller carries the top
+                // inset, so messages scroll up under the floating buttons /
+                // status bar (like the Decklist) instead of clipping below them.
                 paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
                 backgroundColor: 'var(--bg-base)',
               }}
