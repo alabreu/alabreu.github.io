@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, User, FileInput, LogIn, LogOut, MessageSquare, Globe, Check, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../store/useDeckStore';
 import { Deck } from '../types';
@@ -16,6 +16,7 @@ import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { useLanguage, useT } from '../lib/i18n';
 import { Language } from '../lib/translations';
 import { PriceSource, getPriceSource, setPriceSource } from '../lib/priceSource';
+import { useIsAdmin } from '../lib/useIsAdmin';
 
 /** Small circular "avatar" for a picker option — a flag emoji for language,
  *  a currency symbol for price store. */
@@ -401,6 +402,7 @@ export default function Home() {
   const { session } = useSupabaseSession();
   const { lang, setLang } = useLanguage();
   const t = useT();
+  const isAdmin = useIsAdmin();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [loginOpen, setLoginOpen] = React.useState(false);
@@ -848,6 +850,31 @@ export default function Home() {
                 </p>
               </div>
             </button>
+          )}
+
+          {/* Admin dashboard — only for allowlisted admins (migration 0006) */}
+          {isAdmin && (
+            <>
+              <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />
+              <button
+                onClick={() => { setMenuOpen(false); navigate('/admin'); }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px',
+                  backgroundColor: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'inherit', transition: 'background-color 0.1s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <span style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-secondary)' }}>
+                  <BarChart3 size={17} />
+                </span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>Painel</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '1px 0 0' }}>Métricas e KPIs</p>
+                </div>
+              </button>
+            </>
           )}
 
           {/* Build version — tap 5x quickly to reach the (hidden) Design System page */}

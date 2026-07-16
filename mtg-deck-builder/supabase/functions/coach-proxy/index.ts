@@ -177,7 +177,15 @@ Deno.serve(async (req: Request) => {
         'HTTP-Referer': 'https://alabreu.github.io',
         'X-Title': 'Cobuilder Tutor',
       },
-      body: JSON.stringify({ model: body.model, stream: true, messages: safeMessages, max_tokens: MAX_TOKENS }),
+      // usage.include asks OpenRouter to append a final chunk with token counts
+      // and actual cost, which we tee off for telemetry (see below).
+      body: JSON.stringify({
+        model: body.model,
+        stream: true,
+        messages: safeMessages,
+        max_tokens: MAX_TOKENS,
+        usage: { include: true },
+      }),
     });
   } catch {
     // Network/DNS failure reaching OpenRouter — must still return CORS headers,
@@ -201,12 +209,60 @@ Deno.serve(async (req: Request) => {
     return jsonError(upstream.status, 'upstream_error', msg);
   }
 
+  const contentType = upstream.headers.get('Content-Type') ?? 'text/event-stream';
+  if (!upstream.body) {
+    return jsonError(502, 'upstream_error', 'Resposta vazia do modelo. Tente novamente.');
+  }
+
+  // Tee the stream: one branch goes straight to the client (no added latency),
+  // the other is consumed in the background to extract the final usage chunk
+  // (tokens + actual cost) for the pricing-study telemetry. Telemetry is
+  // strictly best-effort — any failure here never affects the user's reply.
+  const [clientBranch, logBranch] = upstream.body.tee();
+
+  async function logUsage() {
+    const reader = logBranch.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let usage: { prompt_tokens?: number; completion_tokens?: number; cost?: number } | null = null;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const m = line.match(/^data:\s?/);
+          if (!m) continue;
+          const data = line.slice(m[0].length).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed?.usage) usage = parsed.usage; // last one wins
+          } catch { /* skip malformed chunk */ }
+        }
+      }
+    } catch { /* stream error — skip logging */ }
+    try {
+      await admin.from('coach_message_log').insert({
+        user_id: userId,
+        model: body.model,
+        prompt_tokens: typeof usage?.prompt_tokens === 'number' ? usage.prompt_tokens : null,
+        completion_tokens: typeof usage?.completion_tokens === 'number' ? usage.completion_tokens : null,
+        cost_micro_usd: typeof usage?.cost === 'number' ? Math.round(usage.cost * 1_000_000) : null,
+      });
+    } catch { /* best-effort telemetry */ }
+  }
+
+  // Keep the function alive to finish logging after the response is returned.
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(logUsage());
+  else logUsage(); // fallback: fire-and-forget
+
   // Stream OpenRouter's SSE response straight through to the client
-  return new Response(upstream.body, {
+  return new Response(clientBranch, {
     status: upstream.status,
-    headers: {
-      ...CORS_HEADERS,
-      'Content-Type': upstream.headers.get('Content-Type') ?? 'text/event-stream',
-    },
+    headers: { ...CORS_HEADERS, 'Content-Type': contentType },
   });
 });

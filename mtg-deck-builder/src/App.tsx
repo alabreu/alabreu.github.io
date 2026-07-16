@@ -1,3 +1,4 @@
+import React from 'react';
 import { HashRouter as BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import ChooseNewDeckMethod from './pages/ChooseNewDeckMethod';
@@ -5,6 +6,10 @@ import NewDeck from './pages/NewDeck';
 import TutorDeckChat from './pages/TutorDeckChat';
 import DeckBuilder from './pages/DeckBuilder';
 import DesignSystem from './pages/DesignSystem';
+
+// Admin dashboard is code-split so its charts/telemetry code never ships in the
+// bundle regular users download.
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 import { UpdateToast } from './components/UpdateToast';
 import { DeckCloudSync } from './components/DeckCloudSync';
 import { NoiseOverlay } from './components/NoiseOverlay';
@@ -37,6 +42,14 @@ export default function App() {
           <Route path="/new-deck/tutor" element={<TutorDeckChat />} />
           <Route path="/deck/:id" element={<DeckBuilder />} />
           <Route path="/design" element={<DesignSystem />} />
+          <Route
+            path="/admin"
+            element={
+              <React.Suspense fallback={null}>
+                <AdminDashboard />
+              </React.Suspense>
+            }
+          />
         </Routes>
         <UpdateToast />
         <NoiseOverlay />
