@@ -41,6 +41,115 @@ export const inlineCodeStyle: React.CSSProperties = {
   overflowWrap: 'break-word',
 };
 
+type QueryVerdict = 'checking' | 'valid' | 'empty' | 'invalid' | 'unknown';
+
+type DefiniteVerdict = Exclude<QueryVerdict, 'checking' | 'unknown'>;
+// Session cache of query → verdict, so re-renders and repeated queries don't
+// re-hit Scryfall. Only DEFINITIVE verdicts are cached ('unknown' can retry).
+const queryValidityCache = new Map<string, DefiniteVerdict>();
+// In-flight requests, so two identical chips in the same message share ONE
+// Scryfall call instead of racing to fire duplicates.
+const queryValidityInflight = new Map<string, Promise<QueryVerdict>>();
+
+function fetchQueryVerdict(query: string): Promise<QueryVerdict> {
+  const cached = queryValidityCache.get(query);
+  if (cached) return Promise.resolve(cached);
+  const existing = queryValidityInflight.get(query);
+  if (existing) return existing;
+  const p = (async (): Promise<QueryVerdict> => {
+    try {
+      // /cards/random parses the same query syntax but returns a single card:
+      // 400/422 → invalid syntax, 404 → valid but no results, 2xx → valid.
+      const res = await fetch(`https://api.scryfall.com/cards/random?q=${encodeURIComponent(query)}`);
+      let verdict: QueryVerdict;
+      if (res.status === 400 || res.status === 422) verdict = 'invalid';
+      else if (res.status === 404) verdict = 'empty';
+      else if (res.ok) verdict = 'valid';
+      else verdict = 'unknown';
+      if (verdict !== 'unknown') queryValidityCache.set(query, verdict as DefiniteVerdict);
+      return verdict;
+    } catch {
+      return 'unknown'; // network/rate-limit — assume ok, stay clickable
+    } finally {
+      queryValidityInflight.delete(query);
+    }
+  })();
+  queryValidityInflight.set(query, p);
+  return p;
+}
+
+/** Live-validates a Scryfall query against the API. Debounced so a query still
+ *  streaming in (text changes each token) only fires once it stabilizes.
+ *  Network/rate-limit errors return 'unknown' — never demote a query just
+ *  because Scryfall is flaky. */
+function useQueryValidity(query: string): QueryVerdict {
+  const [state, setState] = React.useState<QueryVerdict>(() => queryValidityCache.get(query) ?? 'checking');
+
+  React.useEffect(() => {
+    const cached = queryValidityCache.get(query);
+    if (cached) {
+      setState(cached);
+      return;
+    }
+    setState('checking');
+    let cancelled = false;
+    const t = setTimeout(() => {
+      fetchQueryVerdict(query).then((verdict) => {
+        if (!cancelled) setState(verdict);
+      });
+    }, 550);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [query]);
+
+  return state;
+}
+
+/** A Scryfall-query chip: clickable when the query is valid (or its validity is
+ *  still unknown/flaky), but rendered as inert struck-through text when Scryfall
+ *  confirms the syntax is invalid — so a tap never opens a broken/empty search. */
+function QueryChip({ query, onOpenSearch }: { query: string; onOpenSearch: (q: string) => void }) {
+  const verdict = useQueryValidity(query);
+
+  if (verdict === 'invalid') {
+    return (
+      <code
+        title="Busca inválida no Scryfall — não é possível abrir"
+        style={{
+          ...inlineCodeStyle,
+          color: 'var(--text-muted)',
+          textDecoration: 'line-through',
+          textDecorationColor: 'var(--text-muted)',
+        }}
+      >
+        {query}
+      </code>
+    );
+  }
+
+  const empty = verdict === 'empty';
+  return (
+    <code
+      onClick={() => onOpenSearch(query)}
+      title={empty ? 'Busca válida, mas sem resultados' : 'Abrir na busca'}
+      style={{
+        ...inlineCodeStyle,
+        cursor: 'pointer',
+        color: empty ? 'var(--text-secondary)' : 'var(--accent)',
+        textDecoration: 'underline',
+        textDecorationStyle: 'dotted',
+        textUnderlineOffset: '2px',
+        opacity: verdict === 'checking' ? 0.65 : 1,
+        transition: 'opacity 0.15s, color 0.15s',
+      }}
+    >
+      {query}
+    </code>
+  );
+}
+
 /** Shared react-markdown component overrides for every Tutor chat surface.
  *  Single-line inline code is treated as Scryfall query syntax (see the
  *  system prompts) and rendered as a clickable link that opens Search
@@ -91,26 +200,12 @@ export function getMarkdownComponents(onOpenSearch: (query: string) => void): Co
       if (!isClickableQuery) {
         return <code style={inlineCodeStyle}>{children}</code>;
       }
-      // Resilience: fix invalid Scryfall operators the model sometimes invents
-      // (subtype:, keyword:<type>, smart quotes) so the chip both DISPLAYS and
-      // RUNS valid syntax — never a query that errors or returns nothing.
+      // Resilience: first normalize the invalid operators the model sometimes
+      // invents (subtype:, keyword:<type>, smart quotes), then live-validate the
+      // result against Scryfall so a confirmed-invalid query is shown inert
+      // instead of opening a broken search (see QueryChip).
       const query = normalizeScryfallQuery(text);
-      return (
-        <code
-          onClick={() => onOpenSearch(query)}
-          title="Abrir na busca"
-          style={{
-            ...inlineCodeStyle,
-            cursor: 'pointer',
-            color: 'var(--accent)',
-            textDecoration: 'underline',
-            textDecorationStyle: 'dotted',
-            textUnderlineOffset: '2px',
-          }}
-        >
-          {query}
-        </code>
-      );
+      return <QueryChip query={query} onOpenSearch={onOpenSearch} />;
     },
     pre: ({ children }) => (
       <pre
