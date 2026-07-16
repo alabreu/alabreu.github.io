@@ -17,6 +17,7 @@ import {
   getSavedAccentPreview,
 } from '../design-system/accentPreview';
 import { getNoiseEnabled, setNoiseEnabled } from '../design-system/noiseOverlay';
+import { getEmptyPreview, setEmptyPreview } from '../design-system/previewEmpty';
 import { getFlameTintEnabled, setFlameTintEnabled } from '../design-system/flameTint';
 import { getFlameSpeed, setFlameSpeed, DEFAULT_FLAME_SPEED } from '../design-system/flameSpeed';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
@@ -90,6 +91,74 @@ function AccentPicker() {
           Badge accent
         </Badge>
       </div>
+    </div>
+  );
+}
+
+function EmptyPreviewToggle() {
+  const navigate = useNavigate();
+  const [enabled, setEnabled] = React.useState(() => getEmptyPreview());
+
+  function toggle(next: boolean) {
+    setEmptyPreview(next);
+    setEnabled(next);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+        Força os empty states a aparecerem mesmo com decks criados — pra revisar sem apagar nada nem
+        criar outra conta. É temporário: some ao fechar a aba. Depois de ligar, abra a Home pra ver.
+      </p>
+
+      <button
+        onClick={() => toggle(!enabled)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 14px',
+          backgroundColor: 'var(--surface-1)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          Preview de empty state (Home)
+        </span>
+        <span
+          style={{
+            width: '44px',
+            height: '26px',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: enabled ? 'var(--accent)' : 'var(--surface-3)',
+            border: `1px solid ${enabled ? 'var(--accent)' : 'var(--border-default)'}`,
+            position: 'relative',
+            flexShrink: 0,
+            transition: 'background-color 0.15s, border-color 0.15s',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: '2px',
+              left: enabled ? '20px' : '2px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'left 0.15s',
+            }}
+          />
+        </span>
+      </button>
+
+      <Button variant="secondary" size="md" onClick={() => { toggle(true); navigate('/'); }}>
+        Abrir Home vazia
+      </Button>
     </div>
   );
 }
@@ -458,6 +527,11 @@ export default function DesignSystem() {
           <FlameTintToggle />
           <FlameSpeedControl />
         </CollapsibleSection>
+
+        {/* ── Dev preview of empty states ── */}
+        <Section title="Preview de empty states">
+          <EmptyPreviewToggle />
+        </Section>
 
         {/* ── Colors ── */}
         <Section title="Colors — Backgrounds">

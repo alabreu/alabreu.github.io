@@ -15,6 +15,7 @@ import { FeedbackSheet } from '../features/feedback/FeedbackSheet';
 import { ChangelogSheet } from '../features/home/ChangelogSheet';
 import { SettingsSheet } from '../features/home/SettingsSheet';
 import { getUnreadCount, markChangelogSeen } from '../lib/changelog';
+import { getEmptyPreview, subscribeEmptyPreview } from '../design-system/previewEmpty';
 import { CONTENT_MAX_WIDTH } from '../design-system/responsive';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
@@ -404,6 +405,10 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
 
 export default function Home() {
   const { decks, deleteDeck } = useDeckStore();
+  // Dev preview (from /#/design): force the empty state without deleting decks.
+  const [emptyPreview, setEmptyPreview] = React.useState(() => getEmptyPreview());
+  React.useEffect(() => subscribeEmptyPreview(() => setEmptyPreview(getEmptyPreview())), []);
+  const showEmpty = decks.length === 0 || emptyPreview;
   const navigate = useNavigate();
   const { session } = useSupabaseSession();
   const { lang, setLang } = useLanguage();
@@ -529,7 +534,7 @@ export default function Home() {
           boxSizing: 'border-box',
         }}
       >
-        {decks.length === 0 ? (
+        {showEmpty ? (
           /* Empty state */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
