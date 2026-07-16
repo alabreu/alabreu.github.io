@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import type { Components } from 'react-markdown';
+import { normalizeScryfallQuery } from './scryfallQuery';
 
 export function childrenToText(children: React.ReactNode): string {
   if (typeof children === 'string') return children;
@@ -90,9 +91,13 @@ export function getMarkdownComponents(onOpenSearch: (query: string) => void): Co
       if (!isClickableQuery) {
         return <code style={inlineCodeStyle}>{children}</code>;
       }
+      // Resilience: fix invalid Scryfall operators the model sometimes invents
+      // (subtype:, keyword:<type>, smart quotes) so the chip both DISPLAYS and
+      // RUNS valid syntax — never a query that errors or returns nothing.
+      const query = normalizeScryfallQuery(text);
       return (
         <code
-          onClick={() => onOpenSearch(text)}
+          onClick={() => onOpenSearch(query)}
           title="Abrir na busca"
           style={{
             ...inlineCodeStyle,
@@ -103,7 +108,7 @@ export function getMarkdownComponents(onOpenSearch: (query: string) => void): Co
             textUnderlineOffset: '2px',
           }}
         >
-          {children}
+          {query}
         </code>
       );
     },

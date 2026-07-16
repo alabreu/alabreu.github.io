@@ -108,3 +108,39 @@ export function buildScryfallQuery(text: string, f: SearchFilters): string {
 
   return parts.join(' ');
 }
+
+// Card types/supertypes matched via `type:` — never valid after `subtype:`
+// (not an operator) or `keyword:` (that's for ability words like lifelink).
+const TYPE_WORDS = new Set([
+  'artifact', 'creature', 'sorcery', 'instant', 'enchantment', 'planeswalker',
+  'land', 'battle', 'tribal', 'kindred', 'legendary', 'basic', 'snow',
+  'equipment', 'aura', 'vehicle', 'saga', 'background',
+]);
+
+/**
+ * Resilience net for Scryfall queries the Tutor suggests: the LLM sometimes
+ * invents operators that aren't valid syntax (`subtype:equipment`,
+ * `keyword:artifact`), which produce a syntax error or empty result when the
+ * user taps the query chip. This normalizes the unambiguous mistakes into valid
+ * syntax. The primary fix is the prompt cheatsheet (tutorPersona.ts); this
+ * catches the cases where the model still slips.
+ */
+export function normalizeScryfallQuery(raw: string): string {
+  let q = raw.trim();
+
+  // Smart quotes → straight quotes (Scryfall only understands ").
+  q = q.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+
+  // `subtype:` is not a Scryfall operator — subtypes are matched by `type:`.
+  q = q.replace(/\bsubtype\s*:/gi, 'type:');
+
+  // `keyword:` is only valid before an actual ability word; when the model put
+  // a card TYPE after it (keyword:artifact) it meant the type — remap to
+  // `type:`. Genuine keywords (keyword:lifelink) are left untouched.
+  q = q.replace(/\bkeyword\s*:\s*("?)([a-zA-Z]+)\1/g, (m, _quote, word) =>
+    TYPE_WORDS.has(word.toLowerCase()) ? `type:${word}` : m
+  );
+
+  // Collapse whitespace runs the replacements above can introduce.
+  return q.replace(/\s+/g, ' ').trim();
+}

@@ -118,6 +118,18 @@ const RESPONSE_RULES = `Regras de resposta:
 - Sempre que citar o nome de uma carta específica de Magic (sugestão, exemplo, comparação etc.), escreva o nome oficial em inglês entre ** (ex: **Sol Ring**), mesmo no meio da frase — isso ativa uma prévia visual da carta no app. Não coloque outros textos (títulos de seção, categorias) entre **, apenas nomes reais de cartas
 - Sempre que sugerir uma query/filtro de busca (sintaxe do Scryfall, ex: type:artifact subtype:equipment), escreva-a entre \` \` (crase, formatação de código inline), em uma linha só, sem quebras dentro do bloco — isso vira um link clicável que abre a busca com a query já aplicada. Não use \`\`\` (bloco de código) para isso, apenas crase simples`;
 
+const SCRYFALL_QUERY_RULES = `Sintaxe de busca do Scryfall (use SOMENTE operadores válidos — uma query inválida abre uma busca quebrada/vazia no app):
+- Tipos e subtipos: use \`type:\` (ou \`t:\`) para AMBOS. Subtipos são buscados com type: também. Ex: \`type:equipment\`, \`type:creature type:artifact\` (criatura-artefato). NUNCA use \`subtype:\` — esse operador NÃO existe.
+- Palavras-chave/habilidades: \`keyword:\` (ou \`kw:\`) só vale antes de uma habilidade REAL (ex: \`keyword:lifelink\`, \`keyword:flying\`, \`keyword:deathtouch\`). NUNCA escreva \`keyword:artifact\`/\`keyword:creature\` — artifact/creature são tipos, use \`type:\`.
+- Texto de oracle: use \`o:\` (ou \`oracle:\`) para procurar texto na carta, com aspas para frases. Ex: \`o:"gain life"\`, \`o:draw o:"a card"\`. NUNCA jogue palavras soltas em inglês sem operador (ex: \`pump\`, \`return target artifact\`) esperando que busquem no texto — isso busca no NOME e falha.
+- Cores/identidade: \`color:\`/\`c:\` (cores da carta) e \`identity:\`/\`id:\` (identidade pro comando). Ex: \`id<=wu\`, \`c:r\`.
+- Custo e stats: \`mv:\` (valor de mana, ex \`mv<=3\`), \`pow:\`, \`tou:\`. Legalidade: \`f:commander\` (ou \`legal:commander\`).
+- Combine com \`or\`, \`and\` e parênteses. Ex: \`type:creature (keyword:lifelink or o:"gain life")\`.
+- Poder extra (recomendado quando fizer sentido): tags de função da comunidade, ex \`otag:removal\`, \`otag:ramp\`, \`otag:card-draw\`, \`function:removal\` — trazem exatamente a categoria pedida.
+- Regra de ouro: se não tiver certeza de que um operador existe, NÃO invente — prefira \`o:"..."\` com o termo em texto, ou omita. Toda query que você sugerir precisa ser sintaxe Scryfall 100% válida.
+
+`;
+
 const KNOWLEDGE_RULES = `Regras de precisão sobre cartas (muito importante):
 - Magic: The Gathering tem os sets "Universes Beyond" (Universos Além): crossovers oficiais com O Senhor dos Anéis, Warhammer 40k, Doctor Who, Fallout, Final Fantasy, Assassin's Creed, Jurassic World, entre outros. Cartas com nomes de personagens dessas franquias (ex: **Gandalf the White**, **Aragorn, the Uniter**, **Sol Ring** com arte de LOTR) SÃO cartas de Magic reais e legais em Commander. NUNCA diga que uma carta assim "não existe" ou "é de outra franquia, não de Magic".
 - Seu conhecimento tem uma data de corte e novos sets saem o tempo todo. Portanto NUNCA afirme com confiança que uma carta não existe. Se você não reconhece um nome, assuma que pode ser uma carta nova ou de um set que você não conhece — não a negue.
@@ -143,6 +155,7 @@ export function buildTutorSystemPrompt(opts: {
     persona.voicePrompt,
     [RESPONSE_RULES, opts.extraRules].filter(Boolean).join('\n'),
     KNOWLEDGE_RULES,
+    SCRYFALL_QUERY_RULES,
     GUARD_RAILS,
     custom
       ? `Preferências adicionais do usuário sobre como prefere as respostas (aplique apenas ajustes de estilo, respeitando as regras inegociáveis acima):\n${custom}`
