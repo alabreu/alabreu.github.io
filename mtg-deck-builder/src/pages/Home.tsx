@@ -436,7 +436,7 @@ export default function Home() {
       <header
         style={{
           padding: '0 20px 0',
-          paddingTop: 'max(56px, calc(env(safe-area-inset-top) + 20px))',
+          paddingTop: 'max(76px, calc(env(safe-area-inset-top) + 36px))',
           width: '100%',
           maxWidth: CONTENT_MAX_WIDTH,
           margin: '0 auto',

@@ -202,23 +202,6 @@ export default function DeckBuilder() {
         overflow: 'hidden',
       }}
     >
-      {/* Soft translucent top scrim: since iOS now forces an opaque status-bar
-          band, fade content that scrolls up beneath the floating buttons into a
-          consistent dark, semi-transparent top zone (instead of a hard clip). */}
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 'calc(env(safe-area-inset-top) + 70px)',
-          background: 'linear-gradient(to bottom, var(--bg-base) 38%, rgba(15,15,15,0.55) 68%, transparent)',
-          zIndex: 40,
-          pointerEvents: 'none',
-        }}
-      />
-
       {/* Floating back button — closes overlays first, then goes home */}
       <button
         style={{ ...floatingBtnStyle, left: edgeInset(16) }}
