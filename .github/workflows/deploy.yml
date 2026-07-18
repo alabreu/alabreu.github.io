@@ -5,14 +5,6 @@ on:
     # Hourly deploy — avoids the GitHub Pages ~10 builds/hour throttle
     - cron: '0 * * * *'
   workflow_dispatch:
-  push:
-    branches: [master]
-    # Publica automaticamente quando o design-lab (ou o próprio pipeline)
-    # muda. Escopo estreito de propósito: mudanças aqui são raras, então não
-    # reintroduz o problema de throttle que fez desligar o deploy-on-push geral.
-    paths:
-      - 'design-lab/**'
-      - '.github/workflows/deploy.yml'
 
 permissions:
   contents: write
