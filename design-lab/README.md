@@ -21,10 +21,10 @@ O "molho secreto" são **filtros SVG**:
   cada forma → contorno orgânico e imperfeito, como se fosse desenhado.
 - Animar o `baseFrequency` do ruído (SMIL `<animate>`, `calcMode="linear"`)
   faz as linhas ondularem devagar, em velocidade fixa (sem aceleração).
-- `numOctaves="1"` + um `feGaussianBlur` leve deixam as curvas suaves (menos
-  serrilhado); `color-interpolation-filters="sRGB"` evita escurecer a borda; e
-  a região do filtro é ampliada (`-50%`/`200%`) pra não cortar a forma quando
-  ela é deslocada pra fora.
+- `numOctaves="1"` deixa as curvas maiores e mais suaves;
+  `color-interpolation-filters="sRGB"` evita escurecer a borda; e a região do
+  filtro é ampliada (`-50%`/`200%`) pra não cortar a forma quando ela é
+  deslocada pra fora.
 
 **Escala por elemento:** o JS gera um filtro por elemento apenas para escalar
 o deslocamento pelo tamanho da forma (elementos pequenos, como o toggle, não
@@ -39,7 +39,11 @@ deformam mas o texto continua nítido.
 
 Tabs de ícones, paleta de cores, botões, cards/painéis, chips/badges,
 toggles, sliders arrastáveis, input e barra de progresso — todos no mesmo
-estilo.
+estilo. Fonte: **Fredoka**.
+
+No topo há dois toggles: **Live edges** (movimento) e **Paleta pastel**, que
+alterna entre a paleta vibrante (sobre branco) e uma paleta só de tons pastel
+sobre fundo creme off-white — trocando apenas uma classe no `<body>`.
 
 ## Toggle "Live edges"
 
