@@ -6,8 +6,11 @@ Site pessoal + **MTG Commander Deck Builder** em `mtg-deck-builder/` (React + Vi
 
 - GitHub Pages publica do branch `gh-pages` (fonte: Settings → Pages → branch).
 - Workflow `.github/workflows/deploy.yml`: roda **de hora em hora** (cron) e por
-  `workflow_dispatch` — push em `master` NÃO dispara deploy (evita o limite de
-  ~10 builds/hora do Pages, que já nos travou).
+  `workflow_dispatch` — push em `master` NÃO dispara deploy de forma geral
+  (evita o limite de ~10 builds/hora do Pages, que já nos travou).
+  **Exceção:** push em `master` que toca `design-lab/**` (ou o próprio
+  `deploy.yml`) dispara deploy — escopo estreito de propósito, pra publicar o
+  laboratório de UI automaticamente sem reintroduzir o throttle.
 - Para publicar imediatamente: disparar o workflow "Deploy to GitHub Pages" manualmente.
 - O app mostra a versão (sha + hora do build) no menu da home; um toast avisa o
   usuário quando há versão nova no servidor (`version.json` gerado no build).
