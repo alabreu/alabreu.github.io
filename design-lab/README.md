@@ -31,3 +31,17 @@ deformam mas o texto continua nítido.
 Tabs de ícones, paleta de cores, botões, cards/painéis, chips/badges,
 toggles, sliders arrastáveis, input e barra de progresso — todos no mesmo
 estilo.
+
+## Toggle "Live edges"
+
+No topo da página tem um interruptor **Live edges**: liga/desliga a
+*animação* do contorno de **todos** os elementos de uma vez.
+
+- **Ligado** → todo contorno usa o filtro animado (`#wobble`) e ondula.
+- **Desligado** → todo contorno fica estático, mas ainda orgânico/desenhado
+  (`#organic`).
+
+É só um switch de classe no `<body>` (`body.live-edges`); as regras com essa
+classe têm especificidade maior e trocam o filtro de cada elemento sem
+`!important`. Começa **desligado** automaticamente pra quem tem
+`prefers-reduced-motion` ativo.

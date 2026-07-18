@@ -227,6 +227,49 @@
   .toggle.on .toggle__bg { background: var(--teal); }
   .toggle.on .knob { transform: translateX(34px); }
 
+  /* ============================================================
+     MASTER SWITCH — "Live edges".
+     Liga/desliga a ANIMAÇÃO do contorno em TODOS os elementos.
+     ON  → todo mundo usa o filtro animado (#wobble).
+     OFF → todo mundo usa o filtro estático, mas ainda orgânico (#organic).
+     Os seletores com body.live-edges têm especificidade maior que as
+     regras-base, então vencem o cascade sem !important.
+     ============================================================ */
+  body.live-edges .blob__bg,
+  body.live-edges .btn__bg,
+  body.live-edges .tab__bg,
+  body.live-edges .badge__bg,
+  body.live-edges .chip__bg,
+  body.live-edges .toggle__bg,
+  body.live-edges .input-wrap__bg,
+  body.live-edges .progress__bg,
+  body.live-edges .progress__fill,
+  body.live-edges .slider__track,
+  body.live-edges .slider__fill {
+    filter: url(#wobble);
+  }
+  body:not(.live-edges) .blob__bg,
+  body:not(.live-edges) .btn__bg,
+  body:not(.live-edges) .tab__bg,
+  body:not(.live-edges) .badge__bg,
+  body:not(.live-edges) .chip__bg,
+  body:not(.live-edges) .toggle__bg,
+  body:not(.live-edges) .input-wrap__bg,
+  body:not(.live-edges) .progress__bg,
+  body:not(.live-edges) .progress__fill,
+  body:not(.live-edges) .slider__track,
+  body:not(.live-edges) .slider__fill {
+    filter: url(#organic);
+  }
+
+  /* Barra de controle no topo */
+  .control-bar {
+    display: inline-flex; align-items: center; gap: 16px;
+    padding: 14px 22px; margin-top: 22px;
+  }
+  .cb-title { font-weight: 800; font-size: 16px; line-height: 1.1; }
+  .cb-sub   { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+
   /* ---------- Slider (Shape / Size) ---------- */
   .slider-block { margin: 20px 0; }
   .slider-block .lbl {
@@ -337,6 +380,18 @@
     </div>
   </header>
 
+  <!-- Master switch: Live edges -->
+  <div class="blob control-bar">
+    <div class="blob__bg"></div>
+    <div class="toggle on" id="liveToggle" role="switch" aria-checked="true" tabindex="0" aria-label="Live edges">
+      <div class="toggle__bg"></div><div class="knob"></div>
+    </div>
+    <div>
+      <div class="cb-title">Live edges</div>
+      <div class="cb-sub"><span id="liveState">ligado</span> — anima o contorno de todos os elementos</div>
+    </div>
+  </div>
+
   <!-- Tabs -->
   <section>
     <div class="sec-head"><h2>Tabs / Navegação</h2><span class="tag">passe o mouse ✦ ativo ondula</span></div>
@@ -387,7 +442,7 @@
         <div class="blob__bg live" style="background: var(--card-sun)"></div>
         <span class="badge c"><span>Live ✦</span><div class="badge__bg"></div></span>
         <h3>Borda Viva</h3>
-        <p>Este card usa o filtro animado — repare no contorno ondulando devagar.</p>
+        <p>Com o <em>Live edges</em> ligado (topo da página), todo contorno ondula devagar — inclusive este.</p>
       </div>
     </div>
   </section>
@@ -489,6 +544,26 @@
   // ---- Toggles ----
   document.querySelectorAll('[data-toggle]').forEach(t => {
     t.addEventListener('click', () => t.classList.toggle('on'));
+  });
+
+  // ---- Master switch: Live edges (liga/desliga animação de TODOS os contornos) ----
+  const liveToggle = document.getElementById('liveToggle');
+  const liveState  = document.getElementById('liveState');
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function setLive(on) {
+    document.body.classList.toggle('live-edges', on);
+    liveToggle.classList.toggle('on', on);
+    liveToggle.setAttribute('aria-checked', on ? 'true' : 'false');
+    liveState.textContent = on ? 'ligado' : 'desligado';
+  }
+  // Respeita quem pediu menos movimento: começa desligado nesse caso.
+  setLive(!prefersReduced);
+
+  const toggleLive = () => setLive(!document.body.classList.contains('live-edges'));
+  liveToggle.addEventListener('click', toggleLive);
+  liveToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLive(); }
   });
 
   // ---- Tabs ----
