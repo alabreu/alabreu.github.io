@@ -30,6 +30,7 @@ const ALLOWED_MODELS = new Set([
   'openai/gpt-4o-mini',
   'google/gemini-2.5-flash',
   'google/gemini-2.5-flash-lite',
+  'deepseek/deepseek-v4-flash',
   'meta-llama/llama-3.3-70b-instruct:free',
   'deepseek/deepseek-r1:free',
   'google/gemma-3-27b-it:free',
@@ -37,7 +38,7 @@ const ALLOWED_MODELS = new Set([
   'mistralai/mistral-7b-instruct:free',
 ]);
 // Fallback when app_settings has no (or an invalid) active_model row.
-const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash';
 const MAX_MESSAGES = 60;
 // The system prompt (deck list + persona + rules + guard rails + custom
 // instructions) can legitimately run ~6.5k chars for a full 100-card deck —

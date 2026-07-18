@@ -20,6 +20,7 @@ export const TUTOR_MODELS: TutorModel[] = [
   { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini', provider: 'OpenAI', tier: 'paid', note: 'Barato, rápido e confiável' },
   { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'Google', tier: 'paid', note: 'Mais capaz · contexto enorme' },
   { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', provider: 'Google', tier: 'paid', note: 'Muito barato · rápido' },
+  { id: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash', provider: 'DeepSeek', tier: 'paid', note: 'O mais barato · forte no raciocínio' },
   // Free — $0, mas podem ficar sobrecarregados / na fila.
   { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B', provider: 'Meta', tier: 'free', note: 'Grátis · pode sobrecarregar' },
   { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1', provider: 'DeepSeek', tier: 'free', note: 'Grátis · raciocínio avançado' },
@@ -30,7 +31,7 @@ export const TUTOR_MODELS: TutorModel[] = [
 
 // Fallback used when the server hasn't set an active model yet (or on the legacy
 // bring-your-own-key path, where there's no app_settings to read).
-export const DEFAULT_ACTIVE_MODEL = 'openai/gpt-4o-mini';
+export const DEFAULT_ACTIVE_MODEL = 'deepseek/deepseek-v4-flash';
 
 // Key of the row in public.app_settings that holds the active model id.
 export const ACTIVE_MODEL_SETTING_KEY = 'active_model';
