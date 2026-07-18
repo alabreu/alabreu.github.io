@@ -296,8 +296,9 @@
      feTurbulence gera ruído; feDisplacementMap usa esse ruído para
      empurrar os pixels das bordas, criando linhas orgânicas.
      Aqui fica só o filtro estático de fallback; o JS gera, na carga, um
-     filtro ANIMADO por elemento (seed/duração/fase próprios) e injeta neste
-     mesmo <defs>. O contorno anima animando o baseFrequency devagar.
+     filtro ANIMADO por elemento (mesmo movimento pra todos; um por elemento
+     só pra escalar o deslocamento pelo tamanho) e injeta neste mesmo <defs>.
+     O contorno se anima variando o baseFrequency devagar.
      ==================================================================== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" id="fx-svg">
   <defs id="fx-defs">
@@ -495,17 +496,19 @@
   });
 
   // ---- Live edges ----------------------------------------------------------
-  // Cada elemento ganha o SEU PRÓPRIO filtro, com seed / duração / fase
-  // aleatórios — então cada contorno se move de um jeito diferente e fora de
-  // sincronia (o "RNG" por elemento). O liga/desliga apenas pausa/retoma a
-  // timeline SMIL do SVG inteiro, congelando as bordas onde estiverem.
+  // Todos os contornos se movem igual (em sincronia). O liga/desliga apenas
+  // pausa/retoma a timeline SMIL do SVG inteiro, congelando as bordas onde
+  // estiverem.
   const fxSvg  = document.getElementById('fx-svg');
   const fxDefs = document.getElementById('fx-defs');
   const NS = 'http://www.w3.org/2000/svg';
   const FILTERED = '.blob__bg, .btn__bg, .tab__bg, .badge__bg, .chip__bg,' +
                    '.toggle__bg, .input-wrap__bg, .progress__bg, .progress__fill,' +
                    '.slider__track, .slider__fill';
-  const rnd = (a, b) => a + Math.random() * (b - a);
+  // Movimento igual para todos (em sincronia). Ainda geramos um filtro por
+  // elemento só para escalar o deslocamento pelo tamanho — assim elementos
+  // pequenos como o toggle não são cortados/destruídos.
+  const M = { seed: 7, bf0: 0.009, bf1: 0.011, dur: 12 };
 
   document.querySelectorAll(FILTERED).forEach((el, i) => {
     const r = el.getBoundingClientRect();
@@ -513,11 +516,6 @@
     // Deslocamento proporcional ao tamanho (e limitado), pra não destruir
     // elementos pequenos como o toggle nem exagerar nos grandes.
     const scale = Math.max(2.5, Math.min(6, minDim * 0.1)).toFixed(1);
-    const seed  = Math.floor(rnd(0, 1000));
-    const bf0   = rnd(0.008, 0.011);          // base do ruído (ondas grandes)
-    const bf1   = bf0 + rnd(0.0015, 0.003);   // amplitude pequena = movimento sutil
-    const dur   = rnd(9, 15);                 // lento, e diferente por elemento
-    const phase = rnd(0, dur);                // fase aleatória → dessincroniza
     const id    = 'fx' + i;
 
     const filter = document.createElementNS(NS, 'filter');
@@ -528,17 +526,16 @@
 
     const turb = document.createElementNS(NS, 'feTurbulence');
     turb.setAttribute('type', 'fractalNoise');
-    turb.setAttribute('baseFrequency', bf0.toFixed(4));
+    turb.setAttribute('baseFrequency', M.bf0.toFixed(4));
     turb.setAttribute('numOctaves', '1');
-    turb.setAttribute('seed', seed);
+    turb.setAttribute('seed', M.seed);
     turb.setAttribute('result', 'n');
 
     const anim = document.createElementNS(NS, 'animate');
     anim.setAttribute('attributeName', 'baseFrequency');
     anim.setAttribute('calcMode', 'linear'); // velocidade fixa, sem aceleração
-    anim.setAttribute('values', bf0.toFixed(4) + ';' + bf1.toFixed(4) + ';' + bf0.toFixed(4));
-    anim.setAttribute('dur', dur.toFixed(2) + 's');
-    anim.setAttribute('begin', '-' + phase.toFixed(2) + 's');
+    anim.setAttribute('values', M.bf0.toFixed(4) + ';' + M.bf1.toFixed(4) + ';' + M.bf0.toFixed(4));
+    anim.setAttribute('dur', M.dur.toFixed(2) + 's');
     anim.setAttribute('repeatCount', 'indefinite');
     turb.appendChild(anim);
 
