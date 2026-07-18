@@ -137,7 +137,10 @@
     filter: url(#organic);
     z-index: 0;
   }
-  .blob > * { position: relative; z-index: 1; }
+  /* Exclui o .blob__bg: senão esta regra empata em especificidade com
+     .blob__bg e (por vir depois) sobrescreve position:absolute → o fundo
+     colapsa pra altura 0 e some. */
+  .blob > *:not(.blob__bg) { position: relative; z-index: 1; }
 
   .grid {
     display: grid;
