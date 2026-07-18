@@ -32,8 +32,8 @@
     --yellow:    #f5d24a;
     --coral:     #f47a6b;
 
-    --panel:     #f8eef2;
-    --panel-2:   #efd9e4;
+    --panel:     #eee3eb;
+    --panel-2:   #ecd7e2;
     --card-mint: #d6f0e6;
     --card-pink: #f6dde8;
     --card-sun:  #fbeecb;
@@ -49,10 +49,7 @@
   body {
     font-family: var(--font);
     color: var(--ink);
-    background:
-      radial-gradient(120% 80% at 15% 0%, #f6e7ef 0%, transparent 55%),
-      radial-gradient(100% 90% at 100% 20%, #e6f4ee 0%, transparent 50%),
-      var(--bg);
+    background: #ffffff;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
@@ -122,8 +119,6 @@
     filter: url(#organic);
     z-index: 0;
   }
-  .blob__bg.live   { filter: url(#wobble); }
-  .blob__bg.strong { filter: url(#organic-strong); }
   .blob > * { position: relative; z-index: 1; }
 
   .grid {
@@ -161,7 +156,6 @@
   }
   .btn > span { position: relative; z-index: 1; }
   .btn:hover  { transform: translateY(-3px) rotate(-.6deg); }
-  .btn:hover .btn__bg { filter: url(#wobble); }
   .btn:active { transform: translateY(0) scale(.97); }
 
   .btn.primary   { color: #fff; }
@@ -187,7 +181,6 @@
   .tab:hover { transform: translateY(-4px) scale(1.05); }
   .tab.active .tab__bg { background: var(--purple); }
   .tab.active { color: #fff; }
-  .tab.active .tab__bg { filter: url(#wobble); }
 
   /* ---------- Cards ---------- */
   .card h3 { margin: 4px 0 6px; font-size: 19px; font-weight: 800; }
@@ -226,41 +219,6 @@
   }
   .toggle.on .toggle__bg { background: var(--teal); }
   .toggle.on .knob { transform: translateX(34px); }
-
-  /* ============================================================
-     MASTER SWITCH — "Live edges".
-     Liga/desliga a ANIMAÇÃO do contorno em TODOS os elementos.
-     ON  → todo mundo usa o filtro animado (#wobble).
-     OFF → todo mundo usa o filtro estático, mas ainda orgânico (#organic).
-     Os seletores com body.live-edges têm especificidade maior que as
-     regras-base, então vencem o cascade sem !important.
-     ============================================================ */
-  body.live-edges .blob__bg,
-  body.live-edges .btn__bg,
-  body.live-edges .tab__bg,
-  body.live-edges .badge__bg,
-  body.live-edges .chip__bg,
-  body.live-edges .toggle__bg,
-  body.live-edges .input-wrap__bg,
-  body.live-edges .progress__bg,
-  body.live-edges .progress__fill,
-  body.live-edges .slider__track,
-  body.live-edges .slider__fill {
-    filter: url(#wobble);
-  }
-  body:not(.live-edges) .blob__bg,
-  body:not(.live-edges) .btn__bg,
-  body:not(.live-edges) .tab__bg,
-  body:not(.live-edges) .badge__bg,
-  body:not(.live-edges) .chip__bg,
-  body:not(.live-edges) .toggle__bg,
-  body:not(.live-edges) .input-wrap__bg,
-  body:not(.live-edges) .progress__bg,
-  body:not(.live-edges) .progress__fill,
-  body:not(.live-edges) .slider__track,
-  body:not(.live-edges) .slider__fill {
-    filter: url(#organic);
-  }
 
   /* Barra de controle no topo */
   .control-bar {
@@ -317,7 +275,7 @@
   }
   .progress__fill {
     position: absolute; top: 3px; left: 3px; bottom: 3px; width: 68%;
-    border-radius: 12px; background: var(--yellow); filter: url(#wobble);
+    border-radius: 12px; background: var(--yellow); filter: url(#organic);
   }
 
   /* ---------- rodapé ---------- */
@@ -337,30 +295,20 @@
      Filtros SVG — o "molho secreto" do visual desenhado.
      feTurbulence gera ruído; feDisplacementMap usa esse ruído para
      empurrar os pixels das bordas, criando linhas orgânicas.
-     Em #wobble, o baseFrequency é animado → as linhas ondulam devagar.
+     Aqui fica só o filtro estático de fallback; o JS gera, na carga, um
+     filtro ANIMADO por elemento (seed/duração/fase próprios) e injeta neste
+     mesmo <defs>. O contorno anima animando o baseFrequency devagar.
      ==================================================================== -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <filter id="organic">
-      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="7" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-
-    <filter id="organic-strong">
-      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-
-    <filter id="wobble">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="2" result="n">
-        <animate attributeName="baseFrequency"
-                 dur="9s" repeatCount="indefinite"
-                 values="0.011;0.017;0.010;0.015;0.011"
-                 calcMode="spline"
-                 keyTimes="0;0.25;0.5;0.75;1"
-                 keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/>
-      </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" id="fx-svg">
+  <defs id="fx-defs">
+    <!-- Fallback estático (usado antes do JS gerar um filtro por elemento).
+         numOctaves=1 + blur leve = curvas suaves, menos serrilhado;
+         color-interpolation-filters=sRGB evita escurecer a borda;
+         região ampla (-50%/200%) evita cortar a forma deslocada. -->
+    <filter id="organic" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="1" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feGaussianBlur in="d" stdDeviation="0.6"/>
     </filter>
   </defs>
 </svg>
@@ -546,13 +494,80 @@
     t.addEventListener('click', () => t.classList.toggle('on'));
   });
 
-  // ---- Master switch: Live edges (liga/desliga animação de TODOS os contornos) ----
+  // ---- Live edges ----------------------------------------------------------
+  // Cada elemento ganha o SEU PRÓPRIO filtro, com seed / duração / fase
+  // aleatórios — então cada contorno se move de um jeito diferente e fora de
+  // sincronia (o "RNG" por elemento). O liga/desliga apenas pausa/retoma a
+  // timeline SMIL do SVG inteiro, congelando as bordas onde estiverem.
+  const fxSvg  = document.getElementById('fx-svg');
+  const fxDefs = document.getElementById('fx-defs');
+  const NS = 'http://www.w3.org/2000/svg';
+  const FILTERED = '.blob__bg, .btn__bg, .tab__bg, .badge__bg, .chip__bg,' +
+                   '.toggle__bg, .input-wrap__bg, .progress__bg, .progress__fill,' +
+                   '.slider__track, .slider__fill';
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  document.querySelectorAll(FILTERED).forEach((el, i) => {
+    const r = el.getBoundingClientRect();
+    const minDim = Math.max(1, Math.min(r.width, r.height));
+    // Deslocamento proporcional ao tamanho (e limitado), pra não destruir
+    // elementos pequenos como o toggle nem exagerar nos grandes.
+    const scale = Math.max(2.5, Math.min(6, minDim * 0.1)).toFixed(1);
+    const seed  = Math.floor(rnd(0, 1000));
+    const bf0   = rnd(0.008, 0.011);          // base do ruído (ondas grandes)
+    const bf1   = bf0 + rnd(0.0015, 0.003);   // amplitude pequena = movimento sutil
+    const dur   = rnd(9, 15);                 // lento, e diferente por elemento
+    const phase = rnd(0, dur);                // fase aleatória → dessincroniza
+    const id    = 'fx' + i;
+
+    const filter = document.createElementNS(NS, 'filter');
+    filter.setAttribute('id', id);
+    filter.setAttribute('x', '-50%'); filter.setAttribute('y', '-50%');
+    filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+    const turb = document.createElementNS(NS, 'feTurbulence');
+    turb.setAttribute('type', 'fractalNoise');
+    turb.setAttribute('baseFrequency', bf0.toFixed(4));
+    turb.setAttribute('numOctaves', '1');
+    turb.setAttribute('seed', seed);
+    turb.setAttribute('result', 'n');
+
+    const anim = document.createElementNS(NS, 'animate');
+    anim.setAttribute('attributeName', 'baseFrequency');
+    anim.setAttribute('calcMode', 'linear'); // velocidade fixa, sem aceleração
+    anim.setAttribute('values', bf0.toFixed(4) + ';' + bf1.toFixed(4) + ';' + bf0.toFixed(4));
+    anim.setAttribute('dur', dur.toFixed(2) + 's');
+    anim.setAttribute('begin', '-' + phase.toFixed(2) + 's');
+    anim.setAttribute('repeatCount', 'indefinite');
+    turb.appendChild(anim);
+
+    const disp = document.createElementNS(NS, 'feDisplacementMap');
+    disp.setAttribute('in', 'SourceGraphic');
+    disp.setAttribute('in2', 'n');
+    disp.setAttribute('scale', scale);
+    disp.setAttribute('xChannelSelector', 'R');
+    disp.setAttribute('yChannelSelector', 'G');
+    disp.setAttribute('result', 'd');
+
+    const blur = document.createElementNS(NS, 'feGaussianBlur');
+    blur.setAttribute('in', 'd');
+    blur.setAttribute('stdDeviation', '0.6'); // suaviza o serrilhado (antialiasing)
+
+    filter.appendChild(turb);
+    filter.appendChild(disp);
+    filter.appendChild(blur);
+    fxDefs.appendChild(filter);
+
+    el.style.filter = 'url(#' + id + ')';
+  });
+
   const liveToggle = document.getElementById('liveToggle');
   const liveState  = document.getElementById('liveState');
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function setLive(on) {
-    document.body.classList.toggle('live-edges', on);
+    if (on) fxSvg.unpauseAnimations(); else fxSvg.pauseAnimations();
     liveToggle.classList.toggle('on', on);
     liveToggle.setAttribute('aria-checked', on ? 'true' : 'false');
     liveState.textContent = on ? 'ligado' : 'desligado';
@@ -560,7 +575,7 @@
   // Respeita quem pediu menos movimento: começa desligado nesse caso.
   setLive(!prefersReduced);
 
-  const toggleLive = () => setLive(!document.body.classList.contains('live-edges'));
+  const toggleLive = () => setLive(fxSvg.animationsPaused());
   liveToggle.addEventListener('click', toggleLive);
   liveToggle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLive(); }
