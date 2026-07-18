@@ -82,10 +82,11 @@ Scryfall. Ele **vem vazio** no repo — até popular, "Por função" joga tudo e
      `public/functionTags.json` atualizado.
    - **Automático:** no GitHub, aba Actions → "Refresh function tags" →
      *Run workflow*. Ele gera e commita sozinho (o deploy horário publica).
-10. Conferir os números que o script imprime por categoria (Ramp, Remoção,
-    Compra de Cartas, Proteção, Wincons). **Chutei alguns slugs de tag do
-    Scryfall** — se algum vier 0 ou muito baixo, me avise que eu ajusto a query
-    em `scripts/build-function-tags.mjs`.
+10. Conferir os números que o script imprime por categoria. **Slugs já
+    verificados** (tags reais do Scryfall): `ramp`, `removal`, `card-advantage`,
+    `alternate-win-condition`. O único **não confirmado é `protection`** — se a
+    linha "Proteção" vier **0**, me avise que troco por um slug válido (ou removo
+    a categoria). As outras quatro devem vir com centenas/milhares de cartas.
 
 Depois disso, o refresh mensal é automático (cron no dia 1º). Quando sair um set
 novo e você quiser atualizar na hora, é só rodar o workflow manualmente.

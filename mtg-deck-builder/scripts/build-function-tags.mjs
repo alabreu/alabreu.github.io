@@ -19,13 +19,19 @@ import { dirname, join } from 'node:path';
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'functionTags.json');
 
 // Category (our section name) → Scryfall search using oracle tags (otag:).
-// Order = precedence (first match wins).
+// Order = precedence (first match wins). Use ONE confirmed tag per category —
+// avoid compound queries with an unconfirmed slug, since an unknown otag could
+// fail the whole query and drop a good category. A category whose tag is
+// invalid/empty just logs 0 and is skipped (safe). Confirmed as real tags:
+// ramp, removal, card-advantage, alternate-win-condition (via Scryfall Tagger).
 const CATEGORIES = [
   { category: 'Ramp', query: 'otag:ramp' },
-  { category: 'Remoção', query: '(otag:removal or otag:board-wipe)' },
+  { category: 'Remoção', query: 'otag:removal' },
   { category: 'Compra de Cartas', query: 'otag:card-advantage' },
+  // 'protection' is not verified as a single tag — if it returns 0/errors,
+  // it's skipped. Report the count and I'll swap it for a confirmed slug.
   { category: 'Proteção', query: 'otag:protection' },
-  { category: 'Wincons', query: '(otag:win-the-game or otag:alternate-win-condition)' },
+  { category: 'Wincons', query: 'otag:alternate-win-condition' },
 ];
 
 const UA = 'TutorBrew/1.0 (function-tags snapshot builder)';
