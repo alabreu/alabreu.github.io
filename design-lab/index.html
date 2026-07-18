@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design Lab — Organic UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Design Lab — "Organic UI"
+     Inspirado no visual de Ollie Ollie World: formas coloridas
+     com contornos desenhados, linhas orgânicas e imperfeitas
+     que se movem suavemente (via filtros SVG animados).
+     ============================================================ */
+
+  :root {
+    /* Paleta pastel + acentos vibrantes */
+    --bg:        #efe3e9;
+    --bg-2:      #e7d7e0;
+    --ink:       #2c2540;
+    --ink-soft:  #6a5f78;
+
+    --pink:      #f24aa0;
+    --magenta:   #e8449b;
+    --purple:    #a06bd4;
+    --violet:    #7c5cd6;
+    --cyan:      #33c7c2;
+    --teal:      #4fd0a0;
+    --mint:      #b7ecd6;
+    --yellow:    #f5d24a;
+    --coral:     #f47a6b;
+
+    --panel:     #f8eef2;
+    --panel-2:   #efd9e4;
+    --card-mint: #d6f0e6;
+    --card-pink: #f6dde8;
+    --card-sun:  #fbeecb;
+
+    --radius:    26px;
+    --font:      'Baloo 2', ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(120% 80% at 15% 0%, #f6e7ef 0%, transparent 55%),
+      radial-gradient(100% 90% at 100% 20%, #e6f4ee 0%, transparent 50%),
+      var(--bg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 40px 24px 96px;
+  }
+
+  /* ---------- Cabeçalho ---------- */
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  h1.title {
+    font-size: clamp(38px, 6vw, 64px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+  }
+  .subtitle {
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 16px;
+    margin: 8px 0 0;
+    max-width: 46ch;
+  }
+  .whoami {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; color: var(--ink);
+  }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--teal), var(--cyan));
+    display: grid; place-items: center; font-size: 22px;
+  }
+
+  /* ---------- Seções ---------- */
+  section { margin-top: 46px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .sec-head h2 {
+    font-size: 24px; font-weight: 800; margin: 0;
+  }
+  .sec-head .tag {
+    font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  }
+
+  /* ============================================================
+     BLOB — container orgânico reutilizável.
+     A camada .blob__bg recebe o filtro SVG (bordas onduladas)
+     enquanto o conteúdo fica por cima, nítido e legível.
+     ============================================================ */
+  .blob { position: relative; padding: 26px 28px; }
+  .blob__bg {
+    position: absolute; inset: 0;
+    background: var(--panel);
+    border-radius: var(--radius);
+    filter: url(#organic);
+    z-index: 0;
+  }
+  .blob__bg.live   { filter: url(#wobble); }
+  .blob__bg.strong { filter: url(#organic-strong); }
+  .blob > * { position: relative; z-index: 1; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 20px;
+  }
+
+  /* ---------- Amostras de cor ---------- */
+  .swatches {
+    display: flex; flex-wrap: wrap; gap: 22px;
+  }
+  .swatch { text-align: center; width: 96px; }
+  .swatch .chip {
+    position: relative; height: 84px; width: 84px; margin: 0 auto 10px;
+  }
+  .swatch .chip__bg {
+    position: absolute; inset: 0; border-radius: 40% 60% 62% 38% / 52% 44% 56% 48%;
+    filter: url(#organic);
+  }
+  .swatch .name { font-weight: 700; font-size: 13px; }
+  .swatch .hex  { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+
+  /* ---------- Botões ---------- */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .btn {
+    position: relative; border: 0; cursor: pointer;
+    font-family: var(--font); font-weight: 700; font-size: 16px;
+    color: var(--ink); padding: 15px 30px; background: transparent;
+    transition: transform .16s cubic-bezier(.34,1.56,.64,1);
+  }
+  .btn__bg {
+    position: absolute; inset: 0; border-radius: 22px;
+    filter: url(#organic); z-index: 0;
+  }
+  .btn > span { position: relative; z-index: 1; }
+  .btn:hover  { transform: translateY(-3px) rotate(-.6deg); }
+  .btn:hover .btn__bg { filter: url(#wobble); }
+  .btn:active { transform: translateY(0) scale(.97); }
+
+  .btn.primary   { color: #fff; }
+  .btn.primary .btn__bg   { background: var(--pink); }
+  .btn.secondary .btn__bg { background: var(--yellow); }
+  .btn.mint .btn__bg      { background: var(--teal); }
+  .btn.ghost { color: var(--magenta); }
+  .btn.ghost .btn__bg     { background: transparent; box-shadow: inset 0 0 0 3px var(--magenta); }
+
+  /* ---------- Tabs de ícones (como o topo do jogo) ---------- */
+  .tabs { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .tab {
+    position: relative; width: 60px; height: 60px; cursor: pointer;
+    display: grid; place-items: center; font-size: 26px;
+    transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+    color: var(--ink);
+  }
+  .tab__bg {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: var(--panel-2); filter: url(#organic); z-index: 0;
+  }
+  .tab > span { position: relative; z-index: 1; }
+  .tab:hover { transform: translateY(-4px) scale(1.05); }
+  .tab.active .tab__bg { background: var(--purple); }
+  .tab.active { color: #fff; }
+  .tab.active .tab__bg { filter: url(#wobble); }
+
+  /* ---------- Cards ---------- */
+  .card h3 { margin: 4px 0 6px; font-size: 19px; font-weight: 800; }
+  .card p  { margin: 0; color: var(--ink-soft); font-weight: 600; font-size: 14px; line-height: 1.5; }
+  .card .badge { display: inline-block; margin-bottom: 8px; }
+
+  /* ---------- Chips / badges ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; }
+  .badge {
+    position: relative; font-weight: 700; font-size: 13px;
+    padding: 7px 16px; color: var(--ink);
+  }
+  .badge__bg { position: absolute; inset: 0; border-radius: 16px; filter: url(#organic); z-index: 0; }
+  .badge > span { position: relative; z-index: 1; }
+  .badge.a .badge__bg { background: var(--mint); }
+  .badge.b .badge__bg { background: var(--card-pink); }
+  .badge.c .badge__bg { background: var(--card-sun); }
+  .badge.d .badge__bg { background: #d9d2f2; }
+
+  /* ---------- Toggle ---------- */
+  .field { display: flex; align-items: center; gap: 14px; margin: 14px 0; }
+  .field label { font-weight: 700; }
+  .toggle {
+    position: relative; width: 74px; height: 40px; cursor: pointer;
+    flex: 0 0 auto;
+  }
+  .toggle__bg {
+    position: absolute; inset: 0; border-radius: 24px;
+    background: #e0cede; filter: url(#organic); transition: background .25s;
+  }
+  .toggle .knob {
+    position: absolute; top: 5px; left: 6px; width: 30px; height: 30px;
+    border-radius: 50%; background: #fff; z-index: 1;
+    box-shadow: 0 3px 6px rgba(0,0,0,.15);
+    transition: transform .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toggle.on .toggle__bg { background: var(--teal); }
+  .toggle.on .knob { transform: translateX(34px); }
+
+  /* ============================================================
+     MASTER SWITCH — "Live edges".
+     Liga/desliga a ANIMAÇÃO do contorno em TODOS os elementos.
+     ON  → todo mundo usa o filtro animado (#wobble).
+     OFF → todo mundo usa o filtro estático, mas ainda orgânico (#organic).
+     Os seletores com body.live-edges têm especificidade maior que as
+     regras-base, então vencem o cascade sem !important.
+     ============================================================ */
+  body.live-edges .blob__bg,
+  body.live-edges .btn__bg,
+  body.live-edges .tab__bg,
+  body.live-edges .badge__bg,
+  body.live-edges .chip__bg,
+  body.live-edges .toggle__bg,
+  body.live-edges .input-wrap__bg,
+  body.live-edges .progress__bg,
+  body.live-edges .progress__fill,
+  body.live-edges .slider__track,
+  body.live-edges .slider__fill {
+    filter: url(#wobble);
+  }
+  body:not(.live-edges) .blob__bg,
+  body:not(.live-edges) .btn__bg,
+  body:not(.live-edges) .tab__bg,
+  body:not(.live-edges) .badge__bg,
+  body:not(.live-edges) .chip__bg,
+  body:not(.live-edges) .toggle__bg,
+  body:not(.live-edges) .input-wrap__bg,
+  body:not(.live-edges) .progress__bg,
+  body:not(.live-edges) .progress__fill,
+  body:not(.live-edges) .slider__track,
+  body:not(.live-edges) .slider__fill {
+    filter: url(#organic);
+  }
+
+  /* Barra de controle no topo */
+  .control-bar {
+    display: inline-flex; align-items: center; gap: 16px;
+    padding: 14px 22px; margin-top: 22px;
+  }
+  .cb-title { font-weight: 800; font-size: 16px; line-height: 1.1; }
+  .cb-sub   { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- Slider (Shape / Size) ---------- */
+  .slider-block { margin: 20px 0; }
+  .slider-block .lbl {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; margin-bottom: 12px;
+  }
+  .slider {
+    position: relative; height: 20px; cursor: pointer; user-select: none;
+    touch-action: none;
+  }
+  .slider__track {
+    position: absolute; inset: 6px 0; border-radius: 12px;
+    background: #e3d3df; filter: url(#organic);
+  }
+  .slider__fill {
+    position: absolute; top: 6px; left: 0; bottom: 6px; width: 45%;
+    border-radius: 12px; background: linear-gradient(90deg, var(--purple), var(--pink));
+    filter: url(#organic);
+  }
+  .slider__handle {
+    position: absolute; top: 50%; left: 45%; width: 26px; height: 26px;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    background: #fff; box-shadow: 0 3px 7px rgba(0,0,0,.18); z-index: 2;
+    border: 3px solid var(--pink);
+  }
+
+  /* ---------- Input ---------- */
+  .input-wrap { position: relative; max-width: 340px; }
+  .input-wrap__bg {
+    position: absolute; inset: 0; border-radius: 18px;
+    background: #fff; filter: url(#organic); z-index: 0;
+  }
+  .input-wrap input {
+    position: relative; z-index: 1; width: 100%; border: 0; background: transparent;
+    font-family: var(--font); font-weight: 600; font-size: 15px; color: var(--ink);
+    padding: 14px 18px; outline: none;
+  }
+  .input-wrap input::placeholder { color: #b6a7b6; }
+
+  /* ---------- Progress ---------- */
+  .progress { position: relative; height: 22px; margin: 10px 0; }
+  .progress__bg {
+    position: absolute; inset: 0; border-radius: 14px;
+    background: #e3d3df; filter: url(#organic);
+  }
+  .progress__fill {
+    position: absolute; top: 3px; left: 3px; bottom: 3px; width: 68%;
+    border-radius: 12px; background: var(--yellow); filter: url(#wobble);
+  }
+
+  /* ---------- rodapé ---------- */
+  footer {
+    margin-top: 64px; text-align: center; color: var(--ink-soft);
+    font-weight: 600; font-size: 13px;
+  }
+
+  .hint {
+    color: var(--ink-soft); font-weight: 600; font-size: 13px; margin: 0 0 18px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ====================================================================
+     Filtros SVG — o "molho secreto" do visual desenhado.
+     feTurbulence gera ruído; feDisplacementMap usa esse ruído para
+     empurrar os pixels das bordas, criando linhas orgânicas.
+     Em #wobble, o baseFrequency é animado → as linhas ondulam devagar.
+     ==================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="organic">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="organic-strong">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="wobble">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="2" result="n">
+        <animate attributeName="baseFrequency"
+                 dur="9s" repeatCount="indefinite"
+                 values="0.011;0.017;0.010;0.015;0.011"
+                 calcMode="spline"
+                 keyTimes="0;0.25;0.5;0.75;1"
+                 keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1 class="title">Design&nbsp;Lab</h1>
+      <p class="subtitle">Um sistema de UI orgânico e desenhado à mão — formas
+        coloridas com contornos imperfeitos que se movem suavemente. Inspirado
+        em <em>Ollie Ollie World</em>.</p>
+    </div>
+    <div class="whoami">
+      <span>alabreu</span>
+      <div class="avatar">🛹</div>
+    </div>
+  </header>
+
+  <!-- Master switch: Live edges -->
+  <div class="blob control-bar">
+    <div class="blob__bg"></div>
+    <div class="toggle on" id="liveToggle" role="switch" aria-checked="true" tabindex="0" aria-label="Live edges">
+      <div class="toggle__bg"></div><div class="knob"></div>
+    </div>
+    <div>
+      <div class="cb-title">Live edges</div>
+      <div class="cb-sub"><span id="liveState">ligado</span> — anima o contorno de todos os elementos</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <section>
+    <div class="sec-head"><h2>Tabs / Navegação</h2><span class="tag">passe o mouse ✦ ativo ondula</span></div>
+    <div class="tabs">
+      <div class="tab"><span>🎒</span><div class="tab__bg"></div></div>
+      <div class="tab"><span>🧍</span><div class="tab__bg"></div></div>
+      <div class="tab active"><span>🛹</span><div class="tab__bg"></div></div>
+      <div class="tab"><span>🎨</span><div class="tab__bg"></div></div>
+      <div class="tab"><span>⚙️</span><div class="tab__bg"></div></div>
+      <div class="tab"><span>✨</span><div class="tab__bg"></div></div>
+    </div>
+  </section>
+
+  <!-- Cores -->
+  <section>
+    <div class="sec-head"><h2>Paleta</h2><span class="tag">amostras com bordas orgânicas</span></div>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <!-- Botões -->
+  <section>
+    <div class="sec-head"><h2>Botões</h2><span class="tag">hover → salta e ondula</span></div>
+    <div class="btn-row">
+      <button class="btn primary"><span>Jogar agora</span><div class="btn__bg"></div></button>
+      <button class="btn secondary"><span>Personalizar</span><div class="btn__bg"></div></button>
+      <button class="btn mint"><span>Amigos</span><div class="btn__bg"></div></button>
+      <button class="btn ghost"><span>Voltar</span><div class="btn__bg"></div></button>
+    </div>
+  </section>
+
+  <!-- Cards -->
+  <section>
+    <div class="sec-head"><h2>Cards / Painéis</h2><span class="tag">blobs de conteúdo</span></div>
+    <div class="grid">
+      <div class="blob card">
+        <div class="blob__bg" style="background: var(--card-mint)"></div>
+        <span class="badge a"><span>Novo</span><div class="badge__bg"></div></span>
+        <h3>Shape do Deck</h3>
+        <p>Ajuste a forma da sua prancha com controles que reagem ao toque.</p>
+      </div>
+      <div class="blob card">
+        <div class="blob__bg" style="background: var(--card-pink)"></div>
+        <span class="badge b"><span>Popular</span><div class="badge__bg"></div></span>
+        <h3>Estilo Slime</h3>
+        <p>Gradientes vibrantes e contornos derretidos, sempre em movimento.</p>
+      </div>
+      <div class="blob card">
+        <div class="blob__bg live" style="background: var(--card-sun)"></div>
+        <span class="badge c"><span>Live ✦</span><div class="badge__bg"></div></span>
+        <h3>Borda Viva</h3>
+        <p>Com o <em>Live edges</em> ligado (topo da página), todo contorno ondula devagar — inclusive este.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chips -->
+  <section>
+    <div class="sec-head"><h2>Chips / Badges</h2></div>
+    <div class="chips">
+      <span class="badge a"><span>🛹 Skate</span><div class="badge__bg"></div></span>
+      <span class="badge b"><span>💗 Favorito</span><div class="badge__bg"></div></span>
+      <span class="badge c"><span>⭐ Destaque</span><div class="badge__bg"></div></span>
+      <span class="badge d"><span>🎮 Online</span><div class="badge__bg"></div></span>
+    </div>
+  </section>
+
+  <!-- Controles -->
+  <section>
+    <div class="sec-head"><h2>Controles</h2><span class="tag">toggle ✦ slider ✦ input ✦ progresso</span></div>
+    <div class="grid">
+      <div class="blob">
+        <div class="blob__bg"></div>
+        <p class="hint">Toggles</p>
+        <div class="field">
+          <div class="toggle on" data-toggle><div class="toggle__bg"></div><div class="knob"></div></div>
+          <label>Música</label>
+        </div>
+        <div class="field">
+          <div class="toggle" data-toggle><div class="toggle__bg"></div><div class="knob"></div></div>
+          <label>Modo espectador</label>
+        </div>
+      </div>
+
+      <div class="blob">
+        <div class="blob__bg"></div>
+        <p class="hint">Sliders</p>
+        <div class="slider-block">
+          <div class="lbl">◆ Shape</div>
+          <div class="slider" data-slider>
+            <div class="slider__track"></div>
+            <div class="slider__fill"></div>
+            <div class="slider__handle"></div>
+          </div>
+        </div>
+        <div class="slider-block">
+          <div class="lbl">◆ Size</div>
+          <div class="slider" data-slider>
+            <div class="slider__track"></div>
+            <div class="slider__fill" style="width:70%"></div>
+            <div class="slider__handle" style="left:70%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="blob">
+        <div class="blob__bg"></div>
+        <p class="hint">Input & Progresso</p>
+        <div class="input-wrap">
+          <div class="input-wrap__bg"></div>
+          <input type="text" placeholder="Nome do jogador…" />
+        </div>
+        <div style="height:16px"></div>
+        <div class="progress">
+          <div class="progress__bg"></div>
+          <div class="progress__fill"></div>
+        </div>
+        <p class="hint" style="margin:8px 0 0">Carregando mundo… 68%</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Design Lab ✦ protótipo de UI orgânica — filtros SVG animados, sem imagens.
+  </footer>
+</div>
+
+<script>
+  // ---- Amostras de cor geradas a partir das variáveis ----
+  const palette = [
+    ['Pink',    '--pink',   '#f24aa0'],
+    ['Purple',  '--purple', '#a06bd4'],
+    ['Violet',  '--violet', '#7c5cd6'],
+    ['Cyan',    '--cyan',   '#33c7c2'],
+    ['Teal',    '--teal',   '#4fd0a0'],
+    ['Yellow',  '--yellow', '#f5d24a'],
+    ['Coral',   '--coral',  '#f47a6b'],
+    ['Ink',     '--ink',    '#2c2540'],
+  ];
+  const sw = document.getElementById('swatches');
+  palette.forEach(([name, varname, hex]) => {
+    const el = document.createElement('div');
+    el.className = 'swatch';
+    el.innerHTML =
+      '<div class="chip"><div class="chip__bg" style="background:var(' + varname + ')"></div></div>' +
+      '<div class="name">' + name + '</div>' +
+      '<div class="hex">' + hex + '</div>';
+    sw.appendChild(el);
+  });
+
+  // ---- Toggles ----
+  document.querySelectorAll('[data-toggle]').forEach(t => {
+    t.addEventListener('click', () => t.classList.toggle('on'));
+  });
+
+  // ---- Master switch: Live edges (liga/desliga animação de TODOS os contornos) ----
+  const liveToggle = document.getElementById('liveToggle');
+  const liveState  = document.getElementById('liveState');
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function setLive(on) {
+    document.body.classList.toggle('live-edges', on);
+    liveToggle.classList.toggle('on', on);
+    liveToggle.setAttribute('aria-checked', on ? 'true' : 'false');
+    liveState.textContent = on ? 'ligado' : 'desligado';
+  }
+  // Respeita quem pediu menos movimento: começa desligado nesse caso.
+  setLive(!prefersReduced);
+
+  const toggleLive = () => setLive(!document.body.classList.contains('live-edges'));
+  liveToggle.addEventListener('click', toggleLive);
+  liveToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLive(); }
+  });
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // ---- Sliders (arrastáveis) ----
+  document.querySelectorAll('[data-slider]').forEach(slider => {
+    const fill   = slider.querySelector('.slider__fill');
+    const handle = slider.querySelector('.slider__handle');
+    let dragging = false;
+
+    const setPct = (clientX) => {
+      const r = slider.getBoundingClientRect();
+      let pct = ((clientX - r.left) / r.width) * 100;
+      pct = Math.max(0, Math.min(100, pct));
+      fill.style.width = pct + '%';
+      handle.style.left = pct + '%';
+    };
+    const start = (e) => { dragging = true; setPct((e.touches ? e.touches[0] : e).clientX); };
+    const move  = (e) => { if (dragging) setPct((e.touches ? e.touches[0] : e).clientX); };
+    const end   = () => { dragging = false; };
+
+    slider.addEventListener('mousedown', start);
+    slider.addEventListener('touchstart', start, { passive: true });
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move, { passive: true });
+    window.addEventListener('mouseup', end);
+    window.addEventListener('touchend', end);
+  });
+</script>
+</body>
+</html>
