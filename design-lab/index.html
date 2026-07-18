@@ -313,7 +313,7 @@
   }
 </style>
 </head>
-<body>
+<body class="pastel">
 
 <!-- ====================================================================
      Filtros SVG — o "molho secreto" do visual desenhado.
@@ -362,12 +362,12 @@
 
     <div class="blob control-bar">
       <div class="blob__bg"></div>
-      <div class="toggle" id="paletteToggle" role="switch" aria-checked="false" tabindex="0" aria-label="Paleta pastel">
+      <div class="toggle on" id="paletteToggle" role="switch" aria-checked="true" tabindex="0" aria-label="Paleta pastel">
         <div class="toggle__bg"></div><div class="knob"></div>
       </div>
       <div>
         <div class="cb-title">Paleta pastel</div>
-        <div class="cb-sub"><span id="paletteState">desligada</span> — tons suaves + fundo creme</div>
+        <div class="cb-sub"><span id="paletteState">ligada</span> — tons suaves + fundo creme</div>
       </div>
     </div>
   </div>
@@ -614,6 +614,9 @@
     paletteToggle.setAttribute('aria-checked', on ? 'true' : 'false');
     paletteState.textContent = on ? 'ligada' : 'desligada';
   }
+  // Pastel é o padrão (classe já no <body>); sincroniza o estado do toggle.
+  setPastel(document.body.classList.contains('pastel'));
+
   const togglePastel = () => setPastel(!document.body.classList.contains('pastel'));
   paletteToggle.addEventListener('click', togglePastel);
   paletteToggle.addEventListener('keydown', (e) => {
