@@ -6,7 +6,7 @@
 <title>Design Lab — Organic UI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   /* ============================================================
      Design Lab — "Organic UI"
@@ -67,6 +67,9 @@
   /* Nos acentos pastel (claros), texto branco perde contraste → usa o ink */
   body.pastel .btn.primary,
   body.pastel .tab.active { color: var(--ink); }
+
+  /* Alterna a fonte (toggle no topo): padrão Fredoka; .baloo → Baloo 2 */
+  body.baloo { --font: 'Baloo 2', ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', system-ui, sans-serif; }
 
   * { box-sizing: border-box; }
 
@@ -370,6 +373,17 @@
         <div class="cb-sub"><span id="paletteState">ligada</span> — tons suaves + fundo creme</div>
       </div>
     </div>
+
+    <div class="blob control-bar">
+      <div class="blob__bg"></div>
+      <div class="toggle" id="fontToggle" role="switch" aria-checked="false" tabindex="0" aria-label="Alternar fonte">
+        <div class="toggle__bg"></div><div class="knob"></div>
+      </div>
+      <div>
+        <div class="cb-title">Fonte</div>
+        <div class="cb-sub"><span id="fontState">Fredoka</span> — toque pra alternar ↔ Baloo 2</div>
+      </div>
+    </div>
   </div>
 
   <!-- Tabs -->
@@ -621,6 +635,22 @@
   paletteToggle.addEventListener('click', togglePastel);
   paletteToggle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePastel(); }
+  });
+
+  // ---- Toggle de fonte (Fredoka ↔ Baloo 2) ----
+  const fontToggle = document.getElementById('fontToggle');
+  const fontState  = document.getElementById('fontState');
+  function setFont(baloo) {
+    document.body.classList.toggle('baloo', baloo);
+    fontToggle.classList.toggle('on', baloo);
+    fontToggle.setAttribute('aria-checked', baloo ? 'true' : 'false');
+    fontState.textContent = baloo ? 'Baloo 2' : 'Fredoka';
+  }
+  setFont(document.body.classList.contains('baloo'));
+  const toggleFont = () => setFont(!document.body.classList.contains('baloo'));
+  fontToggle.addEventListener('click', toggleFont);
+  fontToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFont(); }
   });
 
   // ---- Tabs ----
