@@ -26,10 +26,10 @@ O "molho secreto" são **filtros SVG**:
   a região do filtro é ampliada (`-50%`/`200%`) pra não cortar a forma quando
   ela é deslocada pra fora.
 
-**Um filtro por elemento (movimento próprio):** em vez de um filtro
-compartilhado, o JS gera na carga da página um filtro para cada elemento, com
-`seed`, duração e fase **aleatórios**. Assim cada contorno tem seu próprio
-desenho e se mexe fora de sincronia com os outros.
+**Escala por elemento:** o JS gera um filtro por elemento apenas para escalar
+o deslocamento pelo tamanho da forma (elementos pequenos, como o toggle, não
+podem levar o mesmo deslocamento dos grandes, senão ficam cortados). O
+*movimento* em si é igual para todos, em sincronia.
 
 Truque de legibilidade: o filtro é aplicado a uma camada de fundo
 (`.blob__bg`) atrás do conteúdo, e não no elemento inteiro — assim as bordas
