@@ -6,7 +6,7 @@
 <title>Design Lab — Organic UI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   /* ============================================================
      Design Lab — "Organic UI"
@@ -16,9 +16,9 @@
      ============================================================ */
 
   :root {
-    /* Paleta pastel + acentos vibrantes */
-    --bg:        #efe3e9;
-    --bg-2:      #e7d7e0;
+    /* Paleta 1 — acentos vibrantes sobre branco */
+    --bg:        #ffffff;
+    --bg-2:      #f4eef6;
     --ink:       #2c2540;
     --ink-soft:  #6a5f78;
 
@@ -39,8 +39,34 @@
     --card-sun:  #fbeecb;
 
     --radius:    26px;
-    --font:      'Baloo 2', ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', system-ui, sans-serif;
+    --font:      'Fredoka', ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', system-ui, sans-serif;
   }
+
+  /* Paleta 2 — só tons pastel, sobre fundo creme off-white */
+  body.pastel {
+    --bg:        #f7f1e4;
+    --ink:       #4a4152;
+    --ink-soft:  #928795;
+
+    --pink:      #f0a9c4;
+    --magenta:   #e79bb7;
+    --purple:    #c3aee6;
+    --violet:    #b3a0e0;
+    --cyan:      #9fdcd6;
+    --teal:      #a9e0c6;
+    --mint:      #cdeede;
+    --yellow:    #f3e0a0;
+    --coral:     #f4b6a8;
+
+    --panel:     #f1e7d3;
+    --panel-2:   #ece0c9;
+    --card-mint: #d9efdd;
+    --card-pink: #f6e1e8;
+    --card-sun:  #f9ecc8;
+  }
+  /* Nos acentos pastel (claros), texto branco perde contraste → usa o ink */
+  body.pastel .btn.primary,
+  body.pastel .tab.active { color: var(--ink); }
 
   * { box-sizing: border-box; }
 
@@ -49,7 +75,8 @@
   body {
     font-family: var(--font);
     color: var(--ink);
-    background: #ffffff;
+    background: var(--bg);
+    transition: background .3s ease;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
@@ -82,15 +109,6 @@
     font-size: 16px;
     margin: 8px 0 0;
     max-width: 46ch;
-  }
-  .whoami {
-    display: flex; align-items: center; gap: 10px;
-    font-weight: 700; color: var(--ink);
-  }
-  .avatar {
-    width: 42px; height: 42px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--teal), var(--cyan));
-    display: grid; place-items: center; font-size: 22px;
   }
 
   /* ---------- Seções ---------- */
@@ -220,10 +238,13 @@
   .toggle.on .toggle__bg { background: var(--teal); }
   .toggle.on .knob { transform: translateX(34px); }
 
-  /* Barra de controle no topo */
+  /* Barras de controle no topo */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-top: 22px;
+  }
   .control-bar {
     display: inline-flex; align-items: center; gap: 16px;
-    padding: 14px 22px; margin-top: 22px;
+    padding: 14px 22px;
   }
   .cb-title { font-weight: 800; font-size: 16px; line-height: 1.1; }
   .cb-sub   { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
@@ -303,13 +324,12 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" id="fx-svg">
   <defs id="fx-defs">
     <!-- Fallback estático (usado antes do JS gerar um filtro por elemento).
-         numOctaves=1 + blur leve = curvas suaves, menos serrilhado;
+         numOctaves=1 = curvas maiores e mais suaves;
          color-interpolation-filters=sRGB evita escurecer a borda;
          região ampla (-50%/200%) evita cortar a forma deslocada. -->
     <filter id="organic" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="1" seed="7" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
-      <feGaussianBlur in="d" stdDeviation="0.6"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>
@@ -320,24 +340,32 @@
     <div>
       <h1 class="title">Design&nbsp;Lab</h1>
       <p class="subtitle">Um sistema de UI orgânico e desenhado à mão — formas
-        coloridas com contornos imperfeitos que se movem suavemente. Inspirado
-        em <em>Ollie Ollie World</em>.</p>
-    </div>
-    <div class="whoami">
-      <span>alabreu</span>
-      <div class="avatar">🛹</div>
+        coloridas com contornos imperfeitos que se movem suavemente.</p>
     </div>
   </header>
 
-  <!-- Master switch: Live edges -->
-  <div class="blob control-bar">
-    <div class="blob__bg"></div>
-    <div class="toggle on" id="liveToggle" role="switch" aria-checked="true" tabindex="0" aria-label="Live edges">
-      <div class="toggle__bg"></div><div class="knob"></div>
+  <!-- Controles: Live edges + Paleta -->
+  <div class="controls">
+    <div class="blob control-bar">
+      <div class="blob__bg"></div>
+      <div class="toggle on" id="liveToggle" role="switch" aria-checked="true" tabindex="0" aria-label="Live edges">
+        <div class="toggle__bg"></div><div class="knob"></div>
+      </div>
+      <div>
+        <div class="cb-title">Live edges</div>
+        <div class="cb-sub"><span id="liveState">ligado</span> — anima o contorno de todos</div>
+      </div>
     </div>
-    <div>
-      <div class="cb-title">Live edges</div>
-      <div class="cb-sub"><span id="liveState">ligado</span> — anima o contorno de todos os elementos</div>
+
+    <div class="blob control-bar">
+      <div class="blob__bg"></div>
+      <div class="toggle" id="paletteToggle" role="switch" aria-checked="false" tabindex="0" aria-label="Paleta pastel">
+        <div class="toggle__bg"></div><div class="knob"></div>
+      </div>
+      <div>
+        <div class="cb-title">Paleta pastel</div>
+        <div class="cb-sub"><span id="paletteState">desligada</span> — tons suaves + fundo creme</div>
+      </div>
     </div>
   </div>
 
@@ -545,15 +573,9 @@
     disp.setAttribute('scale', scale);
     disp.setAttribute('xChannelSelector', 'R');
     disp.setAttribute('yChannelSelector', 'G');
-    disp.setAttribute('result', 'd');
-
-    const blur = document.createElementNS(NS, 'feGaussianBlur');
-    blur.setAttribute('in', 'd');
-    blur.setAttribute('stdDeviation', '0.6'); // suaviza o serrilhado (antialiasing)
 
     filter.appendChild(turb);
     filter.appendChild(disp);
-    filter.appendChild(blur);
     fxDefs.appendChild(filter);
 
     el.style.filter = 'url(#' + id + ')';
@@ -576,6 +598,23 @@
   liveToggle.addEventListener('click', toggleLive);
   liveToggle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLive(); }
+  });
+
+  // ---- Toggle de paleta (vibrante ↔ pastel + fundo creme) ----
+  // Troca só uma classe no <body>; as variáveis CSS fazem o resto.
+  const paletteToggle = document.getElementById('paletteToggle');
+  const paletteState  = document.getElementById('paletteState');
+
+  function setPastel(on) {
+    document.body.classList.toggle('pastel', on);
+    paletteToggle.classList.toggle('on', on);
+    paletteToggle.setAttribute('aria-checked', on ? 'true' : 'false');
+    paletteState.textContent = on ? 'ligada' : 'desligada';
+  }
+  const togglePastel = () => setPastel(!document.body.classList.contains('pastel'));
+  paletteToggle.addEventListener('click', togglePastel);
+  paletteToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePastel(); }
   });
 
   // ---- Tabs ----
