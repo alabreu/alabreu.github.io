@@ -1,6 +1,18 @@
 # alabreu.github.io
 
-Site pessoal + **MTG Commander Deck Builder** em `mtg-deck-builder/` (React + Vite + TS).
+Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
+`mtg-deck-builder/` (React + Vite + TS).
+
+## Portfolio (repo dedicado)
+
+- O portfólio pessoal **não mora mais aqui**: foi movido para o repositório
+  dedicado `alabreu/portfolio` (site estático, sem build), publicado em
+  `https://alabreu.github.io/portfolio/`.
+- A raiz (`index.html`) agora é só um **redirect** para `/portfolio/`, pra não
+  quebrar o link antigo `alabreu.github.io/`.
+- Para publicar o portfólio: mexer no repo `alabreu/portfolio` (Pages a partir
+  do branch `main`, raiz). Este repo aqui não versiona mais os arquivos do
+  portfólio.
 
 ## Deploy
 
