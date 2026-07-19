@@ -50,6 +50,20 @@ Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
 - Fase 3 (social) continua para quando o usuário disser **"vamos fazer o
   backend"** de novo, referindo-se ao restante do plano.
 
+## Pagamentos (Stripe) — scaffold
+
+- Plano e passo a passo em `mtg-deck-builder/docs/stripe-plan.md`. Stack:
+  **Checkout hospedado + Billing + Tax + Customer Portal**, dirigido pelas Edge
+  Functions do Supabase (mesmo padrão do `coach-proxy`).
+- Peças: migração `supabase/migrations/0008_stripe_billing.sql`
+  (`stripe_customers` + `subscriptions`, RLS read-own / escrita só service role);
+  funções `create-checkout-session`, `create-portal-session` e `stripe-webhook`
+  (único que escreve entitlement, `--no-verify-jwt`); helper
+  `src/lib/billing.ts` (`startCheckout`/`openBillingPortal`/`getEntitlement`).
+- O **Price** é escolhido no servidor (secret `STRIPE_PRICE_ID`), nunca vem do
+  cliente. Ainda **falta**: criar produto/price no dashboard, ligar Stripe Tax,
+  configurar o webhook, definir os secrets e plugar os botões na UI.
+
 ## Segurança
 
 - NUNCA commitar a chave do OpenRouter nem a Supabase **service role key**.
@@ -58,3 +72,7 @@ Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
 - Chave do OpenRouter: no fluxo legado (sem Supabase configurado) vive só no
   localStorage do navegador do usuário; no fluxo novo (embutido), vive só como
   secret da Edge Function `coach-proxy`, nunca no código.
+- NUNCA commitar `STRIPE_SECRET_KEY` nem `STRIPE_WEBHOOK_SECRET` — vivem só como
+  secrets das Edge Functions do Stripe. A publishable key e o `price_...` também
+  ficam do lado do servidor aqui (o cliente só chama as funções), então nada do
+  Stripe entra no bundle.
