@@ -114,8 +114,8 @@ construo a tela no app + o código da função**; você só faz o deploy (ela pr
 da service role pra apagar o usuário de `auth.users`, então roda como Edge
 Function, igual ao `coach-proxy`).
 
-15. Depois que eu entregar o código: `supabase functions deploy delete-account`
-    (o nome final eu confirmo no commit). Sem segredos novos.
+15. ~~`supabase functions deploy delete-account`~~ — **feito** (função `delete-account`
+    ativa no projeto). A tela "Excluir conta" já está no app. Nada a fazer aqui.
 
 ## H. Monitoramento de erros e analytics (opcional, recomendado antes de escalar)
 
@@ -126,16 +126,49 @@ Precisam de conta externa; **a fiação no app eu faço** assim que você me pas
 17. **Analytics de produto (privacy-friendly):** criar conta no Plausible (ou
     Umami) pro domínio `tutor-brew.com` → me passar o script/domínio. Eu ligo.
 
-## I. Monetização (antes de cobrar)
+## I. Monetização — infra Stripe (test mode)
 
-18. **Definir o pacote comercial:** preço da assinatura, duração do trial, política
-    de reembolso, e o que é grátis vs pago. (Eu já tenho o plano desenhado; preciso
-    dos números.)
-19. **Criar conta Stripe** (PF/CPF serve pra recorrência no Brasil) → me passar as
-    chaves (via secret, nunca no código). Aí **eu construo** checkout, webhooks,
-    portal de gerenciamento, estado de assinante no banco e o gating do Tutor.
-20. **Nota fiscal / tributação:** definir com um contador como receber e declarar
-    (MEI/PF) e se/como emitir NF. Decisão sua/contábil.
+> **Status:** a infra do lado do servidor **já está construída e no ar** (em
+> modo TESTE, sem cobrar ninguém):
+> - Tabela `subscriptions` (migração `0009`, RLS read-own, escrita só service-role) — aplicada.
+> - Edge Function `stripe-checkout` (`verify_jwt=true`) — cria a sessão de checkout — deployada.
+> - Edge Function `stripe-webhook` (`verify_jwt=false`, valida `Stripe-Signature`) — mantém
+>   `subscriptions` em dia — deployada.
+>
+> Falta só **plugar seus segredos** (você define preço no painel, não no código) e,
+> quando quiser de fato cobrar, eu construo a UI de "assinar" + o gating final.
+> **Nada disso cobra ninguém ainda** — é tudo `sk_test_...`.
+
+18. **Criar Produto + Preço no Stripe (test mode).** No painel do Stripe, com o
+    botão **"Test mode"** LIGADO (canto superior direito):
+    - Products → **Add product** → nome (ex.: "Tutor Brew Pro") → em Pricing,
+      **Recurring**, mensal, um valor qualquer de teste (pode trocar depois; o
+      preço real fica pra daqui uns meses com dados de uso).
+    - Salve e copie o **Price ID** (`price_...`).
+
+19. **Setar os segredos no Supabase** (Project Settings → Edge Functions → Secrets,
+    ou `supabase secrets set`):
+    - `STRIPE_SECRET_KEY` = sua chave **de teste** (`sk_test_...`, em Developers → API keys).
+    - `STRIPE_PRICE_ID` = o `price_...` do passo 18.
+    - `APP_URL` = `https://tutor-brew.com` (opcional; já é o default).
+
+20. **Criar o Webhook** (Developers → Webhooks → **Add endpoint**, ainda em test mode):
+    - Endpoint URL:
+      `https://rxshomnccqfcarvujswq.supabase.co/functions/v1/stripe-webhook`
+    - Eventos: `checkout.session.completed`, `customer.subscription.created`,
+      `customer.subscription.updated`, `customer.subscription.deleted`.
+    - Salve, copie o **Signing secret** (`whsec_...`) e set no Supabase:
+      `STRIPE_WEBHOOK_SECRET` = `whsec_...`.
+
+21. Me avise quando os quatro segredos estiverem no ar — eu rodo um checkout de
+    teste ponta a ponta (cartão `4242 4242 4242 4242`) e confirmo que a linha em
+    `subscriptions` vira `active`.
+
+22. **(Só quando decidir cobrar de verdade — meses à frente):** definir preço/trial/
+    reembolso reais com dados de uso, trocar as chaves de teste pelas **live**
+    (`sk_live_`/`whsec_` live + `price_` live), **nota fiscal/tributação** com um
+    contador (MEI/PF), e revisão jurídica (seção F). Aí eu ligo a UI de assinatura
+    e o gating do Tutor.
 
 ## D. Opcionais (quando quiser)
 
