@@ -110,6 +110,20 @@ Deno.serve(async (req: Request) => {
           const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           await upsertSubscription(sub);
+        } else if (session.mode === 'payment' && session.payment_status === 'paid') {
+          // Donation (or any one-off). Record it for metrics; user_id is null
+          // for anonymous donors.
+          const uid = (session.metadata as Record<string, string> | null)?.supabase_user_id ?? null;
+          await admin.from('donations').upsert(
+            {
+              id: session.id,
+              user_id: uid,
+              amount_total: session.amount_total ?? 0,
+              currency: session.currency ?? 'brl',
+              status: 'paid',
+            },
+            { onConflict: 'id' },
+          );
         }
         break;
       }

@@ -12,13 +12,30 @@ Functions + Postgres/RLS). Chosen defaults, and why:
 | Entitlement | **`subscriptions` table, webhook-written, RLS-read** | The client can never mark itself paid — only a verified webhook writes state. |
 | Self-service | **Stripe Customer Portal** | Update card / see invoices / cancel with ~zero code. |
 
+## Two charge types for Tutor Brew
+
+| Flow | Status | How |
+| --- | --- | --- |
+| **Donation** (one-time, donor-chosen amount) | **Turn on now** | Hosted Checkout `mode=payment`, `submit_type=donate`, inline `price_data` (no Product/Price to create). Login optional. Recorded in `donations` for metrics. |
+| **Subscription** (monthly Tutor access) | **Later** | Hosted Checkout `mode=subscription`. Code is ready but **dormant** until you set `STRIPE_PRICE_ID`. For now you keep collecting usage metrics (below). |
+
+### Usage metrics — already collected
+
+You don't need new Stripe plumbing to gauge demand before pricing: `coach-proxy`
+already logs every Tutor message to **`coach_message_log`** (tokens + real cost)
+and per-user/day counters (`coach_usage`). That's your pre-pricing signal —
+active users, message volume, cost per user. Decide the price off that data,
+then set `STRIPE_PRICE_ID` to flip the subscription on.
+
 ## What was added
 
 - `supabase/migrations/0008_stripe_billing.sql` — `stripe_customers` + `subscriptions` (RLS: read-own, service-role writes only).
 - `supabase/functions/create-checkout-session/` — auth-gated; creates/reuses the Stripe customer and returns a Checkout URL. Price is chosen **server-side**.
 - `supabase/functions/create-portal-session/` — auth-gated; returns a Billing Portal URL.
-- `supabase/functions/stripe-webhook/` — verifies the Stripe signature and mirrors subscription state. **Only writer of entitlement.**
-- `src/lib/billing.ts` — `startCheckout()`, `openBillingPortal()`, `getEntitlement()`.
+- `supabase/functions/create-donation-session/` — one-time donation Checkout (login optional, amount clamped R$5–R$1000).
+- `supabase/functions/stripe-webhook/` — verifies the Stripe signature; mirrors subscription state **and** records donations. **Only writer of entitlement.**
+- `supabase/migrations/0009_donations.sql` — `donations` table (RLS read-own; anonymous rows service-role only).
+- `src/lib/billing.ts` — `startDonation()`, `startCheckout()`, `openBillingPortal()`, `getEntitlement()`.
 
 The frontend gets **no new secrets** — the publishable/price ids stay server-side.
 
@@ -39,12 +56,15 @@ The frontend gets **no new secrets** — the publishable/price ids stay server-s
 ## Secrets (never commit these)
 
 ```bash
+# For DONATIONS now, you only need these three:
 supabase secrets set \
   STRIPE_SECRET_KEY=sk_test_... \
-  STRIPE_PRICE_ID=price_... \
   STRIPE_WEBHOOK_SECRET=whsec_... \
   APP_BASE_URL=https://alabreu.github.io/mtg-deck-builder
-# optional: STRIPE_TRIAL_DAYS=7
+
+# Add these later when you turn the subscription on:
+#   STRIPE_PRICE_ID=price_...        (required for create-checkout-session)
+#   STRIPE_TRIAL_DAYS=7              (optional free trial)
 ```
 
 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are injected automatically — do not set them.
@@ -54,7 +74,8 @@ supabase secrets set \
 ```bash
 # 1. Run the migration in the Supabase SQL Editor (paste 0008_stripe_billing.sql).
 # 2. Deploy the functions:
-supabase functions deploy create-checkout-session
+supabase functions deploy create-donation-session          # donation flow (live now)
+supabase functions deploy create-checkout-session          # subscription (dormant until STRIPE_PRICE_ID)
 supabase functions deploy create-portal-session
 supabase functions deploy stripe-webhook --no-verify-jwt   # Stripe calls this, not a user
 ```

@@ -15,6 +15,21 @@ export async function startCheckout(): Promise<void> {
   window.location.href = data.url;
 }
 
+/** Redirects the browser to a one-time donation Checkout. `amountBRL` is in
+ *  reais (e.g. 25 → R$25); it's converted to cents and re-validated server-side.
+ *  Login is optional — anonymous visitors can donate. */
+export async function startDonation(amountBRL: number): Promise<void> {
+  if (!supabase) throw new Error('Doações não estão configuradas.');
+  const amount = Math.round(amountBRL * 100);
+  const { data, error } = await supabase.functions.invoke<{ url?: string }>('create-donation-session', {
+    body: { amount },
+  });
+  if (error || !data?.url) {
+    throw new Error('Não foi possível iniciar a doação. Tente novamente.');
+  }
+  window.location.href = data.url;
+}
+
 /** Redirects to the Stripe Billing Portal (update card, invoices, cancel). */
 export async function openBillingPortal(): Promise<void> {
   if (!supabase) throw new Error('Login na nuvem não está configurado.');
