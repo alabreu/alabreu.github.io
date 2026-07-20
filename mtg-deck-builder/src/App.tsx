@@ -16,6 +16,7 @@ const PrivacyPage = React.lazy(() => import('./pages/legal/PrivacyPage'));
 const FaqPage = React.lazy(() => import('./pages/legal/FaqPage'));
 import { UpdateToast } from './components/UpdateToast';
 import { DeckCloudSync } from './components/DeckCloudSync';
+import { TermsConsentSync } from './components/TermsConsentSync';
 import { NoiseOverlay } from './components/NoiseOverlay';
 import { PasswordRecoveryGate } from './features/deck-builder/PasswordRecoveryGate';
 import { useSupabaseSession } from './lib/useSupabaseSession';
@@ -39,6 +40,7 @@ export default function App() {
     <LanguageProvider>
       <BrowserRouter>
         <DeckCloudSync />
+        <TermsConsentSync />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/new-deck" element={<ChooseNewDeckMethod />} />

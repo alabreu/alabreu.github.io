@@ -54,11 +54,13 @@ export function AuthGate() {
   const [error, setError] = React.useState<string | null>(null);
   const [confirmSent, setConfirmSent] = React.useState(false);
   const [resetSent, setResetSent] = React.useState(false);
+  const [agreed, setAgreed] = React.useState(false);
 
   function switchMode(next: Mode) {
     setMode(next);
     setError(null);
     setConfirmPassword('');
+    setAgreed(false);
   }
 
   async function handleSubmit() {
@@ -259,11 +261,28 @@ export function AuthGate() {
             fullWidth
           />
         )}
+        {mode === 'signup' && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', textAlign: 'left' }}>
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              style={{ marginTop: '2px', width: '16px', height: '16px', flexShrink: 0, accentColor: 'var(--accent)', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              Li e aceito os{' '}
+              <a href={legalUrl('/termos')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Termos de Uso</a>
+              {' '}e a{' '}
+              <a href={legalUrl('/privacidade')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Política de Privacidade</a>.
+            </span>
+          </label>
+        )}
+
         <Button
           variant="primary"
           size="md"
           fullWidth
-          disabled={!email.trim() || !password || (mode === 'signup' && !confirmPassword) || sending}
+          disabled={!email.trim() || !password || (mode === 'signup' && (!confirmPassword || !agreed)) || sending}
           isLoading={sending}
           onClick={handleSubmit}
         >
@@ -285,12 +304,14 @@ export function AuthGate() {
           )}
         </div>
 
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, margin: '4px 0 0', textAlign: 'center' }}>
-          Ao continuar, você concorda com os{' '}
-          <a href={legalUrl('/termos')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Termos de Uso</a>
-          {' '}e a{' '}
-          <a href={legalUrl('/privacidade')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Política de Privacidade</a>.
-        </p>
+        {mode === 'signin' && (
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, margin: '4px 0 0', textAlign: 'center' }}>
+            Ao continuar, você concorda com os{' '}
+            <a href={legalUrl('/termos')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Termos de Uso</a>
+            {' '}e a{' '}
+            <a href={legalUrl('/privacidade')} target="_blank" rel="noopener noreferrer" style={legalLinkStyle}>Política de Privacidade</a>.
+          </p>
+        )}
       </div>
     </div>
   );
