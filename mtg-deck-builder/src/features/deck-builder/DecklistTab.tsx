@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle, Minus, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle, Minus, Plus, Check } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
@@ -16,6 +16,10 @@ import { DeckErrorsSheet } from './DeckErrorsSheet';
 interface DecklistTabProps {
   deck: Deck;
   forcedExpandAll?: boolean;
+  /** Bulk-selection: ids of the currently selected cards. */
+  selectedIds: Set<string>;
+  /** Toggle a card's membership in the bulk selection. */
+  onToggleSelect: (scryfallId: string) => void;
 }
 
 function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
@@ -79,18 +83,64 @@ const rowActionBtnStyle = (color: string): React.CSSProperties => ({
   WebkitTapHighlightColor: 'transparent',
 });
 
+/** Bulk-selection checkbox that floats over the top-right corner of a card's
+ *  art. Always visible so a tap starts (or extends) a bulk selection. */
+function SelectCheckbox({
+  selected,
+  onToggle,
+  variant = 'overlay',
+}: {
+  selected: boolean;
+  onToggle: (e: React.MouseEvent) => void;
+  /** 'overlay' floats over card art; 'inline' sits in a flex row (list view). */
+  variant?: 'overlay' | 'inline';
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={selected ? 'Desmarcar carta' : 'Selecionar carta'}
+      aria-pressed={selected}
+      style={{
+        ...(variant === 'overlay'
+          ? { position: 'absolute', top: '5%', right: '5%', zIndex: 3 }
+          : { position: 'relative', flexShrink: 0 }),
+        width: '24px',
+        height: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '6px',
+        backgroundColor: selected ? 'var(--accent)' : 'rgba(15,15,15,0.72)',
+        backdropFilter: variant === 'overlay' ? 'blur(6px)' : undefined,
+        WebkitBackdropFilter: variant === 'overlay' ? 'blur(6px)' : undefined,
+        border: selected ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.35)',
+        cursor: 'pointer',
+        color: selected ? '#0f0f0f' : 'transparent',
+        WebkitTapHighlightColor: 'transparent',
+        transition: 'background-color 0.12s, border-color 0.12s',
+      }}
+    >
+      <Check size={15} strokeWidth={3} />
+    </button>
+  );
+}
+
 const FlippableCard = React.memo(function FlippableCard({
   card,
   onCardClick,
   onQuickAdd,
   onQuickRemove,
   hasError,
+  selected,
+  onToggleSelect,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
   onQuickAdd: (card: DeckCard) => void;
   onQuickRemove: (card: DeckCard) => void;
   hasError?: boolean;
+  selected: boolean;
+  onToggleSelect: (scryfallId: string) => void;
 }) {
   const [flipped, setFlipped] = React.useState(false);
   // Only real double-faced cards have a stored back image; split/adventure
@@ -112,7 +162,16 @@ const FlippableCard = React.memo(function FlippableCard({
           style={{ position: 'relative', transformStyle: 'preserve-3d' }}
         >
           {/* Front face */}
-          <div style={{ position: 'relative', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+          <div
+            style={{
+              position: 'relative',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              borderRadius: 'var(--radius-md)',
+              outline: selected ? '3px solid var(--accent)' : 'none',
+              outlineOffset: '-1px',
+            }}
+          >
             <CardImage
               imageUrl={card.imageUrl}
               name={card.name}
@@ -127,6 +186,14 @@ const FlippableCard = React.memo(function FlippableCard({
               onAdd={(e) => { e.stopPropagation(); onQuickAdd(card); }}
               onRemove={(e) => { e.stopPropagation(); onQuickRemove(card); }}
             />
+            {/* The commander is structural (managed via the card sheet), so it
+                is not offered for bulk actions. */}
+            {card.category !== 'Comandante' && (
+              <SelectCheckbox
+                selected={selected}
+                onToggle={(e) => { e.stopPropagation(); onToggleSelect(card.scryfallId); }}
+              />
+            )}
           </div>
           {/* Back face */}
           {isDfc && (
@@ -209,12 +276,16 @@ const ListCardRow = React.memo(function ListCardRow({
   onQuickAdd,
   onQuickRemove,
   hasError,
+  selected,
+  onToggleSelect,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
   onQuickAdd: (card: DeckCard) => void;
   onQuickRemove: (card: DeckCard) => void;
   hasError?: boolean;
+  selected: boolean;
+  onToggleSelect: (scryfallId: string) => void;
 }) {
   return (
     <div
@@ -225,8 +296,22 @@ const ListCardRow = React.memo(function ListCardRow({
         padding: '7px 4px',
         width: '100%',
         borderBottom: '1px solid var(--border-subtle)',
+        backgroundColor: selected ? 'var(--accent-subtle)' : 'transparent',
+        borderRadius: selected ? 'var(--radius-sm)' : 0,
       }}
     >
+      {/* Commander is structural — not bulk-selectable. Keep a spacer so the
+          other rows stay aligned. */}
+      {card.category !== 'Comandante' ? (
+        <SelectCheckbox
+          selected={selected}
+          variant="inline"
+          onToggle={(e) => { e.stopPropagation(); onToggleSelect(card.scryfallId); }}
+        />
+      ) : (
+        <div style={{ width: '24px', flexShrink: 0 }} />
+      )}
+
       {/* Tappable info area — opens the card sheet */}
       <motion.button
         whileTap={{ scale: 0.985 }}
@@ -288,9 +373,11 @@ interface CategorySectionProps {
   onQuickRemove: (card: DeckCard) => void;
   viewMode: ViewMode;
   errorCardIds: Set<string>;
+  selectedIds: Set<string>;
+  onToggleSelect: (scryfallId: string) => void;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
 
   return (
@@ -343,6 +430,8 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     onQuickAdd={onQuickAdd}
                     onQuickRemove={onQuickRemove}
                     hasError={errorCardIds.has(card.scryfallId)}
+                    selected={selectedIds.has(card.scryfallId)}
+                    onToggleSelect={onToggleSelect}
                   />
                 ))}
               </div>
@@ -363,6 +452,8 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     onQuickAdd={onQuickAdd}
                     onQuickRemove={onQuickRemove}
                     hasError={errorCardIds.has(card.scryfallId)}
+                    selected={selectedIds.has(card.scryfallId)}
+                    onToggleSelect={onToggleSelect}
                   />
                 ))}
               </div>
@@ -374,7 +465,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
   );
 });
 
-export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
+export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect }: DecklistTabProps) {
   const { updateDeck, addCard, removeCard } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -665,6 +756,8 @@ export function DecklistTab({ deck, forcedExpandAll }: DecklistTabProps) {
             onQuickRemove={handleQuickRemove}
             viewMode={viewMode}
             errorCardIds={errorCardIds}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
           />
         ))}
       </div>

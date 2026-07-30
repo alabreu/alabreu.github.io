@@ -27,15 +27,16 @@ const btnStyle: React.CSSProperties = {
 
 /**
  * Add/remove buttons floating over the card image, anchored to the
- * bottom-right corner of the card's art box (~55% of the frame height),
- * so the position scales with any tile size.
+ * bottom-left corner of the card's art box (~55% of the frame height),
+ * so the position scales with any tile size. (The top-right corner is
+ * reserved for the bulk-selection checkbox.)
  */
 export function CardActionsOverlay({ qty, onAdd, onRemove, showAdd = true }: Props) {
   return (
     <div
       style={{
         position: 'absolute',
-        right: '5%',
+        left: '5%',
         top: '55%',
         transform: 'translateY(-100%)',
         display: 'flex',

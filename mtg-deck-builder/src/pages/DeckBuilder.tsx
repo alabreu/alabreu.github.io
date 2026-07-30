@@ -1,9 +1,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks, FolderInput, X } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
-import { useDeckStore } from '../store/useDeckStore';
+import { useDeckStore, materializeCategories } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
 import { DecklistTab } from '../features/deck-builder/DecklistTab';
@@ -14,6 +14,7 @@ import { DEFAULT_ACTIVE_MODEL } from '../features/deck-builder/tutorModels';
 import { ImportCardsSheet } from '../features/deck-builder/ImportCardsSheet';
 import { BulkListSheet } from '../features/deck-builder/BulkListSheet';
 import { ManageSectionsSheet } from '../features/deck-builder/ManageSectionsSheet';
+import { MoveToSectionSheet } from '../features/deck-builder/MoveToSectionSheet';
 import { ExportDeckSheet } from '../features/deck-builder/ExportDeckSheet';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
@@ -89,12 +90,52 @@ function MenuRow({
 
 const MENU_DIVIDER = <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />;
 
+/** A pill button in the bulk-selection action bar. */
+function BulkActionButton({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '9px 14px',
+        borderRadius: '999px',
+        backgroundColor: danger ? 'rgba(248,113,113,0.14)' : 'rgba(255,255,255,0.08)',
+        border: `1px solid ${danger ? 'rgba(248,113,113,0.28)' : 'rgba(255,255,255,0.12)'}`,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: '13px',
+        fontWeight: 600,
+        color: danger ? '#f87171' : 'rgba(255,255,255,0.9)',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 export default function DeckBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { decks, deleteDeck, healDeck } = useDeckStore();
+  const { decks, deleteDeck, healDeck, setCardQuantity, updateCardCategory, addCategory } = useDeckStore();
 
   const [menuOpen, setMenuOpen] = React.useState(false);
+  // Bulk selection of decklist cards (checkbox on each card art).
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
+  const [moveToOpen, setMoveToOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [bulkListOpen, setBulkListOpen] = React.useState(false);
@@ -131,6 +172,21 @@ export default function DeckBuilder() {
     if (deck) healDeck(deck.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deck?.id]);
+
+  // Reset the bulk selection when switching decks.
+  React.useEffect(() => {
+    setSelectedIds(new Set());
+  }, [deck?.id]);
+
+  const toggleSelect = React.useCallback((scryfallId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(scryfallId)) next.delete(scryfallId);
+      else next.add(scryfallId);
+      return next;
+    });
+  }, []);
+  const clearSelection = React.useCallback(() => setSelectedIds(new Set()), []);
 
   if (!deck) {
     return (
@@ -194,6 +250,23 @@ export default function DeckBuilder() {
     WebkitTapHighlightColor: 'transparent',
   };
 
+  // Bulk actions on the current selection. Remove drops every copy of each
+  // selected card; move re-categorizes them (creating the section if new).
+  // (deckId is captured so the narrowing survives inside these closures.)
+  const deckId = deck.id;
+  function handleBulkRemove() {
+    selectedIds.forEach((scryfallId) => setCardQuantity(deckId, scryfallId, 0));
+    clearSelection();
+  }
+  function handleMoveTo(category: string) {
+    addCategory(deckId, category); // idempotent — creates the section if new
+    selectedIds.forEach((scryfallId) => updateCardCategory(deckId, scryfallId, category));
+    setMoveToOpen(false);
+    clearSelection();
+  }
+  const moveTargets = materializeCategories(deck).filter((c) => c !== 'Comandante');
+  const selectionActive = selectedIds.size > 0;
+
   return (
     <div
       style={{
@@ -251,7 +324,12 @@ export default function DeckBuilder() {
             paddingBottom: 'calc(80px + env(safe-area-inset-bottom))',
           }}
         >
-          <DecklistTab deck={deck} forcedExpandAll={allExpanded} />
+          <DecklistTab
+            deck={deck}
+            forcedExpandAll={allExpanded}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+          />
         </div>
 
         {/* Search overlay */}
@@ -301,8 +379,40 @@ export default function DeckBuilder() {
         </AnimatePresence>
       </div>
 
+      {/* Bulk-selection action bar — replaces the search bar while cards are
+          selected via their checkboxes. */}
+      {!coachOpen && !searchOpen && selectionActive && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))',
+            left: edgeInset(16),
+            right: edgeInset(16),
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 12px',
+            borderRadius: '999px',
+            backgroundColor: 'rgba(18, 18, 20, 0.92)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+          }}
+        >
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', paddingLeft: '8px', flexShrink: 0 }}>
+            {selectedIds.size}
+          </span>
+          <span style={{ flex: 1 }} />
+          <BulkActionButton icon={<FolderInput size={16} />} label="Mover" onClick={() => setMoveToOpen(true)} />
+          <BulkActionButton icon={<Trash2 size={16} />} label="Remover" danger onClick={handleBulkRemove} />
+          <BulkActionButton icon={<X size={16} />} label="Cancelar" onClick={clearSelection} />
+        </div>
+      )}
+
       {/* Bottom bar: search pill + coach button */}
-      {!coachOpen && !searchOpen && (
+      {!coachOpen && !searchOpen && !selectionActive && (
         <div
           style={{
             position: 'fixed',
@@ -542,6 +652,15 @@ export default function DeckBuilder() {
         isOpen={manageSectionsOpen}
         onClose={() => setManageSectionsOpen(false)}
         deck={deck}
+      />
+
+      {/* Move selected cards to a section */}
+      <MoveToSectionSheet
+        isOpen={moveToOpen}
+        onClose={() => setMoveToOpen(false)}
+        sections={moveTargets}
+        count={selectedIds.size}
+        onPick={handleMoveTo}
       />
 
       {/* Import cards sheet */}
