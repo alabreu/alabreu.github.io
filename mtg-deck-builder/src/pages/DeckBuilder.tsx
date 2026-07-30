@@ -90,17 +90,23 @@ function MenuRow({
 
 const MENU_DIVIDER = <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 20px' }} />;
 
-/** A pill button in the bulk-selection action bar. */
+/** A tertiary (borderless) button in the bulk-selection action bar. The bar is
+ *  already a container, so nesting bordered pills inside it just ate the space
+ *  the labels needed. */
 function BulkActionButton({
   icon,
   label,
   onClick,
   danger,
+  collapsibleLabel,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   danger?: boolean;
+  /** Drop the text label on very narrow phones, keeping the icon (see
+   *  .bulk-action-collapsible-label in index.css). */
+  collapsibleLabel?: boolean;
 }) {
   return (
     <button
@@ -108,21 +114,23 @@ function BulkActionButton({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: '9px 14px',
-        borderRadius: '999px',
-        backgroundColor: danger ? 'rgba(248,113,113,0.14)' : 'rgba(255,255,255,0.08)',
-        border: `1px solid ${danger ? 'rgba(248,113,113,0.28)' : 'rgba(255,255,255,0.12)'}`,
+        gap: '7px',
+        padding: '10px 12px',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'transparent',
+        border: 'none',
         cursor: 'pointer',
         fontFamily: 'inherit',
-        fontSize: '13px',
+        fontSize: '14px',
         fontWeight: 600,
-        color: danger ? '#f87171' : 'rgba(255,255,255,0.9)',
+        whiteSpace: 'nowrap',
+        color: danger ? '#f87171' : 'rgba(255,255,255,0.92)',
         WebkitTapHighlightColor: 'transparent',
       }}
+      aria-label={label}
     >
       {icon}
-      {label}
+      <span className={collapsibleLabel ? 'bulk-action-collapsible-label' : undefined}>{label}</span>
     </button>
   );
 }
@@ -391,8 +399,9 @@ export default function DeckBuilder() {
             zIndex: 50,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '10px 12px',
+            // The bar is the only container: its buttons are borderless, so the
+            // padding here stays tight and the buttons carry their own.
+            padding: '2px 6px',
             borderRadius: '999px',
             backgroundColor: 'rgba(18, 18, 20, 0.92)',
             backdropFilter: 'blur(28px)',
@@ -401,13 +410,21 @@ export default function DeckBuilder() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', paddingLeft: '8px', flexShrink: 0 }}>
+          <span
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              color: 'var(--accent)',
+              padding: '0 4px 0 10px',
+              flexShrink: 0,
+            }}
+          >
             {selectedIds.size}
           </span>
-          <span style={{ flex: 1 }} />
           <BulkActionButton icon={<FolderInput size={16} />} label="Mover" onClick={() => setMoveToOpen(true)} />
           <BulkActionButton icon={<Trash2 size={16} />} label="Remover" danger onClick={handleBulkRemove} />
-          <BulkActionButton icon={<X size={16} />} label="Cancelar" onClick={clearSelection} />
+          <span style={{ flex: 1 }} />
+          <BulkActionButton icon={<X size={16} />} label="Cancelar" collapsibleLabel onClick={clearSelection} />
         </div>
       )}
 

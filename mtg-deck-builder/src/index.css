@@ -307,3 +307,13 @@ select {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Bulk-selection bar: three labelled actions fit from 360px up. On narrower
+   phones (iPhone SE 1st gen) the dismiss action drops its label and stays a
+   plain X, so the two real actions keep theirs instead of everything
+   collapsing to ambiguous icons. */
+@media (max-width: 359px) {
+  .bulk-action-collapsible-label {
+    display: none;
+  }
+}
