@@ -94,8 +94,13 @@ export function BottomSheet({
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ opacity: 1, pointerEvents: 'auto' }}
+            // Stop intercepting taps the moment the sheet starts leaving. This
+            // is both better feel (a fading backdrop shouldn't swallow a tap)
+            // and a safety net: if the exit animation ever fails to complete
+            // and the node lingers, an invisible full-screen backdrop would
+            // otherwise freeze the whole app until reload.
+            exit={{ opacity: 0, pointerEvents: 'none' }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
             style={{
@@ -117,8 +122,10 @@ export function BottomSheet({
             aria-labelledby={title ? titleId : undefined}
             tabIndex={-1}
             initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            animate={{ y: 0, pointerEvents: 'auto' }}
+            // Same guard as the backdrop: a leaving panel must not keep
+            // capturing taps over the content behind it.
+            exit={{ y: '100%', pointerEvents: 'none' }}
             transition={{
               type: 'spring',
               stiffness: 300,

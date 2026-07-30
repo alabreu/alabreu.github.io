@@ -64,8 +64,13 @@ function DraggableRow({
   );
 
   return (
+    // No `layout` prop here on purpose: a layout-projected child inside the
+    // sheet stopped AnimatePresence from ever completing the sheet's exit, so
+    // after a reorder the (invisible) backdrop stayed mounted and swallowed
+    // every tap — the app looked frozen until reload. It is also redundant:
+    // `visualY` already slides the other rows to their landing spots during
+    // the drag, so the array reorder on drop is visually a no-op.
     <motion.div
-      layout={activeIndex === null}
       animate={{
         y: visualY,
         scale: isActive ? 1.03 : 1,
