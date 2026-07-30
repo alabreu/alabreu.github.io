@@ -58,6 +58,35 @@ jobs:
           cp -r mtg-deck-builder/dist/* _site/mtg-deck-builder/
           touch _site/.nojekyll
 
+      # Dev preview: the working branch, published at /dev/ so in-progress
+      # work can be tested from a phone without touching production. The
+      # deploy action cleans the gh-pages branch each run, so /dev/ must be
+      # rebuilt here every time or it would vanish within the hour.
+      # continue-on-error: a broken dev branch must never block the
+      # production deploy (only /dev/ goes stale until the branch is fixed).
+      - name: Checkout dev branch
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: claude/plan-mtg-deckbuilder-9DKbA
+          path: dev-src
+
+      - name: Build dev preview
+        continue-on-error: true
+        run: npm ci && npm run build
+        working-directory: dev-src/mtg-deck-builder
+        env:
+          VITE_BASE: /dev/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_TCGPLAYER_AFFILIATE_BASE: ${{ secrets.VITE_TCGPLAYER_AFFILIATE_BASE }}
+
+      - name: Add dev preview to site
+        continue-on-error: true
+        run: |
+          mkdir -p _site/dev
+          cp -r dev-src/mtg-deck-builder/dist/* _site/dev/
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
