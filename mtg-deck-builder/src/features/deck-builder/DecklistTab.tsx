@@ -169,9 +169,6 @@ const FlippableCard = React.memo(function FlippableCard({
               position: 'relative',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
-              borderRadius: 'var(--radius-md)',
-              outline: selected ? '3px solid var(--accent)' : 'none',
-              outlineOffset: '-1px',
             }}
           >
             <CardImage
@@ -182,6 +179,24 @@ const FlippableCard = React.memo(function FlippableCard({
               showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
               highlightError={hasError}
             />
+            {/* Selected state: an accent stroke tracing the card's rounded
+                corners plus a light accent wash over the art. Painted as an
+                overlay (not an outline/box-shadow on the image) so it sits
+                above the artwork — same reason as the ring in CardImage. */}
+            {selected && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '4.8%',
+                  border: '2px solid var(--accent)',
+                  backgroundColor: 'var(--accent-subtle)',
+                  boxSizing: 'border-box',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                }}
+              />
+            )}
             <CardActionsOverlay
               qty={card.quantity}
               showAdd={isBasicLand(card)}

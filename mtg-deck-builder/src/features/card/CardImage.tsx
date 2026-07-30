@@ -31,6 +31,14 @@ export function CardImage({
   // across size buckets before giving up to the placeholder below. State reset
   // on URL change is handled inside the hook.
   const { src, loaded, failed, onLoad, onError } = useRetryingImage(imageUrl);
+  // An image that finished decoding BEFORE React attached the load handler
+  // (warm HTTP cache, data: URI) never fires `load`, leaving the <img> stuck
+  // at opacity 0 — a blank card. Check the element directly on mount/src change.
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
+  React.useEffect(() => {
+    const el = imgRef.current;
+    if (el?.complete && el.naturalWidth > 0) onLoad();
+  }, [src, onLoad]);
   // "Already in deck" reads as a success state, not a brand/accent one — it
   // shouldn't shift color every time someone tweaks the accent (see the
   // Design System accent picker).
@@ -92,6 +100,7 @@ export function CardImage({
         />
       )}
       <img
+        ref={imgRef}
         src={src}
         alt={name}
         onLoad={onLoad}
