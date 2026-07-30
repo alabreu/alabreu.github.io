@@ -308,10 +308,10 @@ select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Bulk-selection bar: three labelled actions fit from 360px up. On narrower
-   phones (iPhone SE 1st gen) the dismiss action drops its label and stays a
-   plain X, so the two real actions keep theirs instead of everything
-   collapsing to ambiguous icons. */
+/* Bulk-selection bar: on narrow phones (iPhone SE 1st gen) the selection
+   count sheds its trailing word — "2 cartas selecionadas" becomes
+   "2 cartas" — so the Editar button keeps its label instead of the bar
+   overflowing. */
 @media (max-width: 359px) {
   .bulk-action-collapsible-label {
     display: none;

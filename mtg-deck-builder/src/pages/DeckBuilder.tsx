@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks, FolderInput, X } from 'lucide-react';
+import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks, FolderInput, X, Pencil } from 'lucide-react';
 import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
 import { useDeckStore, materializeCategories } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
@@ -98,15 +98,14 @@ function BulkActionButton({
   label,
   onClick,
   danger,
-  collapsibleLabel,
+  hideLabel,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   danger?: boolean;
-  /** Drop the text label on very narrow phones, keeping the icon (see
-   *  .bulk-action-collapsible-label in index.css). */
-  collapsibleLabel?: boolean;
+  /** Render the icon alone (the label stays as the accessible name). */
+  hideLabel?: boolean;
 }) {
   return (
     <button
@@ -130,7 +129,7 @@ function BulkActionButton({
       aria-label={label}
     >
       {icon}
-      <span className={collapsibleLabel ? 'bulk-action-collapsible-label' : undefined}>{label}</span>
+      {!hideLabel && label}
     </button>
   );
 }
@@ -143,6 +142,7 @@ export default function DeckBuilder() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   // Bulk selection of decklist cards (checkbox on each card art).
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
+  const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
   const [moveToOpen, setMoveToOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
@@ -413,18 +413,24 @@ export default function DeckBuilder() {
           <span
             style={{
               fontSize: '13px',
-              fontWeight: 700,
-              color: 'var(--accent)',
-              padding: '0 4px 0 10px',
-              flexShrink: 0,
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              padding: '0 4px 0 14px',
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {selectedIds.size}
+            <strong style={{ color: 'var(--accent)', fontWeight: 700 }}>{selectedIds.size}</strong>
+            {selectedIds.size === 1 ? ' carta' : ' cartas'}
+            <span className="bulk-action-collapsible-label">
+              {selectedIds.size === 1 ? ' selecionada' : ' selecionadas'}
+            </span>
           </span>
-          <BulkActionButton icon={<FolderInput size={16} />} label="Mover" onClick={() => setMoveToOpen(true)} />
-          <BulkActionButton icon={<Trash2 size={16} />} label="Remover" danger onClick={handleBulkRemove} />
           <span style={{ flex: 1 }} />
-          <BulkActionButton icon={<X size={16} />} label="Cancelar" collapsibleLabel onClick={clearSelection} />
+          <BulkActionButton icon={<Pencil size={16} />} label="Editar" onClick={() => setBulkEditOpen(true)} />
+          <BulkActionButton icon={<X size={16} />} label="Cancelar" hideLabel onClick={clearSelection} />
         </div>
       )}
 
@@ -670,6 +676,31 @@ export default function DeckBuilder() {
         onClose={() => setManageSectionsOpen(false)}
         deck={deck}
       />
+
+      {/* Bulk edit: the single entry point for actions on the selection, so the
+          destructive one sits behind a deliberate tap instead of on the bar. */}
+      <BottomSheet
+        isOpen={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        title={`${selectedIds.size} ${selectedIds.size === 1 ? 'carta selecionada' : 'cartas selecionadas'}`}
+      >
+        <div style={{ padding: '8px 0 24px' }}>
+          <MenuRow
+            icon={<FolderInput size={17} />}
+            title="Mover para seção"
+            subtitle="Escolher ou criar uma seção"
+            onClick={() => { setBulkEditOpen(false); setMoveToOpen(true); }}
+          />
+          {MENU_DIVIDER}
+          <MenuRow
+            icon={<Trash2 size={17} />}
+            tone="danger"
+            title="Remover do deck"
+            subtitle={selectedIds.size === 1 ? 'Remove a carta selecionada' : `Remove as ${selectedIds.size} cartas selecionadas`}
+            onClick={() => { setBulkEditOpen(false); handleBulkRemove(); }}
+          />
+        </div>
+      </BottomSheet>
 
       {/* Move selected cards to a section */}
       <MoveToSectionSheet
