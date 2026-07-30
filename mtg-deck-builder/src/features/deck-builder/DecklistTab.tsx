@@ -10,6 +10,7 @@ import { CardBottomSheet } from '../card/CardBottomSheet';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
+import { useLongPress } from '../../lib/useLongPress';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
 import { DeckErrorsSheet } from './DeckErrorsSheet';
 
@@ -20,6 +21,8 @@ interface DecklistTabProps {
   selectedIds: Set<string>;
   /** Toggle a card's membership in the bulk selection. */
   onToggleSelect: (scryfallId: string) => void;
+  /** Power-user shortcut: holding a section header opens "Gerenciar seções". */
+  onManageSections: () => void;
 }
 
 function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
@@ -135,6 +138,7 @@ const FlippableCard = React.memo(function FlippableCard({
   hasError,
   selected,
   onToggleSelect,
+  selectionMode,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
@@ -143,8 +147,19 @@ const FlippableCard = React.memo(function FlippableCard({
   hasError?: boolean;
   selected: boolean;
   onToggleSelect: (scryfallId: string) => void;
+  selectionMode: boolean;
 }) {
   const [flipped, setFlipped] = React.useState(false);
+  const selectable = card.category !== 'Comandante';
+  // Hold to start selecting; once in selection mode the whole card toggles, so
+  // repeat selections don't depend on hitting the small checkbox.
+  const press = useLongPress({
+    onLongPress: () => { if (selectable) onToggleSelect(card.scryfallId); },
+    onClick: () => {
+      if (selectionMode && selectable) onToggleSelect(card.scryfallId);
+      else onCardClick(card);
+    },
+  });
   // Only real double-faced cards have a stored back image; split/adventure
   // cards have ' // ' names but a single face
   const backImageUrl = card.backImageUrl || null;
@@ -171,14 +186,18 @@ const FlippableCard = React.memo(function FlippableCard({
               WebkitBackfaceVisibility: 'hidden',
             }}
           >
-            <CardImage
-              imageUrl={card.imageUrl}
-              name={card.name}
-              size="normal"
-              onClick={() => onCardClick(card)}
-              showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
-              highlightError={hasError}
-            />
+            {/* Only the artwork is pressable. The overlay buttons below are
+                siblings stacked on top, not descendants, so their clicks never
+                reach this element's capture handler. */}
+            <div {...press} style={{ ...press.style, cursor: 'pointer' }}>
+              <CardImage
+                imageUrl={card.imageUrl}
+                name={card.name}
+                size="normal"
+                showQuantityBadge={card.quantity > 1 ? card.quantity : undefined}
+                highlightError={hasError}
+              />
+            </div>
             {/* Selected state: an accent stroke tracing the card's rounded
                 corners plus a light accent wash over the art. Painted as an
                 overlay (not an outline/box-shadow on the image) so it sits
@@ -197,15 +216,19 @@ const FlippableCard = React.memo(function FlippableCard({
                 }}
               />
             )}
-            <CardActionsOverlay
-              qty={card.quantity}
-              showAdd={isBasicLand(card)}
-              onAdd={(e) => { e.stopPropagation(); onQuickAdd(card); }}
-              onRemove={(e) => { e.stopPropagation(); onQuickRemove(card); }}
-            />
+            {/* Quantity controls are noise while bulk-editing — the task there
+                is picking cards, not tuning copies. */}
+            {!selectionMode && (
+              <CardActionsOverlay
+                qty={card.quantity}
+                showAdd={isBasicLand(card)}
+                onAdd={(e) => { e.stopPropagation(); onQuickAdd(card); }}
+                onRemove={(e) => { e.stopPropagation(); onQuickRemove(card); }}
+              />
+            )}
             {/* The commander is structural (managed via the card sheet), so it
                 is not offered for bulk actions. */}
-            {card.category !== 'Comandante' && (
+            {selectable && (
               <SelectCheckbox
                 selected={selected}
                 onToggle={(e) => { e.stopPropagation(); onToggleSelect(card.scryfallId); }}
@@ -295,6 +318,7 @@ const ListCardRow = React.memo(function ListCardRow({
   hasError,
   selected,
   onToggleSelect,
+  selectionMode,
 }: {
   card: DeckCard;
   onCardClick: (card: DeckCard) => void;
@@ -303,7 +327,16 @@ const ListCardRow = React.memo(function ListCardRow({
   hasError?: boolean;
   selected: boolean;
   onToggleSelect: (scryfallId: string) => void;
+  selectionMode: boolean;
 }) {
+  const selectable = card.category !== 'Comandante';
+  const press = useLongPress({
+    onLongPress: () => { if (selectable) onToggleSelect(card.scryfallId); },
+    onClick: () => {
+      if (selectionMode && selectable) onToggleSelect(card.scryfallId);
+      else onCardClick(card);
+    },
+  });
   return (
     <div
       style={{
@@ -319,7 +352,7 @@ const ListCardRow = React.memo(function ListCardRow({
     >
       {/* Commander is structural — not bulk-selectable. Keep a spacer so the
           other rows stay aligned. */}
-      {card.category !== 'Comandante' ? (
+      {selectable ? (
         <SelectCheckbox
           selected={selected}
           variant="inline"
@@ -329,11 +362,12 @@ const ListCardRow = React.memo(function ListCardRow({
         <div style={{ width: '24px', flexShrink: 0 }} />
       )}
 
-      {/* Tappable info area — opens the card sheet */}
+      {/* Tappable info area — opens the card sheet, or toggles the selection
+          while bulk-editing. Holding it starts a selection. */}
       <motion.button
         whileTap={{ scale: 0.985 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        onClick={() => onCardClick(card)}
+        {...press}
         style={{
           flex: 1,
           minWidth: 0,
@@ -347,6 +381,7 @@ const ListCardRow = React.memo(function ListCardRow({
           textAlign: 'left',
           fontFamily: 'inherit',
           WebkitTapHighlightColor: 'transparent',
+          ...press.style,
         }}
       >
         <div style={{ width: '36px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
@@ -364,16 +399,20 @@ const ListCardRow = React.memo(function ListCardRow({
         </div>
       </motion.button>
 
-      {/* Quantity + quick actions */}
+      {/* Quantity + quick actions — hidden while bulk-editing (see the grid) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
         {card.quantity > 1 && <Badge variant="default" size="sm">{card.quantity}</Badge>}
-        <button onClick={() => onQuickRemove(card)} aria-label="Remover uma cópia" style={rowActionBtnStyle('#f87171')}>
-          <Minus size={14} />
-        </button>
-        {isBasicLand(card) && (
-          <button onClick={() => onQuickAdd(card)} aria-label="Adicionar uma cópia" style={rowActionBtnStyle('var(--accent)')}>
-            <Plus size={14} />
-          </button>
+        {!selectionMode && (
+          <>
+            <button onClick={() => onQuickRemove(card)} aria-label="Remover uma cópia" style={rowActionBtnStyle('#f87171')}>
+              <Minus size={14} />
+            </button>
+            {isBasicLand(card) && (
+              <button onClick={() => onQuickAdd(card)} aria-label="Adicionar uma cópia" style={rowActionBtnStyle('var(--accent)')}>
+                <Plus size={14} />
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -392,16 +431,24 @@ interface CategorySectionProps {
   errorCardIds: Set<string>;
   selectedIds: Set<string>;
   onToggleSelect: (scryfallId: string) => void;
+  selectionMode: boolean;
+  onManageSections: () => void;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect, selectionMode, onManageSections }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
+  // Hidden power-user shortcut: hold a section header to manage sections.
+  const headerPress = useLongPress({
+    onLongPress: onManageSections,
+    onClick: () => onToggle(category),
+  });
 
   return (
     <div style={{ marginBottom: '4px' }}>
       <button
-        onClick={() => onToggle(category)}
+        {...headerPress}
         style={{
+          ...headerPress.style,
           width: '100%',
           display: 'flex',
           alignItems: 'center',
@@ -449,6 +496,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     hasError={errorCardIds.has(card.scryfallId)}
                     selected={selectedIds.has(card.scryfallId)}
                     onToggleSelect={onToggleSelect}
+                    selectionMode={selectionMode}
                   />
                 ))}
               </div>
@@ -471,6 +519,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     hasError={errorCardIds.has(card.scryfallId)}
                     selected={selectedIds.has(card.scryfallId)}
                     onToggleSelect={onToggleSelect}
+                    selectionMode={selectionMode}
                   />
                 ))}
               </div>
@@ -482,7 +531,8 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
   );
 });
 
-export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect }: DecklistTabProps) {
+export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect, onManageSections }: DecklistTabProps) {
+  const selectionMode = selectedIds.size > 0;
   const { updateDeck, addCard, removeCard } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -775,6 +825,8 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
             errorCardIds={errorCardIds}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
+            selectionMode={selectionMode}
+            onManageSections={onManageSections}
           />
         ))}
       </div>

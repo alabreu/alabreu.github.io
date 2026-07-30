@@ -337,6 +337,7 @@ export default function DeckBuilder() {
             forcedExpandAll={allExpanded}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
+            onManageSections={() => setManageSectionsOpen(true)}
           />
         </div>
 
