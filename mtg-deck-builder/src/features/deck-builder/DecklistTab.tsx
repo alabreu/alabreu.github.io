@@ -83,8 +83,10 @@ const rowActionBtnStyle = (color: string): React.CSSProperties => ({
   WebkitTapHighlightColor: 'transparent',
 });
 
-/** Bulk-selection checkbox that floats over the top-right corner of a card's
- *  art. Always visible so a tap starts (or extends) a bulk selection. */
+/** Bulk-selection checkbox that floats over the top-right of a card's art.
+ *  Always visible so a tap starts (or extends) a bulk selection. It sits inside
+ *  the art box, BELOW the title bar (which ends ~11.5% down the frame), so it
+ *  never covers the mana cost. */
 function SelectCheckbox({
   selected,
   onToggle,
@@ -102,7 +104,7 @@ function SelectCheckbox({
       aria-pressed={selected}
       style={{
         ...(variant === 'overlay'
-          ? { position: 'absolute', top: '5%', right: '5%', zIndex: 3 }
+          ? { position: 'absolute', top: '14.5%', right: '5%', zIndex: 3 }
           : { position: 'relative', flexShrink: 0 }),
         width: '24px',
         height: '24px',
