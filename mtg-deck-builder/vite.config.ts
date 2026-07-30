@@ -26,7 +26,9 @@ export default defineConfig({
       },
     },
   ],
-  base: '/mtg-deck-builder/',
+  // gh-pages serves the app under /mtg-deck-builder/; other hosts (e.g. a
+  // Vercel preview at the domain root) override this with VITE_BASE=/.
+  base: process.env.VITE_BASE ?? '/mtg-deck-builder/',
   define: {
     __BUILD_SHA__: JSON.stringify(sha),
     __BUILD_TIME__: JSON.stringify(buildTime),
