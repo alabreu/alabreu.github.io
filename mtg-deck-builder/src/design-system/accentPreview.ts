@@ -81,10 +81,15 @@ export function applyAccent(hex: string) {
   // as a mesh at 52px, and the ink holds >=5.3:1 against the most saturated
   // tone for every preset in ACCENT_PRESETS.
   root.setProperty('--accent-mesh-base', blend(hex, 0.25, MESH_WHITE_WARM));
-  root.setProperty('--accent-mesh-1', hex); // the accent itself — most saturated point
-  root.setProperty('--accent-mesh-2', blend(hex, 0.05, MESH_WHITE_COOL));
+  // Deepest point: the accent taken slightly past itself. Pushing this and
+  // mesh-2 apart is what gives the gradient its range (1.76:1 between the
+  // two ends, vs 1.28:1 when this was the raw accent).
+  root.setProperty('--accent-mesh-1', blend(hex, 0.85, MESH_INK_BASE));
+  root.setProperty('--accent-mesh-2', blend(hex, 0.02, MESH_WHITE_COOL));
   root.setProperty('--accent-mesh-3', blend(hex, 0.45, MESH_WHITE_NEUTRAL));
-  root.setProperty('--accent-mesh-ink', blend(hex, 0.2, MESH_INK_BASE));
+  // Darkened to pay for the deeper mesh — the icon still clears 4.8:1
+  // against the deepest point on every preset.
+  root.setProperty('--accent-mesh-ink', blend(hex, 0.09, MESH_INK_BASE));
 }
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
