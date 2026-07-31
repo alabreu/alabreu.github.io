@@ -20,6 +20,7 @@ import { supabase, supabaseConfigured } from '../lib/supabase';
 import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 import { CONTENT_MAX_WIDTH, edgeInset } from '../design-system/responsive';
+import { glassSurface, GLASS_SHADOW, GLASS_LABEL } from '../design-system/glass';
 
 type MenuRowTone = 'default' | 'accent' | 'danger';
 const MENU_ROW_TONES: Record<MenuRowTone, { bg: string; border: string; icon: string; title: string }> = {
@@ -245,10 +246,7 @@ export default function DeckBuilder() {
     width: '36px',
     height: '36px',
     borderRadius: '50%',
-    backgroundColor: 'rgba(28, 28, 30, 0.78)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '0.5px solid rgba(255,255,255,0.10)',
+    ...glassSurface,
     boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
     display: 'flex',
     alignItems: 'center',
@@ -404,11 +402,8 @@ export default function DeckBuilder() {
             // padding here stays tight and the buttons carry their own.
             padding: '2px 6px',
             borderRadius: '999px',
-            backgroundColor: 'rgba(18, 18, 20, 0.92)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+            ...glassSurface,
+            boxShadow: GLASS_SHADOW,
           }}
         >
           <span
@@ -466,11 +461,8 @@ export default function DeckBuilder() {
             style={{
               flex: 1,
               borderRadius: '999px',
-              backgroundColor: 'rgba(18, 18, 20, 0.92)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              ...glassSurface,
+              boxShadow: GLASS_SHADOW,
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
@@ -480,8 +472,8 @@ export default function DeckBuilder() {
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <Search size={16} color="rgba(255,255,255,0.35)" />
-            <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.35)', flex: 1, textAlign: 'left' }}>
+            <Search size={16} color={GLASS_LABEL} />
+            <span style={{ fontSize: '15px', color: GLASS_LABEL, flex: 1, textAlign: 'left' }}>
               Buscar cartas...
             </span>
           </button>
@@ -494,11 +486,8 @@ export default function DeckBuilder() {
               height: '52px',
               flexShrink: 0,
               borderRadius: '50%',
-              backgroundColor: 'rgba(18, 18, 20, 0.92)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+              ...glassSurface,
+              boxShadow: GLASS_SHADOW,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
