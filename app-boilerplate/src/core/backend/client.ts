@@ -17,5 +17,9 @@ export const backendConfigured = Boolean(url && anonKey)
 
 /** Cliente compartilhado (ou null quando não configurado) — sessão única para auth e dados. */
 export const supabase: SupabaseClient | null = backendConfigured
-  ? createClient(url as string, anonKey as string)
+  ? createClient(url as string, anonKey as string, {
+      // PKCE: o código de autorização do OAuth/email só vira sessão com o
+      // verifier guardado neste navegador — token não vaza pela URL.
+      auth: { flowType: 'pkce' },
+    })
   : null

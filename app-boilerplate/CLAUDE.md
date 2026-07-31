@@ -40,7 +40,10 @@ Supabase + Vercel). Extraído dos padrões do Tutor Brew
 - Todo acesso a backend passa por `core/backend/client.ts` (costura única —
   preparação para eventual migração AWS; ver README).
 - Idioma da UI: português como default; toda string nova nasce nos dois idiomas.
-- Sempre rodar `npm run build` antes de commitar.
+- Sempre rodar `npm run lint`, `npm test` e `npm run build` antes de commitar.
+- Segurança: seguir `SECURITY.md` (RLS na mesma migração, validação no banco,
+  secrets nunca no código, host novo de API entra no `connect-src` da CSP do
+  `vercel.json`). Lógica nova de `core/` ganha teste `*.test.ts` ao lado.
 - Migrações em `supabase/migrations/`, numeradas, rodadas à mão no SQL Editor.
   Tabela nova = RLS habilitado + policies na mesma migração.
 - NUNCA commitar service_role key ou qualquer secret (anon key pode).

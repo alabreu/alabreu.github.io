@@ -17,6 +17,10 @@ a partir daqui já nasce com:
 - **Acessibilidade AA de partida** (contraste conferido nos tokens, navegação
   por teclado nos sheets, leitores de tela, reduced motion) — regras e
   checklist em [`ACCESSIBILITY.md`](./ACCESSIBILITY.md)
+- **Qualidade**: TS `strict`, ESLint (com a11y), Prettier, Vitest com
+  testes-exemplo no core, e CI (lint + testes + build em todo PR)
+- **Segurança**: RLS por padrão, PKCE no auth, security headers (CSP etc.) no
+  `vercel.json`, Dependabot — modelo completo em [`SECURITY.md`](./SECURITY.md)
 
 ## Como criar um app novo
 
@@ -139,16 +143,44 @@ deploy.
 npm install
 npm run dev        # servidor de desenvolvimento
 npm run build      # typecheck + build de produção (rodar antes de commitar)
+npm run lint       # ESLint (inclui regras de acessibilidade)
+npm test           # Vitest (testes do core)
+npm run format     # Prettier
 npm run preview    # serve o build localmente
 npm run icons      # regenera os ícones placeholder do PWA
 ```
 
+O CI (`.github/workflows/ci.yml`) roda lint + testes + build em todo PR.
+Testes vivem junto do código (`*.test.ts`), focados no `core/` — que é puro e
+portável justamente para ser testável sem DOM.
+
+## Performance
+
+O que o template já garante:
+
+- **Bundle enxuto**: fontes do sistema (zero webfont), poucos deps, ícones
+  tree-shakeable, CSS do Tailwind purgado.
+- **Code splitting por rota pesada**: o `/admin` é `lazy()` — siga esse padrão
+  para qualquer rota grande do seu app (editor, dashboard, etc.).
+- **PWA**: precache torna a segunda visita instantânea; o toast de atualização
+  evita usuários presos em versão velha.
+
+Práticas ao crescer o app:
+
+- Imagem: sempre `width`/`height` (evita layout shift) e `loading="lazy"` no
+  que está fora da primeira dobra; comprima antes de subir para `public/`.
+- Lista com centenas de itens → virtualização (ex.: `@tanstack/react-virtual`).
+- Antes de adicionar uma dependência, cheque o custo em
+  [bundlephobia.com](https://bundlephobia.com); rode `npx vite-bundle-visualizer`
+  quando o bundle crescer sem explicação.
+- Meça com o Lighthouse (aba Performance) no build de produção
+  (`npm run build && npm run preview`), não no dev server.
+
 ## Segurança
 
-- NUNCA commitar a **service_role key** do Supabase nem qualquer secret. A anon
-  key é pública por design e pode ir no bundle.
-- Tabelas novas: **sempre** habilitar RLS e escrever as policies junto com a
-  migração — nunca depois.
-- Feedback é insert-only por RLS: clientes não conseguem ler o que outros
-  enviaram; leia pelo dashboard (ou um RPC `security definer` gated por
-  allowlist de admins, como no Tutor Brew).
+Modelo completo, regras e checklist de lançamento em
+[`SECURITY.md`](./SECURITY.md). Resumo do que já vem ligado: RLS em toda
+tabela (insert-only para escrita pública, allowlist + `security definer` para
+leitura admin), PKCE no auth, security headers (CSP, HSTS, nosniff, etc.) no
+`vercel.json`, Dependabot semanal e CI em todo PR. A regra de ouro: **anon key
+é pública, service_role nunca sai do dashboard.**

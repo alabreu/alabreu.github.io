@@ -104,7 +104,9 @@ export function MenuSheet({ open, onClose }: MenuSheetProps) {
       }`}
       aria-hidden={!open}
     >
+      {/* Backdrop decorativo: fechar por teclado é o Escape (listener acima). */}
       <div
+        aria-hidden="true"
         onClick={onClose}
         className={`absolute inset-0 bg-ink/40 transition-opacity duration-200 ${
           open ? 'opacity-100' : 'opacity-0'

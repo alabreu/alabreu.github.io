@@ -32,13 +32,13 @@ export function AdminScreen() {
   const { t, locale } = useTranslation()
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [feedback, setFeedback] = useState<FeedbackRow[]>([])
-  const [state, setState] = useState<'loading' | 'denied' | 'ready'>('loading')
+  // Sem backend configurado já nasce negado (evita setState síncrono no effect).
+  const [state, setState] = useState<'loading' | 'denied' | 'ready'>(() =>
+    supabase ? 'loading' : 'denied',
+  )
 
   useEffect(() => {
-    if (!supabase) {
-      setState('denied')
-      return
-    }
+    if (!supabase) return
     const db = supabase
     db.rpc('admin_metrics').then(async ({ data, error }) => {
       if (error || !data) {
