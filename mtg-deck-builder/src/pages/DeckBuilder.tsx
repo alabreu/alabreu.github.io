@@ -196,6 +196,7 @@ export default function DeckBuilder() {
     });
   }, []);
   const clearSelection = React.useCallback(() => setSelectedIds(new Set()), []);
+  const selectMany = React.useCallback((ids: string[]) => setSelectedIds(new Set(ids)), []);
 
   if (!deck) {
     return (
@@ -335,6 +336,7 @@ export default function DeckBuilder() {
             forcedExpandAll={allExpanded}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
+            onSelectMany={selectMany}
             onManageSections={() => setManageSectionsOpen(true)}
           />
         </div>

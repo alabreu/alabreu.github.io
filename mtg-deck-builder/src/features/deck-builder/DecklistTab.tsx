@@ -23,6 +23,8 @@ interface DecklistTabProps {
   onToggleSelect: (scryfallId: string) => void;
   /** Power-user shortcut: holding a section header opens "Gerenciar seções". */
   onManageSections: () => void;
+  /** Replace the whole bulk selection at once (used by the deck-errors sheet). */
+  onSelectMany: (scryfallIds: string[]) => void;
 }
 
 function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
@@ -169,6 +171,7 @@ const FlippableCard = React.memo(function FlippableCard({
     <motion.div
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      data-card-id={card.scryfallId}
       style={{ minWidth: 0, overflow: 'hidden' }}
     >
       {/* 3-D flip container */}
@@ -339,6 +342,7 @@ const ListCardRow = React.memo(function ListCardRow({
   });
   return (
     <div
+      data-card-id={card.scryfallId}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -531,7 +535,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
   );
 });
 
-export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect, onManageSections }: DecklistTabProps) {
+export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect, onManageSections, onSelectMany }: DecklistTabProps) {
   const selectionMode = selectedIds.size > 0;
   const { updateDeck, addCard, removeCard } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
@@ -617,6 +621,28 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
     // toggles). New categories default to expanded via expandedSections[cat] !== false.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forcedExpandAll]);
+
+  /** Tapping an error selects the cards it blames and reveals them: they may
+   *  sit in a collapsed section or far off screen, where selecting alone would
+   *  look like nothing happened. */
+  function handleSelectErrorCards(cardIds: string[]) {
+    onSelectMany(cardIds);
+    setErrorsOpen(false);
+    const wanted = new Set(cardIds);
+    const cats = new Set(deck.cards.filter((c) => wanted.has(c.scryfallId)).map((c) => c.category));
+    setExpandedSections((prev) => {
+      const next = { ...prev };
+      for (const cat of cats) next[cat] = true;
+      return next;
+    });
+    // Wait for the expand to render (and the sheet to start closing) before
+    // scrolling — cardIds keeps deck order, so [0] is the topmost one.
+    setTimeout(() => {
+      document
+        .querySelector(`[data-card-id="${cardIds[0]}"]`)
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 140);
+  }
 
   const toggleSection = React.useCallback((cat: string) => {
     setExpandedSections((prev) => ({ ...prev, [cat]: prev[cat] === false ? true : false }));
@@ -850,6 +876,7 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
         isOpen={errorsOpen}
         onClose={() => setErrorsOpen(false)}
         errors={errors}
+        onSelectCards={handleSelectErrorCards}
       />
     </div>
   );
