@@ -5,6 +5,7 @@ export const pt = {
 
   // Home (placeholder — substitua pelo seu produto)
   'home.menuButton': 'Menu',
+  'home.menuButtonUnread': 'Menu — há novidades não lidas',
   'home.placeholderTitle': 'Seu app começa aqui',
   'home.placeholderBody':
     'Substitua esta tela pelo seu produto. O menu no canto superior direito já vem com feedback, idioma, novidades e login.',

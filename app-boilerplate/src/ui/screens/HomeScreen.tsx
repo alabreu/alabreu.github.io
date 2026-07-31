@@ -24,7 +24,7 @@ export function HomeScreen() {
         <h1 className="text-2xl font-extrabold tracking-tight">{APP_NAME}</h1>
         <button
           type="button"
-          aria-label={t('home.menuButton')}
+          aria-label={unread > 0 ? t('home.menuButtonUnread') : t('home.menuButton')}
           onClick={() => setMenuOpen(true)}
           className="relative flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink ring-1 ring-ink/10 active:scale-90"
         >
@@ -38,7 +38,10 @@ export function HomeScreen() {
             <User size={20} weight="bold" />
           )}
           {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-bg" />
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-bg"
+            />
           )}
         </button>
       </header>

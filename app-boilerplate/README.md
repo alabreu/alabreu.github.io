@@ -14,6 +14,9 @@ a partir daqui já nasce com:
   sessões/dia, inbox de feedback), gated por allowlist no banco
 - **Versão do build** (versão + sha + hora) no rodapé do menu — 5 toques abrem o `/admin`
 - **PWA** com toast de "nova versão disponível"
+- **Acessibilidade AA de partida** (contraste conferido nos tokens, navegação
+  por teclado nos sheets, leitores de tela, reduced motion) — regras e
+  checklist em [`ACCESSIBILITY.md`](./ACCESSIBILITY.md)
 
 ## Como criar um app novo
 

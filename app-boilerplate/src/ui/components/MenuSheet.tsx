@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Icon } from '@phosphor-icons/react'
 import {
   CaretRight,
@@ -42,12 +43,54 @@ const ITEMS: MenuItem[] = [
  * Bottom sheet aberto pelo botão do topo direito. Lista as ações de nível de
  * app (feedback, idioma, novidades, login) + a versão para debug. O item de
  * novidades ganha um contador quando há entradas de changelog não lidas.
+ *
+ * Acessibilidade: role=dialog com nome; Escape fecha; foco entra no sheet ao
+ * abrir, fica preso nele (Tab circula) e volta ao botão de origem ao fechar;
+ * fechado, `invisible` tira tudo do tab order e dos leitores de tela — a
+ * transition de visibility espera a animação de saída terminar.
  */
 export function MenuSheet({ open, onClose }: MenuSheetProps) {
   const navigate = useNavigate()
   const { t, locale } = useTranslation()
   const { user } = useAuth()
   const newsUnread = getUnreadCount()
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    returnFocusRef.current = document.activeElement as HTMLElement | null
+    dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab') return
+      // Trap simples: Tab no último volta ao primeiro (e vice-versa).
+      const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusables || focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      returnFocusRef.current?.focus()
+    }
+  }, [open, onClose])
 
   function go(to: string) {
     onClose()
@@ -56,7 +99,9 @@ export function MenuSheet({ open, onClose }: MenuSheetProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`}
+      className={`fixed inset-0 z-50 transition-[visibility] duration-200 ${
+        open ? 'visible' : 'invisible pointer-events-none'
+      }`}
       aria-hidden={!open}
     >
       <div
@@ -67,8 +112,10 @@ export function MenuSheet({ open, onClose }: MenuSheetProps) {
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-label={t('home.menuButton')}
         className={`absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-3xl bg-surface p-4 pb-8 shadow-2xl transition-transform duration-200 ease-out ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
@@ -83,7 +130,7 @@ export function MenuSheet({ open, onClose }: MenuSheetProps) {
               onClick={() => go(item.to)}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition active:bg-ink/5"
             >
-              <item.icon size={22} />
+              <item.icon size={22} aria-hidden />
               <span className="min-w-0 truncate font-medium">
                 {item.to === '/login' && user
                   ? (user.name ?? user.email)
@@ -98,13 +145,13 @@ export function MenuSheet({ open, onClose }: MenuSheetProps) {
                   {newsUnread}
                 </span>
               ) : (
-                <CaretRight size={18} className="ml-auto text-muted" />
+                <CaretRight size={18} className="ml-auto text-muted" aria-hidden />
               )}
             </button>
           ))}
         </nav>
 
-        <VersionLabel className="mt-4 block w-full select-none text-center text-[11px] text-muted/70" />
+        <VersionLabel className="mt-4 block w-full select-none text-center text-[11px] text-muted" />
       </div>
     </div>
   )

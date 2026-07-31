@@ -29,6 +29,12 @@ Supabase + Vercel). Extraído dos padrões do Tutor Brew
 
 ## Regras
 
+- Acessibilidade: toda feature nova segue `ACCESSIBILITY.md` (contraste AA,
+  teclado, leitor de tela, reduced motion — tem checklist no fim). O padrão de
+  sheet acessível para copiar é o `MenuSheet` (Escape, trap e retorno de foco,
+  `invisible` quando fechado). Nunca desabilitar zoom no viewport nem remover
+  o `:focus-visible` global.
+
 - Arquitetura "cérebro vs pele": nada em `src/core/` importa de `src/ui/` nem
   usa DOM. Aliases `@core/*`, `@ui/*`, `@app/*`.
 - Todo acesso a backend passa por `core/backend/client.ts` (costura única —

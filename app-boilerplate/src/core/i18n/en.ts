@@ -7,6 +7,7 @@ export const en: Record<keyof typeof pt, string> = {
 
   // Home (placeholder)
   'home.menuButton': 'Menu',
+  'home.menuButtonUnread': 'Menu — unread news available',
   'home.placeholderTitle': 'Your app starts here',
   'home.placeholderBody':
     'Replace this screen with your product. The top-right menu already ships with feedback, language, news and login.',

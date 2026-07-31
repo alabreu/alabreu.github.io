@@ -35,7 +35,7 @@ export function VersionLabel({ className }: { className?: string }) {
       title={time}
       className={
         className ??
-        'mx-auto block w-full select-none text-center text-[11px] text-muted/70'
+        'mx-auto block w-full select-none text-center text-[11px] text-muted'
       }
     >
       {APP_NAME} · v{__APP_VERSION__} · {__BUILD_SHA__} · {time}

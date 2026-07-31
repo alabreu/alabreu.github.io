@@ -30,7 +30,8 @@ export function FeedbackScreen() {
 
   const canSend = message.trim().length > 0 && !busy
 
-  async function submit() {
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault()
     if (!canSend) return
     setBusy(true)
     setError(false)
@@ -57,8 +58,12 @@ export function FeedbackScreen() {
       <ScreenHeader title={t('feedback.title')} />
 
       {sent ? (
-        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-          <CheckCircle size={48} weight="fill" className="text-success" />
+        // role=status: a confirmação é anunciada pelo leitor de tela.
+        <main
+          role="status"
+          className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center"
+        >
+          <CheckCircle size={48} weight="fill" className="text-success" aria-hidden />
           <h2 className="text-lg font-bold">{t('feedback.sentTitle')}</h2>
           <p className="max-w-xs text-balance text-muted">
             {sent === 'stored' ? t('feedback.sentBody') : t('feedback.sentMailBody')}
@@ -77,7 +82,10 @@ export function FeedbackScreen() {
           </button>
         </main>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8">
+        <form
+          onSubmit={submit}
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-8"
+        >
           <p className="mb-4 text-sm text-muted">{t('feedback.intro')}</p>
 
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -90,6 +98,7 @@ export function FeedbackScreen() {
                 <button
                   key={opt.value}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => setType(opt.value)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
                     active
@@ -144,15 +153,14 @@ export function FeedbackScreen() {
           )}
 
           <button
-            type="button"
-            onClick={submit}
+            type="submit"
             disabled={!canSend}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-40 disabled:active:scale-100"
           >
-            <PaperPlaneRight size={18} weight="fill" />
+            <PaperPlaneRight size={18} weight="fill" aria-hidden />
             {t('feedback.send')}
           </button>
-        </div>
+        </form>
       )}
     </div>
   )

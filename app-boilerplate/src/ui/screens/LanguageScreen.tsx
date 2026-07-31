@@ -20,6 +20,7 @@ export function LanguageScreen() {
               <button
                 key={code}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setLocale(code)}
                 className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition active:bg-ink/5 ${
                   i > 0 ? 'border-t border-ink/10' : ''
@@ -29,7 +30,7 @@ export function LanguageScreen() {
                   {LOCALE_NAMES[code]}
                 </span>
                 {active && (
-                  <Check size={20} weight="bold" className="text-primary" />
+                  <Check size={20} weight="bold" className="text-primary" aria-hidden />
                 )}
               </button>
             )

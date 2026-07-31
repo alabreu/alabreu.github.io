@@ -106,6 +106,7 @@ export function LoginScreen() {
               <input
                 type="email"
                 autoComplete="email"
+                aria-label={t('auth.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t('auth.email')}
@@ -116,6 +117,7 @@ export function LoginScreen() {
                 autoComplete={
                   mode === 'signup' ? 'new-password' : 'current-password'
                 }
+                aria-label={t('auth.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('auth.password')}

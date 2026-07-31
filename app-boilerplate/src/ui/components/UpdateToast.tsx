@@ -48,7 +48,8 @@ export function UpdateToast() {
   if (!needRefresh) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+    // role=status: leitores de tela anunciam a chegada do toast sem roubar o foco.
+    <div role="status" className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
       <div className="flex items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-xl">
         <span className="flex items-center gap-1.5 text-sm">
           <Sparkle size={16} weight="fill" className="text-amber-300" />
