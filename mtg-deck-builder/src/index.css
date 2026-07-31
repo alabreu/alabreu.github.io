@@ -31,13 +31,14 @@
   --accent-hover: #f2df9d;
   --accent-subtle: rgba(240, 217, 140, 0.12);
   --accent-border: rgba(240, 217, 140, 0.3);
-  /* Dark accent tones for the Tutor button's mesh gradient. Kept dark on
-     purpose: the icon on top is white, and even the lightest of these holds
-     >4.5:1 against it for every accent preset. Derived in applyAccent(). */
-  --accent-mesh-base: #16181e;
-  --accent-mesh-1: #83744b;
-  --accent-mesh-2: #302e2b;
-  --accent-mesh-3: #5b533a;
+  /* Pale accent tones for the Tutor button's mesh gradient, plus the very
+     dark accent its icon is drawn in. The ink holds >=5.3:1 against the most
+     saturated tone for every accent preset. Derived in applyAccent(). */
+  --accent-mesh-base: #fbf0d6;
+  --accent-mesh-1: #f0d98c;
+  --accent-mesh-2: #f1f5fb;
+  --accent-mesh-3: #f7edca;
+  --accent-mesh-ink: #383326;
 
   /* Status */
   --success: #2fae79;
@@ -315,7 +316,16 @@ select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Tutor button: a mesh gradient of dark accent tones, drifting slowly.
+/* Grain for PALE surfaces. The default overlay paints white noise with a
+   screen blend, which is invisible on a light background; this paints black
+   noise over it instead. */
+.app-noise-overlay--ink {
+  mix-blend-mode: normal;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' result='t'/><feColorMatrix in='t' type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Tutor button: a mesh gradient of pale accent tones, drifting slowly.
    Three blurred blobs on different durations so their motion never visibly
    loops, over a flat backdrop that fills the gaps. Only `transform` is
    animated, so it stays on the compositor. */
@@ -338,7 +348,7 @@ select {
   border-radius: 50%;
   /* Enough to melt the edges, not so much that three blobs average into one
      flat fill at this size. */
-  filter: blur(7px);
+  filter: blur(6px);
   will-change: transform;
 }
 

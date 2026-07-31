@@ -48,18 +48,20 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-/** Near-blacks the mesh tones are mixed into, so they stay dark enough for a
- *  white icon no matter how light the accent is. Two of them, one cool and
- *  one warm: blending the same accent into different blacks gives the blobs
- *  a slight hue difference, which is what makes the result read as a mesh
- *  rather than one flat colour at different brightnesses. */
-const MESH_BLACK_NEUTRAL: [number, number, number] = [14, 14, 16];
-const MESH_BLACK_COOL: [number, number, number] = [11, 14, 24];
-const MESH_BLACK_WARM: [number, number, number] = [22, 14, 10];
+/** Whites the Tutor button's mesh tones are mixed into. Three of them —
+ *  warm, cool and neutral — because blending the same accent into different
+ *  whites gives the blobs a slight hue difference, which is what makes the
+ *  result read as a mesh rather than one flat colour at different
+ *  brightnesses. */
+const MESH_WHITE_WARM: [number, number, number] = [255, 248, 238];
+const MESH_WHITE_COOL: [number, number, number] = [240, 246, 255];
+const MESH_WHITE_NEUTRAL: [number, number, number] = [253, 253, 253];
+/** Near-black behind the icon's ink, so the stroke stays a very dark version
+ *  of the accent instead of going flat black. */
+const MESH_INK_BASE: [number, number, number] = [10, 9, 12];
 
-/** `amount` of the accent blended into a near-black — low values keep the
- *  result dark while preserving the accent's hue. */
-function deepen(hex: string, amount: number, base = MESH_BLACK_NEUTRAL): string {
+/** Blends `amount` of the accent into `base`. */
+function blend(hex: string, amount: number, base: [number, number, number]): string {
   const [r, g, b] = hexToRgb(hex);
   return `#${toHex(base[0] + (r - base[0]) * amount)}${toHex(
     base[1] + (g - base[1]) * amount
@@ -74,13 +76,15 @@ export function applyAccent(hex: string) {
   root.setProperty('--accent-hover', lighten(hex, 0.15));
   root.setProperty('--accent-subtle', rgba(hex, 0.12));
   root.setProperty('--accent-border', rgba(hex, 0.3));
-  // Tutor button mesh. The spread is wide so the blobs actually read as a
-  // mesh at 52px; the lightest tone (0.5) still holds >4.5:1 against the
-  // white icon for every preset in ACCENT_PRESETS.
-  root.setProperty('--accent-mesh-base', deepen(hex, 0.05, MESH_BLACK_COOL));
-  root.setProperty('--accent-mesh-1', deepen(hex, 0.5, MESH_BLACK_WARM));
-  root.setProperty('--accent-mesh-2', deepen(hex, 0.16, MESH_BLACK_COOL));
-  root.setProperty('--accent-mesh-3', deepen(hex, 0.34, MESH_BLACK_NEUTRAL));
+  // Tutor button: a pale mesh with the icon drawn in a very dark accent.
+  // The spread is wide (0.08 → 0.80 of the accent) so the blobs actually read
+  // as a mesh at 52px, and the ink holds >=5.3:1 against the most saturated
+  // tone for every preset in ACCENT_PRESETS.
+  root.setProperty('--accent-mesh-base', blend(hex, 0.25, MESH_WHITE_WARM));
+  root.setProperty('--accent-mesh-1', hex); // the accent itself — most saturated point
+  root.setProperty('--accent-mesh-2', blend(hex, 0.05, MESH_WHITE_COOL));
+  root.setProperty('--accent-mesh-3', blend(hex, 0.45, MESH_WHITE_NEUTRAL));
+  root.setProperty('--accent-mesh-ink', blend(hex, 0.2, MESH_INK_BASE));
 }
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;

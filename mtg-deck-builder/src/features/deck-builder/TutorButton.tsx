@@ -9,11 +9,12 @@ interface Props {
 
 /**
  * Entry point to the Tutor. Its face is an animated mesh gradient built from
- * dark tones of the current accent (see --accent-mesh-* in accentPreview),
- * finished with the same film grain the rest of the app uses.
+ * pale tones of the current accent (see --accent-mesh-* in accentPreview),
+ * with the wizard hat drawn in a very dark version of that same accent, and
+ * film grain on top.
  *
- * The tones stay dark deliberately: the wizard hat on top is white, and the
- * mesh has to keep it legible for every accent the user can pick.
+ * A bright disc against the dark bottom bar — it should read as the one
+ * warm object down there.
  */
 export function TutorButton({ onClick, size = 52 }: Props) {
   return (
@@ -29,14 +30,16 @@ export function TutorButton({ onClick, size = 52 }: Props) {
         overflow: 'hidden',
         padding: 0,
         backgroundColor: 'var(--accent-mesh-base)',
-        border: '1px solid var(--accent-border)',
+        // No border: a pale disc already separates itself from the dark bar,
+        // and a rim would only muddy the edge.
+        border: 'none',
         boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
         WebkitTapHighlightColor: 'transparent',
-        color: '#ffffff',
+        color: 'var(--accent-mesh-ink)',
       }}
     >
       {/* Drifting mesh (CSS: .tutor-mesh in index.css) */}
@@ -46,9 +49,12 @@ export function TutorButton({ onClick, size = 52 }: Props) {
         <span />
       </span>
 
-      {/* Same grain as the rest of the app, and it honours the user's
-          "texture" preference through NoiseOverlay. */}
-      <NoiseOverlay style={{ position: 'absolute', inset: 0, zIndex: 1, borderRadius: '50%' }} />
+      {/* Ink grain — the app's default white grain would be invisible on this
+          pale face. Still honours the user's "texture" preference. */}
+      <NoiseOverlay
+        className="app-noise-overlay--ink"
+        style={{ position: 'absolute', inset: 0, zIndex: 1, borderRadius: '50%' }}
+      />
 
       <WizardHatIcon size={Math.round(size * 0.35)} style={{ position: 'relative', zIndex: 2 }} />
     </button>
