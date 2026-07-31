@@ -69,27 +69,22 @@ e o painel **OpenRouter (gasto/restante)**, e trocar o modelo lá vale pra todos
    Tutor. O código já tem caps (40/dia por usuário, 2000/dia global), mas o teto na
    própria chave é a última linha de defesa contra custo inesperado.
 
-## E. Agrupamento "Por função" — popular o snapshot (uma vez + refresh)
+## E. Agrupamento "Por função" — ✅ FEITO
 
-O modo **Por função** (Configurações → Agrupar cartas) usa um snapshot
-`mtg-deck-builder/public/functionTags.json` gerado das tags da comunidade do
-Scryfall. Ele **vem vazio** no repo — até popular, "Por função" joga tudo em
-"Outros" (o fallback), sem quebrar nada.
+Snapshot populado em 20/07/2026 com **14.139 cartas**. O slug `protection`,
+que era o único não confirmado, veio válido:
 
-9. Popular pela primeira vez (escolha um):
-   - **Manual:** `cd mtg-deck-builder && node scripts/build-function-tags.mjs`
-     (precisa de internet; sem chave de API), depois commitar o
-     `public/functionTags.json` atualizado.
-   - **Automático:** no GitHub, aba Actions → "Refresh function tags" →
-     *Run workflow*. Ele gera e commita sozinho (o deploy horário publica).
-10. Conferir os números que o script imprime por categoria. **Slugs já
-    verificados** (tags reais do Scryfall): `ramp`, `removal`, `card-advantage`,
-    `alternate-win-condition`. O único **não confirmado é `protection`** — se a
-    linha "Proteção" vier **0**, me avise que troco por um slug válido (ou removo
-    a categoria). As outras quatro devem vir com centenas/milhares de cartas.
+| Categoria        | Cartas |
+|------------------|--------|
+| Remoção          | 6.054  |
+| Compra de Cartas | 4.845  |
+| Ramp             | 2.159  |
+| Proteção         | 1.043  |
+| Wincons          | 38     |
 
-Depois disso, o refresh mensal é automático (cron no dia 1º). Quando sair um set
-novo e você quiser atualizar na hora, é só rodar o workflow manualmente.
+Nada a fazer. O refresh é automático (cron no dia 1º); quando sair um set novo
+e você quiser atualizar na hora, rode o workflow "Refresh function tags"
+manualmente na aba Actions.
 
 ## F. Jurídico — Termos e Privacidade (rascunho no ar; endurecer antes de cobrar)
 
