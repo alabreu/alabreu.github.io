@@ -1,0 +1,37 @@
+# app-boilerplate
+
+Template de partida para apps novos (React + Vite + TS + Tailwind v4 +
+Supabase + Vercel). Extraído dos padrões do Tutor Brew
+(`alabreu/alabreu.github.io`, pasta `mtg-deck-builder/`) e do Komme
+(`alabreu/mesa-app`). Detalhes de uso e setup: `README.md`.
+
+## O que já vem pronto (não reimplementar)
+
+- i18n pt/en tipado: `core/i18n` + `useTranslation()`. Toda string de UI entra
+  em `core/i18n/pt.ts` (fonte da verdade) e `en.ts` (o tipo força paridade).
+- Feedback: `core/feedback/submit.ts` → tabela `feedback` (insert-only RLS) ou
+  fallback `mailto:` sem backend.
+- Changelog: `core/changelog.ts` (entradas bilíngues, mais novo primeiro) com
+  badge de não lido. Ao lançar feature relevante, adicionar entrada no TOPO.
+- Auth guest-first: `core/auth/client.ts` (email+senha e Google via Supabase),
+  UI só enxerga `AuthUser`. Sem env vars o app roda 100% local — preservar isso.
+- Menu do topo direito: `ui/components/MenuSheet.tsx` — itens específicos do
+  app entram no array `ITEMS`.
+- PWA + toast de atualização (`vite-plugin-pwa` modo prompt).
+
+## Regras
+
+- Arquitetura "cérebro vs pele": nada em `src/core/` importa de `src/ui/` nem
+  usa DOM. Aliases `@core/*`, `@ui/*`, `@app/*`.
+- Todo acesso a backend passa por `core/backend/client.ts` (costura única —
+  preparação para eventual migração AWS; ver README).
+- Idioma da UI: português como default; toda string nova nasce nos dois idiomas.
+- Sempre rodar `npm run build` antes de commitar.
+- Migrações em `supabase/migrations/`, numeradas, rodadas à mão no SQL Editor.
+  Tabela nova = RLS habilitado + policies na mesma migração.
+- NUNCA commitar service_role key ou qualquer secret (anon key pode).
+
+## Ao criar um app novo a partir do template
+
+Seguir o checklist de renomeação do README (config.ts, vite.config.ts,
+index.html, package.json, paleta, ícones, changelog inicial).
