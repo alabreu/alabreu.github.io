@@ -10,6 +10,8 @@ import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { edgeInset } from '../../design-system/responsive';
 
 const ITEM_H = 52;
+/** Hold this long anywhere on a row to pick it up for reordering. */
+const LONG_PRESS_MS = 400;
 
 function clamp(min: number, max: number, val: number) {
   return Math.max(min, Math.min(max, val));
@@ -53,15 +55,34 @@ function DraggableRow({
     }
   }
 
-  const bind = useDrag(
-    ({ movement: [, my], first, last, event }) => {
+  const onDragGesture = React.useCallback(
+    ({ movement: [, my], first, last, event }: { movement: [number, number]; first: boolean; last: boolean; event: Event }) => {
       event.stopPropagation();
       if (first) onDragStart(index);
       if (!last) onDrag(my);
       else onDragEnd();
     },
-    { axis: 'y', filterTaps: true }
+    [index, onDragStart, onDrag, onDragEnd]
   );
+
+  // Grip: drag starts immediately.
+  const bindGrip = useDrag(onDragGesture, { axis: 'y', filterTaps: true });
+
+  // Whole row: hold to pick it up. `preventScroll` lets the sheet scroll
+  // normally until the hold completes, so a flick still scrolls the list and
+  // only a deliberate press-and-hold starts reordering.
+  // Bound via `target` (not spread props) because use-gesture's onDrag*/
+  // onAnimationStart props collide with framer-motion's same-named ones.
+  const rowRef = React.useRef<HTMLDivElement>(null);
+  useDrag(onDragGesture, {
+    target: rowRef,
+    axis: 'y',
+    filterTaps: true,
+    delay: LONG_PRESS_MS,
+    preventScroll: LONG_PRESS_MS,
+    preventScrollAxis: 'y',
+    eventOptions: { passive: false },
+  });
 
   return (
     // No `layout` prop here on purpose: a layout-projected child inside the
@@ -79,6 +100,7 @@ function DraggableRow({
         backgroundColor: isActive ? 'var(--surface-2)' : 'transparent',
       }}
       transition={isActive ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 32 }}
+      ref={rowRef}
       style={{
         position: 'relative',
         height: ITEM_H,
@@ -87,27 +109,15 @@ function DraggableRow({
         alignItems: 'center',
         gap: '10px',
         padding: '0 4px',
+        // pan-y keeps the sheet scrollable; the gesture only takes the touch
+        // over once the hold completes (preventScroll above).
+        touchAction: 'pan-y',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
       }}
     >
-      {/* Grip handle */}
-      <div
-        {...bind()}
-        style={{
-          touchAction: 'none',
-          cursor: isActive ? 'grabbing' : 'grab',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 4px',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          flexShrink: 0,
-        }}
-      >
-        <GripVertical size={17} />
-      </div>
-
-      <span style={{ flex: 1, fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {name}
       </span>
 
@@ -121,6 +131,7 @@ function DraggableRow({
       {name !== 'Comandante' && (
       <button
         onClick={() => onDelete(name)}
+        aria-label={`Apagar seção ${name}`}
         style={{
           width: '30px',
           height: '30px',
@@ -139,6 +150,27 @@ function DraggableRow({
         <Trash2 size={13} />
       </button>
       )}
+
+      {/* Divider keeping the destructive button visually apart from the grip */}
+      <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', flexShrink: 0 }} />
+
+      {/* Grip handle — drags immediately, unlike the row (which needs a hold) */}
+      <div
+        {...bindGrip()}
+        style={{
+          touchAction: 'none',
+          cursor: isActive ? 'grabbing' : 'grab',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 2px',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          flexShrink: 0,
+        }}
+      >
+        <GripVertical size={17} />
+      </div>
     </motion.div>
   );
 }
