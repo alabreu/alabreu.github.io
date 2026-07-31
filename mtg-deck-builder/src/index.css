@@ -354,15 +354,15 @@ select {
 
 .tutor-mesh span:nth-child(1) {
   background: var(--accent-mesh-1);
-  animation: tutor-blob-a 9s ease-in-out infinite alternate;
+  animation: tutor-blob-a 5.5s ease-in-out infinite alternate;
 }
 .tutor-mesh span:nth-child(2) {
   background: var(--accent-mesh-2);
-  animation: tutor-blob-b 12s ease-in-out infinite alternate;
+  animation: tutor-blob-b 7.5s ease-in-out infinite alternate;
 }
 .tutor-mesh span:nth-child(3) {
   background: var(--accent-mesh-3);
-  animation: tutor-blob-c 15s ease-in-out infinite alternate;
+  animation: tutor-blob-c 9.5s ease-in-out infinite alternate;
 }
 
 /* Travel ranges reach past the edges so the light and dark areas sweep the
