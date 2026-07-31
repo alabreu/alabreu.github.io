@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { trackSessionStart } from '@core/analytics'
 import { storageKey } from '@core/config'
 import { DEFAULT_LOCALE, normalizeLocale } from '@core/i18n'
 import { useLocaleStore } from '@core/state/localeStore'
@@ -14,6 +15,11 @@ import { LoginScreen } from '@ui/screens/LoginScreen'
 import { NewsScreen } from '@ui/screens/NewsScreen'
 
 const LOCALE_STORAGE_KEY = storageKey('locale')
+
+// Lazy: o código do painel de admin não entra no bundle dos usuários comuns.
+const AdminScreen = lazy(() =>
+  import('@ui/screens/AdminScreen').then((m) => ({ default: m.AdminScreen })),
+)
 
 /**
  * Shell do app + rotas. Layout limitado a uma coluna de largura de celular.
@@ -43,6 +49,11 @@ export function App() {
   // Restaura + observa a sessão (no-op quando o backend não está configurado).
   useAuthInit()
 
+  // Um evento de sessão por carga do app, para os KPIs do /admin.
+  useEffect(() => {
+    trackSessionStart()
+  }, [])
+
   // Reflete + persiste o idioma.
   useEffect(() => {
     document.documentElement.lang = locale
@@ -63,6 +74,14 @@ export function App() {
           <Route path="/novidades" element={<NewsScreen />} />
           <Route path="/apoiar" element={<DonateScreen />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route
+            path="/admin"
+            element={
+              <Suspense fallback={null}>
+                <AdminScreen />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

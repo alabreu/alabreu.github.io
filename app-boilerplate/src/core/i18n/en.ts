@@ -70,6 +70,19 @@ export const en: Record<keyof typeof pt, string> = {
   'news.subtitle': "What's new in the app.",
   'news.badgeNew': 'new',
 
+  // Admin (operator panel — /admin)
+  'admin.title': 'Admin',
+  'admin.restricted': 'Restricted area.',
+  'admin.users': 'Users',
+  'admin.dau': 'DAU',
+  'admin.wau': 'WAU',
+  'admin.mau': 'MAU',
+  'admin.feedback': 'Feedback',
+  'admin.sessionsByDay': 'Sessions per day (30d)',
+  'admin.noData': 'No data yet.',
+  'admin.feedbackInbox': 'Feedback inbox',
+  'admin.feedbackEmpty': 'No feedback yet.',
+
   // Update toast
   'update.available': 'New version available',
   'update.action': 'Update',

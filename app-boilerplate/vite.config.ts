@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
@@ -14,11 +15,26 @@ const APP_NAME = 'Meu App'
 const APP_DESCRIPTION = 'Descrição curta do app (aparece no manifest e na busca).'
 const THEME_COLOR = '#f7f6f3'
 
+// Sha do commit para o rótulo de versão: CI (Vercel/GitHub) fornece por env
+// var; local cai no git; sem repo, "dev".
+function buildSha(): string {
+  const fromEnv =
+    process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? ''
+  if (fromEnv) return fromEnv.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'dev'
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // Exposed to the app (e.g. version shown in the menu for debugging).
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_SHA__: JSON.stringify(buildSha()),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   plugins: [
     react(),

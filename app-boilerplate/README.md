@@ -10,6 +10,9 @@ a partir daqui já nasce com:
 - **Uso sem login** (guest-first) + criar conta / entrar com email+senha + **Google**
 - **Doações** via Stripe Payment Link (zero backend; o item só aparece quando configurado)
 - **Botão no topo direito** que abre um sheet com tudo isso (extensível por app)
+- **Painel de admin** escondido em `/admin` (KPIs: usuários, DAU/WAU/MAU,
+  sessões/dia, inbox de feedback), gated por allowlist no banco
+- **Versão do build** (versão + sha + hora) no rodapé do menu — 5 toques abrem o `/admin`
 - **PWA** com toast de "nova versão disponível"
 
 ## Como criar um app novo
@@ -40,7 +43,7 @@ a partir daqui já nasce com:
    para `.env` (a partir de `.env.example`) e para as env vars da Vercel.
    A anon key é pública por design (protegida por RLS) — a **service_role
    nunca** sai do dashboard.
-2. Rode `supabase/migrations/0001_feedback.sql` no SQL Editor.
+2. Rode as migrações de `supabase/migrations/` no SQL Editor, em ordem.
 3. **Google login**: Supabase → Authentication → Providers → Google. Crie as
    credenciais OAuth no Google Cloud Console (tipo "Web application"), com o
    redirect `https://<ref>.supabase.co/auth/v1/callback`, e cole client id +
@@ -70,6 +73,24 @@ que cria uma Checkout Session + um `stripe-webhook` que grava o evento — o
 Tutor Brew tem essa infra pronta como referência
 (`mtg-deck-builder/supabase/functions/stripe-{checkout,webhook}`). A secret key
 do Stripe vive **só** como secret da Edge Function, nunca no código.
+
+### Painel de admin e KPIs
+
+- Rota `/admin`, **sem link na UI**: acesse pela URL ou tocando **5 vezes** no
+  rótulo de versão no rodapé do menu. O código é lazy-loaded — não entra no
+  bundle de quem nunca abre.
+- A segurança real está no banco, não na UI: as RPCs `admin_metrics()` e
+  `admin_feedback()` são `security definer` e negam quem não está na tabela
+  `public.admins` (que não tem policies — só o SQL Editor mexe nela).
+- Para virar admin, no SQL Editor:
+  ```sql
+  insert into public.admins (user_id)
+    select id from auth.users where email = 'voce@exemplo.com';
+  ```
+- Os KPIs vêm de `analytics_events` (insert-only por RLS, como o feedback). O
+  boilerplate registra só `session_start`; adicione eventos do seu produto com
+  `track('nome_do_evento')` de `core/analytics.ts` — o funil do seu app é você
+  quem define.
 
 ## Arquitetura: "cérebro" vs "pele"
 

@@ -68,6 +68,19 @@ export const pt = {
   'news.subtitle': 'O que há de novo no app.',
   'news.badgeNew': 'novo',
 
+  // Admin (painel do operador — /admin)
+  'admin.title': 'Admin',
+  'admin.restricted': 'Área restrita.',
+  'admin.users': 'Usuários',
+  'admin.dau': 'DAU',
+  'admin.wau': 'WAU',
+  'admin.mau': 'MAU',
+  'admin.feedback': 'Feedbacks',
+  'admin.sessionsByDay': 'Sessões por dia (30d)',
+  'admin.noData': 'Sem dados ainda.',
+  'admin.feedbackInbox': 'Feedback recebido',
+  'admin.feedbackEmpty': 'Nenhum feedback ainda.',
+
   // Toast de atualização
   'update.available': 'Nova versão disponível',
   'update.action': 'Atualizar',

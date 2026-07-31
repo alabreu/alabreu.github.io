@@ -19,7 +19,12 @@ Supabase + Vercel). Extraído dos padrões do Tutor Brew
   Link via `VITE_STRIPE_DONATE_URL` (URL pública, sem secret). O item do menu
   só aparece configurado. Upgrade para Checkout dinâmico: ver README.
 - Menu do topo direito: `ui/components/MenuSheet.tsx` — itens específicos do
-  app entram no array `ITEMS`.
+  app entram no array `ITEMS`. Rodapé mostra versão + sha + hora do build
+  (`VersionLabel`); 5 toques abrem o `/admin`.
+- Painel de admin: `/admin` (lazy, sem link na UI), KPIs via RPCs
+  `admin_metrics()`/`admin_feedback()` (security definer, allowlist
+  `public.admins`). Eventos de uso: `core/analytics.ts` (`track()`,
+  insert-only em `analytics_events`); o shell registra `session_start`.
 - PWA + toast de atualização (`vite-plugin-pwa` modo prompt).
 
 ## Regras

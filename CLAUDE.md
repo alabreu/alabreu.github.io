@@ -9,7 +9,8 @@ Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
   TS + Tailwind v4 + Supabase + Vercel), extraído dos padrões do Tutor Brew e do
   Komme (`alabreu/mesa-app`): i18n pt/en tipado, feedback in-app, changelog com
   badge, uso sem login + email/senha + Google, doações via Stripe Payment Link,
-  menu no topo direito, PWA com toast de atualização. Detalhes em `app-boilerplate/README.md` e `CLAUDE.md`.
+  menu no topo direito com versão do build (5 toques → /admin), painel de admin
+  com KPIs gated por allowlist no banco, PWA com toast de atualização. Detalhes em `app-boilerplate/README.md` e `CLAUDE.md`.
 - Decisão de infra (07/2026): **Supabase + Vercel para começar**, com migração
   para AWS completa planejada só quando um app validar — o backend fica isolado
   em `src/core/backend/` + `src/core/auth/` justamente para isso (plano de
