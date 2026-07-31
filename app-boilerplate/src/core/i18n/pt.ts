@@ -13,6 +13,7 @@ export const pt = {
   'menu.feedback': 'Enviar feedback',
   'menu.language': 'Idioma',
   'menu.news': 'Novidades',
+  'menu.donate': 'Apoiar o app',
   'menu.login': 'Entrar',
 
   // Auth
@@ -49,6 +50,14 @@ export const pt = {
   'feedback.sentMailBody': 'Abrimos seu email com o feedback — é só enviar. 🙌',
   'feedback.error': 'Não foi possível enviar agora. Tente de novo em instantes.',
   'feedback.another': 'Enviar outro',
+
+  // Doações
+  'donate.title': 'Apoiar o app',
+  'donate.body':
+    'Este app é gratuito. Se ele é útil pra você, uma doação de qualquer valor ajuda a manter os servidores e o desenvolvimento.',
+  'donate.button': 'Fazer uma doação',
+  'donate.thanks': 'Qualquer valor faz diferença. Obrigado! 💜',
+  'donate.soon': 'As doações estarão disponíveis em breve.',
 
   // Idioma
   'language.title': 'Idioma',

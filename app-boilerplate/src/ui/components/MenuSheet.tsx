@@ -2,12 +2,14 @@ import type { Icon } from '@phosphor-icons/react'
 import {
   CaretRight,
   ChatCircleDots,
+  Heart,
   Megaphone,
   SignIn,
   Translate,
 } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { getUnreadCount } from '@core/changelog'
+import { donateConfigured } from '@core/donate'
 import type { MessageKey } from '@core/i18n'
 import { VersionLabel } from '@ui/components/VersionLabel'
 import { useAuth } from '@ui/hooks/useAuth'
@@ -25,10 +27,14 @@ interface MenuItem {
 }
 
 // Adicione aqui os itens específicos do seu app (configurações, importar, etc.).
+// Doação só aparece quando o Payment Link está configurado (build-time).
 const ITEMS: MenuItem[] = [
   { icon: ChatCircleDots, labelKey: 'menu.feedback', to: '/feedback' },
   { icon: Translate, labelKey: 'menu.language', to: '/idioma' },
   { icon: Megaphone, labelKey: 'menu.news', to: '/novidades' },
+  ...(donateConfigured
+    ? [{ icon: Heart, labelKey: 'menu.donate', to: '/apoiar' } as MenuItem]
+    : []),
   { icon: SignIn, labelKey: 'menu.login', to: '/login' },
 ]
 

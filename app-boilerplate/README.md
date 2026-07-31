@@ -8,6 +8,7 @@ a partir daqui já nasce com:
 - **Feedback** in-app (Supabase, aceita anônimo; fallback `mailto:` sem backend)
 - **Novidades** (changelog curado com badge de "não lido")
 - **Uso sem login** (guest-first) + criar conta / entrar com email+senha + **Google**
+- **Doações** via Stripe Payment Link (zero backend; o item só aparece quando configurado)
 - **Botão no topo direito** que abre um sheet com tudo isso (extensível por app)
 - **PWA** com toast de "nova versão disponível"
 
@@ -47,6 +48,28 @@ a partir daqui já nasce com:
    domínio do app (e `http://localhost:5173`) às Redirect URLs.
 4. Email: o SMTP padrão do Supabase é limitado/pouco confiável — para produção,
    configure SMTP customizado (ex.: Resend), como no Tutor Brew.
+
+### Doações (Stripe)
+
+O caminho padrão é **Payment Link** — zero backend e zero secret no app:
+
+1. No [dashboard do Stripe](https://dashboard.stripe.com): Product catalog →
+   crie o produto "Doação" com preço **"Customer chooses what to pay"** (o
+   doador escolhe o valor; defina um mínimo se quiser).
+2. Payment Links → crie o link para esse produto e copie a URL.
+3. Cole em `VITE_STRIPE_DONATE_URL` no `.env` e nas env vars da Vercel. O item
+   "Apoiar o app" aparece no menu automaticamente (sem a URL, ele some).
+
+A página de pagamento é hospedada pelo Stripe (PCI, cartão, Pix se habilitado
+na conta) — o app só abre a URL pública. Nenhuma chave do Stripe entra no
+bundle.
+
+**Upgrade** (quando quiser valores pré-definidos dentro do app, recibo com a
+cara do app ou registrar doadores no banco): uma Edge Function `stripe-checkout`
+que cria uma Checkout Session + um `stripe-webhook` que grava o evento — o
+Tutor Brew tem essa infra pronta como referência
+(`mtg-deck-builder/supabase/functions/stripe-{checkout,webhook}`). A secret key
+do Stripe vive **só** como secret da Edge Function, nunca no código.
 
 ## Arquitetura: "cérebro" vs "pele"
 

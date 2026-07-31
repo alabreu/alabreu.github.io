@@ -6,6 +6,7 @@ import { useLocaleStore } from '@core/state/localeStore'
 import { UpdateToast } from '@ui/components/UpdateToast'
 import { useAuthInit } from '@ui/hooks/useAuth'
 import { useTranslation } from '@ui/hooks/useTranslation'
+import { DonateScreen } from '@ui/screens/DonateScreen'
 import { FeedbackScreen } from '@ui/screens/FeedbackScreen'
 import { HomeScreen } from '@ui/screens/HomeScreen'
 import { LanguageScreen } from '@ui/screens/LanguageScreen'
@@ -60,6 +61,7 @@ export function App() {
           <Route path="/feedback" element={<FeedbackScreen />} />
           <Route path="/idioma" element={<LanguageScreen />} />
           <Route path="/novidades" element={<NewsScreen />} />
+          <Route path="/apoiar" element={<DonateScreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -15,6 +15,9 @@ Supabase + Vercel). Extraído dos padrões do Tutor Brew
   badge de não lido. Ao lançar feature relevante, adicionar entrada no TOPO.
 - Auth guest-first: `core/auth/client.ts` (email+senha e Google via Supabase),
   UI só enxerga `AuthUser`. Sem env vars o app roda 100% local — preservar isso.
+- Doações: `core/donate.ts` + `ui/screens/DonateScreen.tsx` — Stripe Payment
+  Link via `VITE_STRIPE_DONATE_URL` (URL pública, sem secret). O item do menu
+  só aparece configurado. Upgrade para Checkout dinâmico: ver README.
 - Menu do topo direito: `ui/components/MenuSheet.tsx` — itens específicos do
   app entram no array `ITEMS`.
 - PWA + toast de atualização (`vite-plugin-pwa` modo prompt).

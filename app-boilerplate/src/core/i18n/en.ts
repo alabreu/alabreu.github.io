@@ -15,6 +15,7 @@ export const en: Record<keyof typeof pt, string> = {
   'menu.feedback': 'Send feedback',
   'menu.language': 'Language',
   'menu.news': "What's new",
+  'menu.donate': 'Support the app',
   'menu.login': 'Sign in',
 
   // Auth
@@ -51,6 +52,14 @@ export const en: Record<keyof typeof pt, string> = {
   'feedback.sentMailBody': 'We opened your email with the feedback — just hit send. 🙌',
   'feedback.error': "Couldn't send right now. Try again in a moment.",
   'feedback.another': 'Send another',
+
+  // Donations
+  'donate.title': 'Support the app',
+  'donate.body':
+    'This app is free. If it helps you, a donation of any amount helps keep the servers and development going.',
+  'donate.button': 'Make a donation',
+  'donate.thanks': 'Every amount makes a difference. Thank you! 💜',
+  'donate.soon': 'Donations will be available soon.',
 
   // Language
   'language.title': 'Language',
