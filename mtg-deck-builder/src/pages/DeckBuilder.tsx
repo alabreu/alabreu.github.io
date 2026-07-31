@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Search, MoreHorizontal, Trash2, FileInput, FileOutput, LayoutList, ChevronsUpDown, Sparkles, History, LogOut, ListChecks, FolderInput, X, Pencil } from 'lucide-react';
-import { WizardHatIcon } from '../design-system/components/WizardHatIcon';
+import { TutorButton } from '../features/deck-builder/TutorButton';
 import { useDeckStore, materializeCategories } from '../store/useDeckStore';
 import { BottomSheet } from '../design-system/components/BottomSheet';
 import { Button } from '../design-system/components/Button';
@@ -450,26 +450,7 @@ export default function DeckBuilder() {
           }}
         >
           {/* Coach button */}
-          <button
-            onClick={() => setCoachOpen(true)}
-            style={{
-              width: '52px',
-              height: '52px',
-              flexShrink: 0,
-              borderRadius: '50%',
-              backgroundColor: 'var(--surface-2)',
-              border: '1px solid var(--border-default)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              WebkitTapHighlightColor: 'transparent',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <WizardHatIcon size={18} />
-          </button>
+          <TutorButton onClick={() => setCoachOpen(true)} />
 
           {/* Search pill */}
           <button

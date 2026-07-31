@@ -31,6 +31,13 @@
   --accent-hover: #f2df9d;
   --accent-subtle: rgba(240, 217, 140, 0.12);
   --accent-border: rgba(240, 217, 140, 0.3);
+  /* Dark accent tones for the Tutor button's mesh gradient. Kept dark on
+     purpose: the icon on top is white, and even the lightest of these holds
+     >4.5:1 against it for every accent preset. Derived in applyAccent(). */
+  --accent-mesh-base: #16181e;
+  --accent-mesh-1: #83744b;
+  --accent-mesh-2: #302e2b;
+  --accent-mesh-3: #5b533a;
 
   /* Status */
   --success: #2fae79;
@@ -306,6 +313,72 @@ select {
 /* Tab bar safe area */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Tutor button: a mesh gradient of dark accent tones, drifting slowly.
+   Three blurred blobs on different durations so their motion never visibly
+   loops, over a flat backdrop that fills the gaps. Only `transform` is
+   animated, so it stays on the compositor. */
+.tutor-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+  background-color: var(--accent-mesh-base);
+}
+
+.tutor-mesh span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  /* Enough to melt the edges, not so much that three blobs average into one
+     flat fill at this size. */
+  filter: blur(7px);
+  will-change: transform;
+}
+
+.tutor-mesh span:nth-child(1) {
+  background: var(--accent-mesh-1);
+  animation: tutor-blob-a 9s ease-in-out infinite alternate;
+}
+.tutor-mesh span:nth-child(2) {
+  background: var(--accent-mesh-2);
+  animation: tutor-blob-b 12s ease-in-out infinite alternate;
+}
+.tutor-mesh span:nth-child(3) {
+  background: var(--accent-mesh-3);
+  animation: tutor-blob-c 15s ease-in-out infinite alternate;
+}
+
+/* Travel ranges reach past the edges so the light and dark areas sweep the
+   whole face instead of pooling in the middle. */
+@keyframes tutor-blob-a {
+  0%   { transform: translate(-25%, -20%) scale(1); }
+  50%  { transform: translate(70%, 30%) scale(1.2); }
+  100% { transform: translate(20%, 75%) scale(0.9); }
+}
+@keyframes tutor-blob-b {
+  0%   { transform: translate(75%, 60%) scale(1.15); }
+  50%  { transform: translate(-15%, 5%) scale(0.85); }
+  100% { transform: translate(55%, -20%) scale(1.25); }
+}
+@keyframes tutor-blob-c {
+  0%   { transform: translate(30%, 78%) scale(0.9); }
+  50%  { transform: translate(72%, -12%) scale(1.25); }
+  100% { transform: translate(-20%, 40%) scale(1.1); }
+}
+
+/* Respect the OS "reduce motion" setting — the mesh still reads as a mesh
+   when it is standing still. */
+@media (prefers-reduced-motion: reduce) {
+  .tutor-mesh span {
+    animation: none;
+  }
 }
 
 /* Bulk-selection bar: on narrow phones (iPhone SE 1st gen) the selection

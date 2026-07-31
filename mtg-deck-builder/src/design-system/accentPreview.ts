@@ -48,7 +48,25 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-/** Sets the four --accent-* CSS custom properties from a single base hex,
+/** Near-blacks the mesh tones are mixed into, so they stay dark enough for a
+ *  white icon no matter how light the accent is. Two of them, one cool and
+ *  one warm: blending the same accent into different blacks gives the blobs
+ *  a slight hue difference, which is what makes the result read as a mesh
+ *  rather than one flat colour at different brightnesses. */
+const MESH_BLACK_NEUTRAL: [number, number, number] = [14, 14, 16];
+const MESH_BLACK_COOL: [number, number, number] = [11, 14, 24];
+const MESH_BLACK_WARM: [number, number, number] = [22, 14, 10];
+
+/** `amount` of the accent blended into a near-black — low values keep the
+ *  result dark while preserving the accent's hue. */
+function deepen(hex: string, amount: number, base = MESH_BLACK_NEUTRAL): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `#${toHex(base[0] + (r - base[0]) * amount)}${toHex(
+    base[1] + (g - base[1]) * amount
+  )}${toHex(base[2] + (b - base[2]) * amount)}`;
+}
+
+/** Sets the --accent-* CSS custom properties from a single base hex,
  *  mirroring the ratios of the original hand-picked gold values. */
 export function applyAccent(hex: string) {
   const root = document.documentElement.style;
@@ -56,6 +74,13 @@ export function applyAccent(hex: string) {
   root.setProperty('--accent-hover', lighten(hex, 0.15));
   root.setProperty('--accent-subtle', rgba(hex, 0.12));
   root.setProperty('--accent-border', rgba(hex, 0.3));
+  // Tutor button mesh. The spread is wide so the blobs actually read as a
+  // mesh at 52px; the lightest tone (0.5) still holds >4.5:1 against the
+  // white icon for every preset in ACCENT_PRESETS.
+  root.setProperty('--accent-mesh-base', deepen(hex, 0.05, MESH_BLACK_COOL));
+  root.setProperty('--accent-mesh-1', deepen(hex, 0.5, MESH_BLACK_WARM));
+  root.setProperty('--accent-mesh-2', deepen(hex, 0.16, MESH_BLACK_COOL));
+  root.setProperty('--accent-mesh-3', deepen(hex, 0.34, MESH_BLACK_NEUTRAL));
 }
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
