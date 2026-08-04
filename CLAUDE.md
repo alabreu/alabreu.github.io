@@ -3,22 +3,24 @@
 Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
 `mtg-deck-builder/` (React + Vite + TS).
 
-## Boilerplate de apps novos (`app-boilerplate/` — destino: repo template dedicado)
+## Boilerplate de apps novos (repo dedicado)
 
-- `app-boilerplate/` é o **template de partida para apps novos** (React + Vite +
-  TS + Tailwind v4 + Supabase + Vercel), extraído dos padrões do Tutor Brew e do
-  Komme (`alabreu/mesa-app`): i18n pt/en tipado, feedback in-app, changelog com
-  badge, uso sem login + email/senha + Google, doações via Stripe Payment Link,
-  menu no topo direito com versão do build (5 toques → /admin), painel de admin
-  com KPIs gated por allowlist no banco, PWA com toast de atualização. Detalhes em `app-boilerplate/README.md` e `CLAUDE.md`.
+- O **template de partida para apps novos** não mora mais aqui: vive no repo
+  dedicado `alabreu/app-boilerplate`, marcado como "Template repository" (app
+  novo nasce pelo botão "Use this template"). Foi desenvolvido nesta sessão,
+  na pasta `app-boilerplate/`, e promovido em 07/2026.
+- Stack: React + Vite + TS + Tailwind v4 + Supabase + Vercel, extraído dos
+  padrões do Tutor Brew e do Komme (`alabreu/mesa-app`): i18n pt/en tipado,
+  feedback in-app, changelog com badge, uso sem login + email/senha + Google,
+  doações via Stripe Payment Link, menu no topo direito com versão do build
+  (5 toques → /admin), painel de admin com KPIs gated por allowlist no banco,
+  PWA com toast de atualização, acessibilidade AA, lint/testes/CI e security
+  headers. Guias no próprio repo: `README.md`, `CLAUDE.md`, `ACCESSIBILITY.md`
+  e `SECURITY.md`.
 - Decisão de infra (07/2026): **Supabase + Vercel para começar**, com migração
   para AWS completa planejada só quando um app validar — o backend fica isolado
   em `src/core/backend/` + `src/core/auth/` justamente para isso (plano de
   migração no README do boilerplate).
-- A pasta está aqui **temporariamente**: o destino é o repo dedicado
-  `alabreu/app-boilerplate` marcado como "Template repository" (a sessão que a
-  criou não tinha permissão de criar repos). Depois de promovida, remover a
-  pasta daqui.
 
 ## Portfolio (repo dedicado)
 
