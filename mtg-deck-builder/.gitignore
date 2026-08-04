@@ -2,3 +2,10 @@ node_modules/
 dist/
 .DS_Store
 *.local
+
+# `*.local` já cobre o .env.local do Vite, mas não os demais: num repo
+# público um .env/.env.production commitado por engano vazaria a chave do
+# OpenRouter, do Stripe ou a service role do Supabase.
+.env
+.env.*
+!.env.example

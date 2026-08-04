@@ -48,12 +48,21 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p _site/mtg-deck-builder
+          # Este rsync copia a raiz inteira do repo para o site. Todo arquivo
+          # novo na raiz vira página pública automaticamente — por isso as
+          # exclusões abaixo: CLAUDE.md é documentação interna (arquitetura,
+          # ref do Supabase, roadmap) e não deve ser servido; .DS_Store expõe
+          # nomes de arquivos locais. Ao adicionar algo na raiz, decida
+          # conscientemente se aquilo deve ficar público.
           rsync -av \
             --exclude='mtg-deck-builder' \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='_site' \
             --exclude='*.tar' \
+            --exclude='CLAUDE.md' \
+            --exclude='.DS_Store' \
+            --exclude='.gitignore' \
             . _site/
           cp -r mtg-deck-builder/dist/* _site/mtg-deck-builder/
           touch _site/.nojekyll

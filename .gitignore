@@ -1,0 +1,15 @@
+# Repo público: nada de segredo pode ser commitado por acidente.
+# Variáveis de ambiente ficam no .env local (ignorado) ou em secrets do
+# GitHub Actions / da Edge Function — nunca versionadas.
+.env
+.env.*
+!.env.example
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Dependências e build
+node_modules/
+dist/
