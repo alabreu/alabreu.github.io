@@ -4,27 +4,32 @@ Passos que só você consegue fazer (têm segredos, acesso ao painel do Supabase
 OpenRouter, contas externas). Tudo é seguro de rodar mais de uma vez (migrações
 usam `if not exists` / `on conflict do nothing`).
 
-## ⭐ Ordem recomendada (faça de cima pra baixo)
+## ⭐ Estado atual (revisado em 04/08/2026)
 
-**Agora — ligar o que já está construído:**
-1. Rodar migrações `0005 → 0006 → 0007` + virar admin + excluir testers → **seção A**.
-2. Redeploy `coach-proxy` + deploy `admin-openrouter-status` → **seção B**.
-3. **Teto de gasto rígido no OpenRouter** → **seção C**. (crítico antes de qualquer público)
-4. (Opcional) Popular o snapshot "Por função" → **seção E**.
+**✅ Já feito:** seções A, B, C, E, G — migrações, admin, teto de gasto no
+OpenRouter, snapshot "Por função", exclusão de conta.
 
-**Antes de divulgar publicamente (ainda grátis):**
-5. Ativar **Cloudflare Email Routing** (e-mail de suporte) → **seção D** → eu faço o Worker.
-6. **Deploy da Edge Function de exclusão de conta** → **seção G** (depois que eu construir o código).
-7. (Opcional) Criar conta de **monitoramento de erros / analytics** → **seção H** → eu ligo.
+**🔵 Ativo agora — só isto:**
+1. **Cloudflare Email Routing** (`contato@tutor-brew.com`) → **seção D**.
+   Depois me passe o endereço pra eu colocar nos Termos/Privacidade.
+2. **Leaked Password Protection** no Supabase Auth (1 clique) → **seção D**.
+3. **Rodar o workflow de deploy** quando eu avisar que tem pacote no `master`
+   (Actions → "Deploy to GitHub Pages" → Run workflow). Meu token dá 403 pra
+   isso, então sempre depende de você — ou do cron horário.
 
-**Antes de cobrar (monetização):**
-8. Definir **preços/trial/reembolso** e criar **conta Stripe** → **seção I** → eu construo pagamento + gating.
-9. **Revisão jurídica** + aperto dos termos → **seção F**.
-10. **Nota fiscal / tributação** → **seção I**.
+**⏸️ Estacionado (voltar quando fizer sentido, sem pressa):**
+- **Stripe** → **seção I**. A infra do servidor já está pronta e no ar em modo
+  teste; falta só plugar os segredos. Só volta quando a monetização entrar no
+  radar de verdade — hoje está longe disso.
+- **Sentry / analytics** → **seção H**. Vale quando houver volume de uso que
+  justifique. Antes disso, o feedback dos testers cobre.
+- **Repo dedicado** para o Tutor Brew (hoje vive em `alabreu.github.io`).
+  Não é pré-requisito da migração de hospedagem — os dois são independentes.
+  O melhor momento é com `dev` e `master` iguais.
+- **Jurídico / tributação** → seções F e I. Só antes de cobrar.
 
-> O que **não depende de você** (landing + OG, exclusão de conta no app, onboarding/
-> deck de exemplo, FAQ, página de preços) eu construo e faço o deploy sozinho — só
-> aparecem aqui os passos que exigem sua conta/segredo/deploy.
+> O que **não depende de você** eu construo e faço o deploy sozinho — só aparecem
+> aqui os passos que exigem sua conta/segredo/clique.
 
 ## A. Banco de dados — rodar migrações no SQL Editor do Supabase
 
@@ -165,13 +170,40 @@ Precisam de conta externa; **a fiação no app eu faço** assim que você me pas
     contador (MEI/PF), e revisão jurídica (seção F). Aí eu ligo a UI de assinatura
     e o gating do Tutor.
 
-## D. Opcionais (quando quiser)
+## D. Ativos agora
+
+### D1. E-mail de contato — Cloudflare Email Routing
+
+Passo a passo para a **UI nova** (Cloudflare renovou a tela; a ordem mudou —
+o DNS vem antes de habilitar). Em `dash.cloudflare.com` → domínio
+`tutor-brew.com` → **Email** → **Email Routing**:
+
+1. Aba **Settings** → seção **DNS records** → botão **Add missing records**.
+   Isso cria os MX (`route1/2/3.mx.cloudflare.net`) e o TXT de SPF. O topo da
+   página deve sair de "DNS records: Not configured" para configurado.
+2. O **Status** no topo deve virar **Enabled**. Se continuar "Disabled", há um
+   botão de habilitar no **Overview** — clique.
+3. Aba **Destination Addresses** → **Add address** → o Gmail pessoal.
+4. **Abra o Gmail e clique no link de verificação** da Cloudflare. Sem esse
+   passo o encaminhamento não funciona, e é o mais fácil de esquecer.
+5. Aba **Routing rules** → **Create address**: `contato` @ tutor-brew.com →
+   ação **Send to an email** → destino o Gmail verificado → **Save**.
+6. Teste mandando um e-mail de outra conta para `contato@tutor-brew.com`.
+
+Não afeta o site: Email Routing usa registros **MX**, independentes do tráfego
+HTTP que o Worker `tutor-brew-proxy` atende.
+
+### D2. Leaked Password Protection (1 clique)
+
+Supabase → **Authentication** → **Policies** (ou Providers → Email) →
+ativar **Leaked Password Protection**. Checa a senha do cadastro contra o
+HaveIBeenPwned. Apontado pelo advisor de segurança do Supabase; é grátis.
+
+### D3. Opcionais sem pressa
 
 - **Reduzir expiração do OTP** (Auth → Email → OTP expiry) pra endurecer o magic link.
 - **TCGplayer / afiliado:** cadastrar na Impact, pegar o link base e setar o secret
   `VITE_TCGPLAYER_AFFILIATE_BASE` no repositório (o código já é no-op sem ele).
-- **E-mail de contato:** ativar Cloudflare Email Routing → me avisar que eu construo
-  o Worker que joga os e-mails na mesma caixa de entrada do dashboard.
 
 ---
 
