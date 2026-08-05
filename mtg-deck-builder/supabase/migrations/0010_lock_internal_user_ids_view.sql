@@ -1,0 +1,14 @@
+-- public.internal_user_ids (admins UNION excluded_users) was granted to anon
+-- and authenticated. Being a view, it runs with the creator's rights, so it
+-- bypassed the RLS that deliberately locks both underlying tables — anyone,
+-- signed in or not, could list the admin and tester user ids over PostgREST
+-- (GET /rest/v1/internal_user_ids with just the public anon key).
+--
+-- The view is only ever read from inside admin_metrics() and admin_feedback(),
+-- which are SECURITY DEFINER and therefore run as the owner; no client or edge
+-- function reads it directly. So revoking the public grants closes the leak
+-- without touching the dashboard.
+--
+-- Found by `get_advisors(type: security)`, which flags it as
+-- 0010_security_definer_view.
+revoke all on public.internal_user_ids from anon, authenticated;
