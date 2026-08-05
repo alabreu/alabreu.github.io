@@ -24,11 +24,7 @@ integration"). A alternativa é não fazer nada e esperar o cron horário.
 
 ## 🟡 Aberto
 
-### Confirmar a entrega do e-mail de contato
-Mande um e-mail de outra conta para `contato@tutor-brew.com` e veja se cai na
-caixa. É o único teste que prova a corrente inteira (MX → regra de roteamento →
-destino verificado). Se não chegar, o suspeito nº 1 é o link de verificação do
-destino não ter sido clicado no Gmail.
+Nada. Só o recorrente acima.
 
 ---
 
@@ -104,3 +100,5 @@ por alguns minutos. O resto (mover arquivos preservando histórico, workflow,
 | Deploy da Edge Function `delete-account` | jul/2026 |
 | Cloudflare Email Routing → `contato@tutor-brew.com` | 04/08/2026 |
 | Leaked Password Protection no Supabase Auth | 05/08/2026 |
+| Entrega do e-mail testada ponta a ponta (Activity Log: `Forwarded`) | 05/08/2026 |
+| Deploy do pacote com seleção múltipla, botão do Tutor, vidro e contato nos documentos (sha `6cbc579`) | 05/08/2026 |
