@@ -28,14 +28,24 @@ jobs:
         working-directory: mtg-deck-builder
         run: node scripts/build-function-tags.mjs
 
+      # Cards that override the singleton rule ("A deck can have any number of
+      # cards named…"). continue-on-error: a Scryfall hiccup here must not stop
+      # the function-tag refresh above from being committed — and the script
+      # already refuses to blank the list on an empty answer.
+      - name: Refresh "any number of copies" cards
+        continue-on-error: true
+        working-directory: mtg-deck-builder
+        run: node scripts/build-any-number-cards.mjs
+
       - name: Commit if changed
         run: |
-          if git diff --quiet -- mtg-deck-builder/public/functionTags.json; then
-            echo "No changes to function tags."
+          FILES="mtg-deck-builder/public/functionTags.json mtg-deck-builder/src/features/deck-builder/anyNumberCards.ts"
+          if git diff --quiet -- $FILES; then
+            echo "No changes to the Scryfall snapshots."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add mtg-deck-builder/public/functionTags.json
-          git commit -m "chore: refresh function-tag snapshot from Scryfall"
+          git add $FILES
+          git commit -m "chore: refresh Scryfall snapshots (function tags + any-number cards)"
           git push

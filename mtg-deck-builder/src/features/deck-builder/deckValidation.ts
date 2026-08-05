@@ -1,4 +1,5 @@
 import { Deck, DeckCard } from '../../types';
+import { maxCopiesAllowed } from './anyNumberCards';
 
 export interface DeckError {
   id: string;
@@ -9,18 +10,17 @@ export interface DeckError {
 
 const BASIC_LAND_NAMES = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
 
-function isBasicLand(card: DeckCard): boolean {
+/** Copies this card may legally hold: basics and "any number of" cards are
+ *  unbounded, Seven Dwarves/Nazgûl have their own caps, everything else is 1. */
+function copyLimit(card: DeckCard): number {
   const baseName = card.name.replace(/^Snow-Covered /, '');
-  if (BASIC_LAND_NAMES.has(baseName)) return true;
-  return card.typeLine?.includes('Basic Land') ?? false;
+  if (BASIC_LAND_NAMES.has(baseName)) return Infinity;
+  return maxCopiesAllowed(card.name, card.typeLine ?? null);
 }
 
 /**
  * Lightweight Commander-format validation, in the spirit of Archidekt's deck
- * errors list. Doesn't special-case cards with "any number of copies" text
- * (e.g. Relentless Rats, Persistent Petitioners) — that would need oracle
- * text we don't persist on DeckCard — so those show as a singleton warning
- * until we track that.
+ * errors list.
  */
 export function validateDeck(deck: Deck): DeckError[] {
   const errors: DeckError[] = [];
@@ -53,13 +53,15 @@ export function validateDeck(deck: Deck): DeckError[] {
     });
   }
 
-  const tooMany = deck.cards.filter((c) => c.quantity > 1 && !isBasicLand(c));
+  const tooMany = deck.cards.filter((c) => c.quantity > copyLimit(c));
   if (tooMany.length > 0) {
-    errors.push({
-      id: 'singleton',
-      message: `${tooMany.length} ${tooMany.length === 1 ? 'carta excede' : 'cartas excedem'} o limite de 1 cópia (formato singleton).`,
-      cardIds: tooMany.map((c) => c.scryfallId),
-    });
+    // Cards with their own cap (Seven Dwarves, Nazgûl) break a different rule
+    // than the plain singleton one, so say which limit was passed.
+    const message =
+      tooMany.length === 1
+        ? `"${tooMany[0].name}" excede o limite de ${copyLimit(tooMany[0])} ${copyLimit(tooMany[0]) === 1 ? 'cópia' : 'cópias'}.`
+        : `${tooMany.length} cartas excedem o limite de cópias permitido.`;
+    errors.push({ id: 'singleton', message, cardIds: tooMany.map((c) => c.scryfallId) });
   }
 
   return errors;
