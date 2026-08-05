@@ -57,13 +57,6 @@ código para builds sem Supabase.)
 
 ## Dívidas técnicas conhecidas
 
-### Cartas com "any number of copies"
-`deckValidation.ts` marca como erro de singleton qualquer carta com 2+ cópias
-que não seja terreno básico. Isso é **falso positivo** para Relentless Rats,
-Persistent Petitioners e afins, que dizem no texto "a deck can have any number
-of cards named…". Corrigir exige persistir o `oracle_text` no `DeckCard`, o que
-hoje não fazemos.
-
 ### Repo dedicado + migração de hospedagem
 O Tutor Brew vive dentro de `alabreu/alabreu.github.io` (repo de user-pages), na
 pasta `mtg-deck-builder/`. Os dois movimentos são **independentes** — o Vercel
@@ -71,13 +64,19 @@ aceita apontar pra uma subpasta, então o repo dedicado não é pré-requisito d
 migração de hospedagem. Melhor momento: com `dev` e `master` iguais. Envolve
 ações suas (ver `manual-backlog.md`).
 
-### Worker de e-mail → dashboard
-Com o Email Routing ativo, dá pra fazer um Worker que joga os e-mails recebidos
-na mesma caixa de entrada do dashboard admin, junto do feedback in-app.
-
 ---
 
 ## Ideias soltas
 
 - Mais ações em lote no sheet "Editar" da seleção múltipla: alterar quantidade,
   marcar como maybeboard, etc. O sheet foi desenhado pra crescer.
+
+---
+
+## ✅ Feito
+
+- **Cartas "any number of copies"** (05/08/2026) — limite de cópias agora é por
+  carta, com teto próprio para Seven Dwarves e Nazgûl. Lista gerada do Scryfall
+  e atualizada pelo workflow mensal.
+- **Worker de e-mail → dashboard** (05/08/2026) — código pronto; falta você
+  aplicar (ver `manual-backlog.md`).

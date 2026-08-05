@@ -10,12 +10,20 @@ interface InboxMsg {
   id: string | number;
   source: string;
   type: string;
+  /** Only set for support e-mails (source 'email'). */
+  subject: string | null;
   message: string;
   contact_email: string | null;
   page_context: string | null;
   user_email: string | null;
   created_at: string;
 }
+
+const INBOX_KINDS: Record<string, { label: string; fg: string; bg: string }> = {
+  bug: { label: 'bug', fg: 'var(--error)', bg: 'rgba(248,113,113,0.12)' },
+  email: { label: 'e-mail', fg: 'var(--accent)', bg: 'var(--accent-subtle)' },
+  feature: { label: 'ideia', fg: 'var(--success)', bg: 'rgba(47,174,121,0.12)' },
+};
 interface Metrics {
   generated_at: string;
   totals: { users: number; decks: number; coach_messages: number; coach_messages_today: number; cost_micro_usd_30d: number };
@@ -99,19 +107,23 @@ function Inbox() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {msgs.map((m) => {
-        const isBug = m.type === 'bug';
+        const kind = INBOX_KINDS[m.type] ?? INBOX_KINDS.feature;
         const contact = m.contact_email || m.user_email;
         return (
           <div key={m.id} style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: isBug ? 'var(--error)' : 'var(--success)', backgroundColor: isBug ? 'rgba(248,113,113,0.12)' : 'rgba(47,174,121,0.12)', padding: '1px 6px', borderRadius: '4px' }}>
-                {isBug ? 'bug' : 'ideia'}
+              <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: kind.fg, backgroundColor: kind.bg, padding: '1px 6px', borderRadius: '4px' }}>
+                {kind.label}
               </span>
-              {m.source !== 'in_app' && (
+              {/* 'email' already says where it came from — the source chip would repeat it */}
+              {m.source !== 'in_app' && m.source !== 'email' && (
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', backgroundColor: 'var(--surface-3)', padding: '1px 6px', borderRadius: '4px' }}>{m.source}</span>
               )}
               <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto' }}>{new Date(m.created_at).toLocaleString('pt-BR')}</span>
             </div>
+            {m.subject && (
+              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{m.subject}</p>
+            )}
             <p style={{ fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.message}</p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '4px', flexWrap: 'wrap' }}>
               {contact && (
