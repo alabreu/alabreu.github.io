@@ -2,7 +2,7 @@ import { LegalPage, H2, P, UL, LI } from './LegalPage';
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Política de Privacidade" updated="16 de julho de 2026">
+    <LegalPage title="Política de Privacidade" updated="4 de agosto de 2026">
       <P>
         Esta Política explica quais dados o Tutor Brew coleta, como os usamos e quais são os seus
         direitos, em conformidade com a Lei Geral de Proteção de Dados (LGPD).
@@ -64,7 +64,10 @@ export default function PrivacyPage() {
       <H2>6. Seus direitos</H2>
       <P>
         Você pode solicitar acesso, correção, exclusão, portabilidade dos seus dados e a revogação do
-        consentimento. Para exercer esses direitos, use a opção "Enviar feedback" no menu do app.
+        consentimento. Para exercer esses direitos, escreva para{' '}
+        <a href="mailto:contato@tutor-brew.com" style={{ color: 'var(--accent)' }}>contato@tutor-brew.com</a>{' '}
+        ou use a opção "Enviar feedback" no menu do app. Você também pode excluir sua conta e todos
+        os seus dados a qualquer momento, sozinho, em Configurações → Excluir conta.
       </P>
 
       <H2>7. Transferência internacional</H2>
@@ -92,8 +95,10 @@ export default function PrivacyPage() {
 
       <H2>11. Contato</H2>
       <P>
-        Para dúvidas sobre privacidade ou para exercer seus direitos, use a opção "Enviar feedback"
-        no menu do app.
+        Para dúvidas sobre privacidade ou para exercer seus direitos, escreva para{' '}
+        <a href="mailto:contato@tutor-brew.com" style={{ color: 'var(--accent)' }}>contato@tutor-brew.com</a>.
+        Respondemos em até 15 dias, o prazo previsto na LGPD. Você também pode usar a opção
+        "Enviar feedback" no menu do app.
       </P>
     </LegalPage>
   );

@@ -1,8 +1,15 @@
 import { supabase } from './supabase';
 
-// Bump when the Terms/Privacy change materially. Matches the "Última atualização"
-// shown on the legal pages. Recorded per user in public.terms_acceptance so we
+// Bump ONLY when the Terms/Privacy change materially — i.e. when what the user
+// agreed to actually changed. Recorded per user in public.terms_acceptance so we
 // have an auditable trail of who accepted which version (LGPD).
+//
+// This deliberately does NOT track every edit, so it can lag the "Última
+// atualização" date on the pages. On 04/08/2026 they gained a support e-mail
+// (contato@tutor-brew.com) for exercising data-subject rights: that widens what
+// the user can do and removes nothing, so it needs no re-consent. Bumping for it
+// would silently write "accepted the 04/08 version" for people who never saw it
+// — a worse audit trail than leaving it alone.
 export const TERMS_VERSION = '2026-07-16';
 
 /** Record that the current user accepted the current version. Idempotent

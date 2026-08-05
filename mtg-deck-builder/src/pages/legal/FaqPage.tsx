@@ -2,7 +2,7 @@ import { LegalPage, H2, P } from './LegalPage';
 
 export default function FaqPage() {
   return (
-    <LegalPage title="Ajuda / FAQ" updated="16 de julho de 2026">
+    <LegalPage title="Ajuda / FAQ" updated="4 de agosto de 2026">
       <H2>O que é o Tutor Brew?</H2>
       <P>
         Um aplicativo para montar, organizar e analisar decks de Magic: The Gathering (foco no
@@ -54,7 +54,9 @@ export default function FaqPage() {
 
       <H2>Achei um bug ou tenho uma sugestão. O que faço?</H2>
       <P>
-        Use "Enviar feedback" no menu da tela inicial — sua mensagem chega direto para nós.
+        Use "Enviar feedback" no menu da tela inicial — sua mensagem chega direto para nós. Se
+        preferir e-mail, escreva para{' '}
+        <a href="mailto:contato@tutor-brew.com" style={{ color: 'var(--accent)' }}>contato@tutor-brew.com</a>.
       </P>
     </LegalPage>
   );

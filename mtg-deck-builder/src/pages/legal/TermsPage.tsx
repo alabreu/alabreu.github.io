@@ -2,7 +2,7 @@ import { LegalPage, H2, P, UL, LI } from './LegalPage';
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Termos de Uso" updated="16 de julho de 2026">
+    <LegalPage title="Termos de Uso" updated="4 de agosto de 2026">
       <P>
         Bem-vindo ao Tutor Brew. Estes Termos de Uso regem o uso do aplicativo e dos serviços
         oferecidos aqui. Ao criar uma conta ou usar o app, você concorda com estes Termos. Se não
@@ -83,7 +83,9 @@ export default function TermsPage() {
 
       <H2>11. Contato</H2>
       <P>
-        Para dúvidas sobre estes Termos, use a opção "Enviar feedback" no menu do app.
+        Para dúvidas sobre estes Termos, escreva para{' '}
+        <a href="mailto:contato@tutor-brew.com" style={{ color: 'var(--accent)' }}>contato@tutor-brew.com</a>{' '}
+        ou use a opção "Enviar feedback" no menu do app.
       </P>
     </LegalPage>
   );
