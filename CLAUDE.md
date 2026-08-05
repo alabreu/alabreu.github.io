@@ -50,6 +50,20 @@ Raiz do GitHub Pages do usuário + **MTG Commander Deck Builder** em
 - Fase 3 (social) continua para quando o usuário disser **"vamos fazer o
   backend"** de novo, referindo-se ao restante do plano.
 
+## Backlogs — dois arquivos, dois donos
+
+Manter os dois atualizados conforme as coisas forem decididas ou concluídas:
+
+- `mtg-deck-builder/docs/manual-backlog.md` — **só o que depende do usuário**:
+  contas externas, segredos, cliques em painel sem acesso de escrita. Nada aqui
+  eu consigo fazer sozinho.
+- `mtg-deck-builder/docs/project-backlog.md` — **ideias que eu construo
+  sozinho**, guardadas até virarem prioridade. Nada aqui está esperando o usuário.
+
+Quando o usuário perguntar "qual meu backlog", responder com o manual; "backlog
+do projeto" é o outro. Verificar o estado real (git, Supabase, advisors) antes de
+listar — os documentos podem estar defasados.
+
 ## Segurança
 
 - NUNCA commitar a chave do OpenRouter nem a Supabase **service role key**.
