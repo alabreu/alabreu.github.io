@@ -25,33 +25,40 @@ integration"). A alternativa é não fazer nada e esperar o cron horário.
 ## 🟡 Aberto
 
 ### Ligar a caixa de entrada por e-mail
-O código está pronto e commitado; faltam três passos que exigem seus painéis.
+✅ **Lado Supabase pronto** — migração `0011` aplicada e a função `email-inbox`
+deployada (com `verify_jwt` desligado, que é o correto: a Cloudflare não tem
+sessão do Supabase e a autenticação é pelo segredo abaixo). Verifiquei inserindo
+uma linha `type='email'` e conferindo que ela sai no payload do dashboard com o
+assunto — depois removi a linha de teste.
 
-**a) Supabase — migração e função** (o conector MCP estava fora quando construí):
-1. SQL Editor → colar e rodar `supabase/migrations/0011_email_inbox.sql`.
-2. Criar um segredo compartilhado. Gere um valor aleatório, por exemplo:
-   `openssl rand -hex 32`
-3. Project Settings → Edge Functions → Secrets → criar `EMAIL_INBOX_SECRET`
-   com esse valor.
-4. Deployar a função (Supabase CLI):
-   `supabase functions deploy email-inbox --no-verify-jwt`
-   O `--no-verify-jwt` é obrigatório: a Cloudflare não tem sessão do Supabase,
-   e a autenticação é pelo segredo acima.
+Faltam três passos nos seus painéis:
 
-**b) Cloudflare — criar o Worker:**
-1. Workers & Pages → Create → Worker → colar `cloudflare/email-worker.js` → Deploy.
-2. Settings → Variables, adicionar:
-   - `FORWARD_TO` = seu Gmail (o mesmo destino já verificado)
-   - `INBOX_URL` = `https://rxshomnccqfcarvujswq.supabase.co/functions/v1/email-inbox`
-   - `INBOX_SECRET` = o mesmo valor do passo (a.2) — marcar **Encrypt**
+**1) Criar o segredo compartilhado.** Gere um valor aleatório:
+```
+openssl rand -hex 32
+```
+Guarde — ele vai nos passos 2 e 3, e precisa ser **idêntico** nos dois.
 
-**c) Cloudflare — apontar o endereço pro Worker:**
+**2) Supabase.** Project Settings → Edge Functions → Secrets → adicionar
+`EMAIL_INBOX_SECRET` com esse valor.
+
+**3) Cloudflare — criar o Worker:**
+- Workers & Pages → Create → Worker → colar `cloudflare/email-worker.js` → Deploy.
+- Settings → Variables, adicionar:
+  - `FORWARD_TO` = seu Gmail (o mesmo destino já verificado)
+  - `INBOX_URL` = `https://rxshomnccqfcarvujswq.supabase.co/functions/v1/email-inbox`
+  - `INBOX_SECRET` = o valor do passo 1 — marcar **Encrypt**
+
+**4) Cloudflare — apontar o endereço pro Worker:**
 Email → Email Routing → Routing rules → editar `contato@tutor-brew.com` →
 ação **Send to a Worker** → escolher o Worker criado.
 
 ⚠️ O Worker **encaminha pro Gmail primeiro** e só depois manda pro dashboard, então
 trocar a regra não faz você perder e-mail: se o Supabase estiver fora, a mensagem
 chega no Gmail do mesmo jeito e só a cópia do dashboard é perdida.
+
+Enquanto o passo 2 não for feito, a função responde 500 `not_configured` — ou
+seja, nada quebra, só não grava.
 
 Depois, mande um e-mail de teste e me avise — ele deve aparecer em `/#/admin`
 com o chip "e-mail", junto do feedback in-app.
