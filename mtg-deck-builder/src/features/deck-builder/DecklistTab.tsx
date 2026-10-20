@@ -14,6 +14,7 @@ import { useLongPress } from '../../lib/useLongPress';
 import { isCategoryCounted, countedCards } from '../../lib/deckCounting';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
 import { DeckErrorsSheet } from './DeckErrorsSheet';
+import { DeckAnalyticsSheet } from './DeckAnalyticsSheet';
 
 interface DecklistTabProps {
   deck: Deck;
@@ -571,6 +572,7 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
   const [errorsOpen, setErrorsOpen] = React.useState(false);
 
   const errors = React.useMemo(() => validateDeck(deck), [deck]);
+  const [analyticsOpen, setAnalyticsOpen] = React.useState(false);
   const errorCardIds = React.useMemo(() => collectErrorCardIds(errors), [errors]);
 
   function startEditingName() {
@@ -845,9 +847,15 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
         </div>
       </div>
 
-      {/* Stats bar */}
-      <div
+      {/* Stats bar — tap anywhere for the full analytics sheet */}
+      <button
+        onClick={() => setAnalyticsOpen(true)}
+        aria-label="Ver estatísticas do deck"
         style={{
+          width: '100%',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          WebkitTapHighlightColor: 'transparent',
           display: 'flex',
           gap: '8px',
           marginBottom: '16px',
@@ -862,7 +870,9 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
         <StatItem icon={<MapPin size={13} />} label="Terrenos" value={landCount} />
         <div style={{ width: '1px', backgroundColor: 'var(--border-subtle)' }} />
         <StatItem icon={<Zap size={13} />} label="CMC médio" value={avgCmc} />
-      </div>
+      </button>
+
+      <DeckAnalyticsSheet isOpen={analyticsOpen} onClose={() => setAnalyticsOpen(false)} deck={deck} />
 
       {/* Cards by category */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

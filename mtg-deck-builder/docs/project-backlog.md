@@ -75,6 +75,9 @@ ações suas (ver `manual-backlog.md`).
 
 ## ✅ Feito
 
+- **Estatísticas do deck** (20/10/2026) — tocar no bloco de estatísticas abre
+  curva de mana e pizzas de cores, fontes de mana (produced_mana do Scryfall,
+  com fallback nos tipos básicos) e tipos de carta.
 - **Atalho "Mover para seção" na carta** (20/10/2026) — botão à direita,
   na altura do (−), abre a lista de seções (ou cria uma nova).
 - **Seções fora da contagem** (20/10/2026) — interruptor "Conta no deck" em
