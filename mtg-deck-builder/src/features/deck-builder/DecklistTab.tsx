@@ -682,6 +682,14 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
     setSheetOpen(true);
   }, []);
 
+  // Prev/next navigation inside the card sheet follows the list on screen:
+  // section order, skipping collapsed sections.
+  const navList = React.useMemo(
+    () => sortedCategories.filter((cat) => expandedSections[cat] !== false).flatMap((cat) => grouped[cat] ?? []),
+    [sortedCategories, expandedSections, grouped]
+  );
+  const navIndex = selectedCard ? navList.findIndex((c) => c.scryfallId === selectedCard.scryfallId) : -1;
+
   // Quick add (basic lands only) / remove one copy, straight from the decklist.
   const handleQuickAdd = React.useCallback((card: DeckCard) => addCard(deck.id, card), [addCard, deck.id]);
   const handleQuickRemove = React.useCallback((card: DeckCard) => removeCard(deck.id, card.scryfallId), [removeCard, deck.id]);
@@ -900,6 +908,8 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
 
       {/* Card detail bottom sheet */}
       <CardBottomSheet
+        onPrev={navIndex > 0 ? () => setSelectedCard(navList[navIndex - 1]) : undefined}
+        onNext={navIndex >= 0 && navIndex < navList.length - 1 ? () => setSelectedCard(navList[navIndex + 1]) : undefined}
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}
         card={selectedCard ? deckCardToScryfall(selectedCard) : null}

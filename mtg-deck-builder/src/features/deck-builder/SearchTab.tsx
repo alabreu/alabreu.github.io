@@ -536,6 +536,9 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
     removeCard(deck.id, card.id);
   }
 
+  // Prev/next inside the card sheet walks the loaded results in order.
+  const searchNavIndex = selectedCard ? results.findIndex((c) => c.id === selectedCard.id) : -1;
+
   function handleCardClick(card: ScryfallCard) {
     setSelectedCard(card);
     setSheetOpen(true);
@@ -1102,6 +1105,8 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
 
       {/* Card detail bottom sheet */}
       <CardBottomSheet
+        onPrev={searchNavIndex > 0 ? () => setSelectedCard(results[searchNavIndex - 1]) : undefined}
+        onNext={searchNavIndex >= 0 && searchNavIndex < results.length - 1 ? () => setSelectedCard(results[searchNavIndex + 1]) : undefined}
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}
         card={selectedCard}

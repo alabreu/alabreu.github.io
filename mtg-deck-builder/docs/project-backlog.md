@@ -75,6 +75,9 @@ ações suas (ver `manual-backlog.md`).
 
 ## ✅ Feito
 
+- **Navegar entre cartas no detalhe** (20/10/2026) — swipe lateral na faixa
+  da imagem, setas ←/→ no teclado ou os botões laterais; vale no deck (seções
+  abertas, na ordem da tela) e na busca (resultados carregados).
 - **Estatísticas do deck** (20/10/2026) — tocar no bloco de estatísticas abre
   curva de mana e pizzas de cores, fontes de mana (produced_mana do Scryfall,
   com fallback nos tipos básicos) e tipos de carta.

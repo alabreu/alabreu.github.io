@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useDrag } from '@use-gesture/react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Badge } from '../../design-system/components/Badge';
@@ -8,7 +9,7 @@ import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { scryfallToDeckCard, canBeCommanderCard } from './cardUtils';
-import { Crown, Plus, Minus, ChevronDown, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
+import { Crown, Plus, Minus, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
 import { getUsdBrlRate, formatBrl, ligaMagicUrl } from '../../lib/usdBrl';
 import { getPriceSource, tcgplayerUrl } from '../../lib/priceSource';
 
@@ -55,6 +56,19 @@ interface CardBottomSheetProps {
   deckId: string;
   existingCard?: DeckCard | null;
   deck?: Deck | null;
+  /** Previous/next card of the list the sheet was opened from. Swiping the
+   *  image strip or pressing ←/→ calls them; omitted at the ends of the list. */
+  onPrev?: () => void;
+  onNext?: () => void;
+}
+
+const SWIPE_MIN_PX = 50;
+
+/** True while typing in a field — arrow keys belong to the caret then. */
+function isEditableTarget(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null;
+  if (!el) return false;
+  return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
 }
 
 function parseManaSymbols(manaCost: string | null): ManaColor[] {
@@ -83,6 +97,8 @@ export function CardBottomSheet({
   deckId,
   existingCard,
   deck,
+  onPrev,
+  onNext,
 }: CardBottomSheetProps) {
   const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory, patchCardData } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
@@ -144,6 +160,47 @@ export function CardBottomSheet({
   }, [isOpen, cardProp?.id, cardProp?.set_name]);
 
   const card = fetchedCard && cardProp && fetchedCard.id === cardProp.id ? fetchedCard : cardProp;
+
+  // Which way the last navigation went, so the new image slides in from that side.
+  const [navDir, setNavDir] = React.useState<1 | -1 | 0>(0);
+  const navRef = React.useRef({ onPrev, onNext });
+  navRef.current = { onPrev, onNext };
+  const goPrev = React.useCallback(() => {
+    if (!navRef.current.onPrev) return;
+    setNavDir(-1);
+    navRef.current.onPrev();
+  }, []);
+  const goNext = React.useCallback(() => {
+    if (!navRef.current.onNext) return;
+    setNavDir(1);
+    navRef.current.onNext();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setNavDir(0);
+      return;
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target) || e.altKey || e.metaKey || e.ctrlKey) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, goPrev, goNext]);
+
+  // Horizontal swipe across the image strip. pan-y keeps the sheet scrolling
+  // vertically; only a clearly sideways drag counts.
+  const bindSwipe = useDrag(
+    ({ last, movement: [mx, my] }) => {
+      if (!last) return;
+      if (Math.abs(mx) < SWIPE_MIN_PX || Math.abs(mx) < Math.abs(my) * 1.5) return;
+      if (mx < 0) goNext();
+      else goPrev();
+    },
+    { filterTaps: true, pointer: { touch: true } }
+  );
 
   // Keep the quantity field in sync with the deck (button presses, reopen, etc.)
   React.useEffect(() => {
@@ -280,9 +337,20 @@ export function CardBottomSheet({
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={card.name} maxHeight="92dvh">
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Card image with DFC flip */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-          <div style={{ maxWidth: '220px', width: '100%', perspective: '900px' }}>
+        {/* Card image with DFC flip. The whole strip is the swipe area. */}
+        <div
+          {...bindSwipe()}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', position: 'relative', touchAction: 'pan-y' }}
+        >
+          {onPrev && <NavArrow side="left" onClick={goPrev} />}
+          {onNext && <NavArrow side="right" onClick={goNext} />}
+          <motion.div
+            key={card.id}
+            initial={navDir === 0 ? false : { x: navDir * 48, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            style={{ maxWidth: '220px', width: '100%', perspective: '900px' }}
+          >
             <motion.div
               animate={{ rotateY: flipped ? 180 : 0 }}
               transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
@@ -307,7 +375,7 @@ export function CardBottomSheet({
                 </div>
               )}
             </motion.div>
-          </div>
+          </motion.div>
 
           {isDfc && (
             <button
@@ -644,5 +712,37 @@ export function CardBottomSheet({
         </div>
       </div>
     </BottomSheet>
+  );
+}
+
+/** Side arrow over the image strip: a visible cue that swiping works, and a
+ *  click target for mouse users. */
+function NavArrow({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
+  const Icon = side === 'left' ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      onClick={onClick}
+      aria-label={side === 'left' ? 'Carta anterior' : 'Próxima carta'}
+      style={{
+        position: 'absolute',
+        top: '40%',
+        [side]: 0,
+        transform: 'translateY(-50%)',
+        width: '36px',
+        height: '36px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '50%',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-default)',
+        color: 'var(--text-secondary)',
+        cursor: 'pointer',
+        zIndex: 1,
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <Icon size={18} />
+    </button>
   );
 }
