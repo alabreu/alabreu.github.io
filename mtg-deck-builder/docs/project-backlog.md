@@ -75,6 +75,9 @@ ações suas (ver `manual-backlog.md`).
 
 ## ✅ Feito
 
+- **Seções fora da contagem** (20/10/2026) — interruptor "Conta no deck" em
+  Gerenciar seções; cartas dessas seções ficam fora do total, validação e
+  estatísticas, vão como "em consideração" pro Tutor e como sideboard no Export.
 - **Cartas "any number of copies"** (05/08/2026) — limite de cópias agora é por
   carta, com teto próprio para Seven Dwarves e Nazgûl. Lista gerada do Scryfall
   e atualizada pelo workflow mensal.

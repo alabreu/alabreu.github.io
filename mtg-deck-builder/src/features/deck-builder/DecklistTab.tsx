@@ -11,6 +11,7 @@ import { Badge } from '../../design-system/components/Badge';
 import { ManaGroup } from '../../design-system/components/ManaSymbol';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { useLongPress } from '../../lib/useLongPress';
+import { isCategoryCounted, countedCards } from '../../lib/deckCounting';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
 import { DeckErrorsSheet } from './DeckErrorsSheet';
 
@@ -437,9 +438,11 @@ interface CategorySectionProps {
   onToggleSelect: (scryfallId: string) => void;
   selectionMode: boolean;
   onManageSections: () => void;
+  /** False for sections switched off in "Gerenciar seções" (don't count toward the deck). */
+  counted: boolean;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect, selectionMode, onManageSections }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect, selectionMode, onManageSections, counted }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
   // Hidden power-user shortcut: hold a section header to manage sections.
   const headerPress = useLongPress({
@@ -469,7 +472,12 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
           fontFamily: 'inherit',
         }}
       >
-        <span style={{ flex: 1 }}>{category}</span>
+        <span style={{ flex: counted ? 1 : undefined, color: counted ? undefined : 'var(--text-muted)' }}>{category}</span>
+        {!counted && (
+          <span style={{ flex: 1, fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>
+            fora da contagem
+          </span>
+        )}
         <Badge variant="default" size="sm">
           {totalQty}
         </Badge>
@@ -486,7 +494,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
+            style={{ overflow: 'hidden', opacity: counted ? undefined : 0.6 }}
           >
             {viewMode === 'list' ? (
               <div style={{ padding: '4px 0' }}>
@@ -576,12 +584,14 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
   // One pass over deck.cards for all three header stats, recomputed only when
   // the cards change (was ~4 full passes on every render, e.g. opening the
   // card sheet).
-  const { totalCards, landCount, avgCmc } = React.useMemo(() => {
+  // Cards in sections switched off ("fora da contagem") stay out of the stats.
+  const { totalCards, uncountedTotal, landCount, avgCmc } = React.useMemo(() => {
+    const counted = countedCards(deck);
     let total = 0;
     let lands = 0;
     let nonLandCmc = 0;
     let nonLandCount = 0;
-    for (const c of deck.cards) {
+    for (const c of counted) {
       total += c.quantity;
       const isLandCard = c.typeLine?.includes('Land') || c.category === 'Terrenos';
       if (isLandCard) {
@@ -592,12 +602,14 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
         nonLandCount += c.quantity;
       }
     }
+    const all = deck.cards.reduce((s, c) => s + c.quantity, 0);
     return {
       totalCards: total,
+      uncountedTotal: all - total,
       landCount: lands,
-      avgCmc: deck.cards.length > 0 ? (nonLandCmc / Math.max(nonLandCount, 1)).toFixed(2) : '0.00',
+      avgCmc: counted.length > 0 ? (nonLandCmc / Math.max(nonLandCount, 1)).toFixed(2) : '0.00',
     };
-  }, [deck.cards]);
+  }, [deck.cards, deck.excludedCategories]);
 
   const sortedCategories = React.useMemo(
     () => materializeCategories(deck),
@@ -754,7 +766,9 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ManaGroup colors={(deck.colorIdentity ?? []).length > 0 ? deck.colorIdentity : ['C']} size="sm" />
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{totalCards} cartas</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {totalCards} cartas{uncountedTotal > 0 && ` · +${uncountedTotal} fora`}
+          </span>
           {errors.length > 0 && (
             <button
               onClick={() => setErrorsOpen(true)}
@@ -853,6 +867,7 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
             onToggleSelect={onToggleSelect}
             selectionMode={selectionMode}
             onManageSections={onManageSections}
+            counted={isCategoryCounted(deck, cat)}
           />
         ))}
       </div>

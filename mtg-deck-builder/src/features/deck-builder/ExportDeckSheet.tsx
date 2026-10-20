@@ -4,6 +4,7 @@ import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
 import { Deck } from '../../types';
 import { buildDecklistText } from './exportDeck';
+import { countedTotal } from '../../lib/deckCounting';
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +21,8 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
     () => buildDecklistText(deck, { includeSectionHeaders }),
     [deck, includeSectionHeaders]
   );
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const totalCards = countedTotal(deck);
+  const sideTotal = deck.cards.reduce((s, c) => s + c.quantity, 0) - totalCards;
 
   async function handleCopy() {
     try {
@@ -43,7 +45,8 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
     >
       <div style={{ padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-          {totalCards} {totalCards === 1 ? 'carta' : 'cartas'}. Toque em "Copiar tudo" ou selecione
+          {totalCards} {totalCards === 1 ? 'carta' : 'cartas'}
+          {sideTotal > 0 && ` + ${sideTotal} no sideboard (seções fora da contagem)`}. Toque em "Copiar tudo" ou selecione
           manualmente o trecho que quiser copiar.
         </p>
 

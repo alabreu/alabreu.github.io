@@ -21,6 +21,7 @@ import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { useLanguage, useT } from '../lib/i18n';
 import { Language } from '../lib/translations';
 import { PriceSource, getPriceSource, setPriceSource } from '../lib/priceSource';
+import { countedTotal } from '../lib/deckCounting';
 
 /** Small circular "avatar" for a picker option — a flag emoji for language,
  *  a currency symbol for price store. */
@@ -151,7 +152,7 @@ function DeckCard({ deck, onDelete }: { deck: Deck; onDelete: (id: string) => vo
   const navigate = useNavigate();
   const t = useT();
   const [showDelete, setShowDelete] = React.useState(false);
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const totalCards = countedTotal(deck);
   // Only show art if the commander card still exists in the deck
   const commanderArtUrl =
     deck.commanderId &&

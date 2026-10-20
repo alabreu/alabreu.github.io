@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowUp, User, Key, Check, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Deck, ScryfallCard } from '../../types';
+import { Deck, DeckCard, ScryfallCard } from '../../types';
 import { Button } from '../../design-system/components/Button';
 import { Input } from '../../design-system/components/Input';
 import { WizardHatIcon } from '../../design-system/components/WizardHatIcon';
@@ -23,6 +23,7 @@ import {
   setCustomInstructions,
   CUSTOM_INSTRUCTIONS_MAX_LEN,
 } from './tutorPersona';
+import { countedTotal, countedCards, uncountedCards } from '../../lib/deckCounting';
 
 interface CoachTabProps {
   deck: Deck;
@@ -52,19 +53,31 @@ function formatTime(ts: number): string {
 }
 
 function buildSystemPrompt(deck: Deck, personaId: string): string {
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const totalCards = countedTotal(deck);
 
-  const byCategory: Record<string, string[]> = {};
-  for (const card of deck.cards) {
-    if (!byCategory[card.category]) byCategory[card.category] = [];
-    byCategory[card.category].push(card.quantity > 1 ? `${card.quantity}x ${card.name}` : card.name);
-  }
+  const listByCategory = (cards: DeckCard[]) => {
+    const byCategory: Record<string, string[]> = {};
+    for (const card of cards) {
+      if (!byCategory[card.category]) byCategory[card.category] = [];
+      byCategory[card.category].push(card.quantity > 1 ? `${card.quantity}x ${card.name}` : card.name);
+    }
+    const lines: string[] = [];
+    for (const [cat, names] of Object.entries(byCategory)) {
+      lines.push(`${cat} (${names.length}):`);
+      for (const c of names) lines.push(`  - ${c}`);
+      lines.push('');
+    }
+    return lines;
+  };
 
-  const allLines: string[] = [];
-  for (const [cat, cards] of Object.entries(byCategory)) {
-    allLines.push(`${cat} (${cards.length}):`);
-    for (const c of cards) allLines.push(`  - ${c}`);
+  const allLines = listByCategory(countedCards(deck));
+  // Sections switched off by the user: candidates they're still weighing,
+  // not part of the 100.
+  const considering = uncountedCards(deck);
+  if (considering.length > 0) {
+    allLines.push('Em consideração (fora do deck, não contam nas 100):');
     allLines.push('');
+    allLines.push(...listByCategory(considering));
   }
   // Keep system prompt under ~3000 chars to fit smaller free-model context windows
   let deckList = allLines.join('\n');
@@ -514,7 +527,7 @@ export function CoachTab({ deck, model, personaId, onKeyboardChange, onOpenSearc
     };
   }, []);
 
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  const totalCards = countedTotal(deck);
   const canSend = input.trim().length > 0 && !isLoading;
 
   // Keep the latest messages in a ref so the unmount flush below can persist

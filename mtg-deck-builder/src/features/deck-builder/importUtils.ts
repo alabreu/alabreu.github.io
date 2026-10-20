@@ -49,6 +49,9 @@ export function parseDecklist(text: string): ParsedLine[] {
     const line = raw.trim();
     if (!line) continue;
 
+    // Board markers from our plain export and Moxfield ("SIDEBOARD:").
+    if (/^(sideboard|maybeboard|mainboard|deck):?$/i.test(line)) continue;
+
     if (line.startsWith('//') || line.startsWith('#')) {
       const heading = line.replace(/^\/\/|^#/, '').trim();
       if (heading && !isDecorativeComment(heading)) currentSection = normalizeSectionName(heading);

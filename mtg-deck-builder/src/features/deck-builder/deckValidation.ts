@@ -1,5 +1,6 @@
 import { Deck, DeckCard } from '../../types';
 import { maxCopiesAllowed } from './anyNumberCards';
+import { countedCards } from '../../lib/deckCounting';
 
 export interface DeckError {
   id: string;
@@ -24,7 +25,9 @@ function copyLimit(card: DeckCard): number {
  */
 export function validateDeck(deck: Deck): DeckError[] {
   const errors: DeckError[] = [];
-  const totalCards = deck.cards.reduce((s, c) => s + c.quantity, 0);
+  // Sections switched off ("fora da contagem") are a sideboard: not validated.
+  const cards = countedCards(deck);
+  const totalCards = cards.reduce((s, c) => s + c.quantity, 0);
 
   if (totalCards !== 100) {
     errors.push({
@@ -43,7 +46,7 @@ export function validateDeck(deck: Deck): DeckError[] {
   // so every colored card would be flagged — noise on top of the "no commander"
   // error, which already covers that state.
   const outOfIdentity = deck.commanderId
-    ? deck.cards.filter((c) => (c.colorIdentity ?? []).some((color) => !identity.includes(color)))
+    ? cards.filter((c) => (c.colorIdentity ?? []).some((color) => !identity.includes(color)))
     : [];
   if (outOfIdentity.length > 0) {
     errors.push({
@@ -53,7 +56,7 @@ export function validateDeck(deck: Deck): DeckError[] {
     });
   }
 
-  const tooMany = deck.cards.filter((c) => c.quantity > copyLimit(c));
+  const tooMany = cards.filter((c) => c.quantity > copyLimit(c));
   if (tooMany.length > 0) {
     // Cards with their own cap (Seven Dwarves, Nazgûl) break a different rule
     // than the plain singleton one, so say which limit was passed.

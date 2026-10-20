@@ -8,6 +8,7 @@ import { Input } from '../../design-system/components/Input';
 import { Deck } from '../../types';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { edgeInset } from '../../design-system/responsive';
+import { isCategoryCounted } from '../../lib/deckCounting';
 
 const ITEM_H = 52;
 /** Hold this long anywhere on a row to pick it up for reordering. */
@@ -28,18 +29,20 @@ interface RowProps {
   index: number;
   total: number;
   cardCount: number;
+  counted: boolean;
   activeIndex: number | null;
   activeY: number;
   onDragStart: (i: number) => void;
   onDrag: (y: number) => void;
   onDragEnd: () => void;
   onDelete: (name: string) => void;
+  onToggleCounted: (name: string) => void;
 }
 
 function DraggableRow({
-  name, index, total, cardCount,
+  name, index, total, cardCount, counted,
   activeIndex, activeY,
-  onDragStart, onDrag, onDragEnd, onDelete,
+  onDragStart, onDrag, onDragEnd, onDelete, onToggleCounted,
 }: RowProps) {
   const isActive = activeIndex === index;
 
@@ -117,14 +120,24 @@ function DraggableRow({
         WebkitTouchCallout: 'none',
       }}
     >
-      <span style={{ flex: 1, minWidth: 0, fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {name}
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontSize: '15px', color: counted ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {name}
+        </span>
+        {!counted && (
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>fora da contagem</span>
+        )}
       </span>
 
       {cardCount > 0 && (
         <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>
           {cardCount}
         </span>
+      )}
+
+      {/* "Conta no deck" switch — the commander section always counts */}
+      {name !== 'Comandante' && (
+        <CountedSwitch name={name} counted={counted} onToggle={() => onToggleCounted(name)} />
       )}
 
       {/* The commander section is structural and cannot be deleted */}
@@ -175,6 +188,44 @@ function DraggableRow({
   );
 }
 
+function CountedSwitch({ name, counted, onToggle }: { name: string; counted: boolean; onToggle: () => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={counted}
+      aria-label={`Seção ${name} conta no deck`}
+      title={counted ? 'Conta no deck' : 'Não conta no deck'}
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      style={{
+        width: '34px',
+        height: '20px',
+        borderRadius: '10px',
+        border: 'none',
+        padding: 0,
+        position: 'relative',
+        cursor: 'pointer',
+        flexShrink: 0,
+        backgroundColor: counted ? 'var(--accent)' : 'var(--surface-3)',
+        transition: 'background-color 0.15s',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: counted ? '16px' : '2px',
+          width: '16px',
+          height: '16px',
+          borderRadius: '50%',
+          backgroundColor: counted ? 'var(--bg-elevated)' : 'var(--text-muted)',
+          transition: 'left 0.15s',
+        }}
+      />
+    </button>
+  );
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -182,7 +233,7 @@ interface Props {
 }
 
 export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
-  const { reorderCategories, addCategory, deleteCategory, groupLandsIntoSection } = useDeckStore();
+  const { reorderCategories, addCategory, deleteCategory, groupLandsIntoSection, setCategoryCounted } = useDeckStore();
   const [localCats, setLocalCats] = React.useState<string[]>([]);
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [activeY, setActiveY] = React.useState(0);
@@ -279,6 +330,10 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
     <>
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Gerenciar seções" maxHeight="85dvh">
       <div style={{ padding: '4px 20px 32px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45, margin: '0 0 8px' }}>
+          Desligue o interruptor de uma seção para as cartas dela não contarem no total do deck — como um sideboard.
+        </p>
+
         {/* Draggable list */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
           {localCats.map((name, i) => (
@@ -288,12 +343,14 @@ export function ManageSectionsSheet({ isOpen, onClose, deck }: Props) {
               index={i}
               total={localCats.length}
               cardCount={cardCount[name] ?? 0}
+              counted={isCategoryCounted(deck, name)}
               activeIndex={activeIndex}
               activeY={activeY}
               onDragStart={handleDragStart}
               onDrag={handleDrag}
               onDragEnd={handleDragEnd}
               onDelete={handleDeleteRequest}
+              onToggleCounted={(n) => setCategoryCounted(deck.id, n, !isCategoryCounted(deck, n))}
             />
           ))}
         </div>

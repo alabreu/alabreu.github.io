@@ -12,6 +12,9 @@ export type Deck = {
   colorIdentity: ManaColor[];
   cards: DeckCard[];
   categories?: string[];
+  /** Sections switched off in "Gerenciar seções": their cards don't count
+   *  toward the deck (see lib/deckCounting). */
+  excludedCategories?: string[];
   createdAt: number;
   updatedAt: number;
 };

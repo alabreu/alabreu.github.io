@@ -25,6 +25,7 @@ type DeckStore = {
   reorderCategories: (deckId: string, categories: string[]) => void;
   addCategory: (deckId: string, name: string) => void;
   deleteCategory: (deckId: string, name: string) => void;
+  setCategoryCounted: (deckId: string, name: string, counted: boolean) => void;
   groupLandsIntoSection: (deckId: string, sectionName: string) => void;
 };
 
@@ -463,10 +464,25 @@ export const useDeckStore = create<DeckStore>()(
             const cards = d.cards.map((c) =>
               c.category === name ? { ...c, category: 'Outros' } : c
             );
-            return { ...d, categories, cards, updatedAt: Date.now() };
+            const excludedCategories = d.excludedCategories?.filter((c) => c !== name);
+            return { ...d, categories, cards, excludedCategories, updatedAt: Date.now() };
           }),
         }));
       },
+      setCategoryCounted: (deckId: string, name: string, counted: boolean) => {
+        if (name === 'Comandante') return;
+        set((state) => ({
+          decks: state.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const current = d.excludedCategories ?? [];
+            const excludedCategories = counted
+              ? current.filter((c) => c !== name)
+              : current.includes(name) ? current : [...current, name];
+            return { ...d, excludedCategories, updatedAt: Date.now() };
+          }),
+        }));
+      },
+
       groupLandsIntoSection: (deckId: string, sectionName: string) => {
         set((state) => ({
           decks: state.decks.map((d) => {
