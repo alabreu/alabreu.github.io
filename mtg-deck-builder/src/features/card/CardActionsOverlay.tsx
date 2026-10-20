@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, FolderInput } from 'lucide-react';
 
 interface Props {
   qty: number;
@@ -8,6 +8,9 @@ interface Props {
   /** Hide the [+] button — used in the decklist, where only basic lands may
    *  have more than one copy (Commander singleton rule). Defaults to true. */
   showAdd?: boolean;
+  /** When set, a "move to section" button sits on the right edge, level with
+   *  the [-] button. */
+  onMove?: (e: React.MouseEvent) => void;
 }
 
 const btnStyle: React.CSSProperties = {
@@ -31,8 +34,9 @@ const btnStyle: React.CSSProperties = {
  * so the position scales with any tile size. (The top-right corner is
  * reserved for the bulk-selection checkbox.)
  */
-export function CardActionsOverlay({ qty, onAdd, onRemove, showAdd = true }: Props) {
+export function CardActionsOverlay({ qty, onAdd, onRemove, showAdd = true, onMove }: Props) {
   return (
+    <>
     <div
       style={{
         position: 'absolute',
@@ -55,5 +59,23 @@ export function CardActionsOverlay({ qty, onAdd, onRemove, showAdd = true }: Pro
         </button>
       )}
     </div>
+    {onMove && (
+      <button
+        onClick={onMove}
+        aria-label="Mover para seção"
+        style={{
+          ...btnStyle,
+          color: 'var(--text-primary)',
+          position: 'absolute',
+          right: '5%',
+          top: '55%',
+          transform: 'translateY(-100%)',
+          zIndex: 2,
+        }}
+      >
+        <FolderInput size={14} />
+      </button>
+    )}
+    </>
   );
 }

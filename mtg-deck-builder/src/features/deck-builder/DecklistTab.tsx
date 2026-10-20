@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle, Minus, Plus, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, MapPin, Zap, RefreshCw, LayoutGrid, LayoutList, Square, Pencil, XCircle, Minus, Plus, Check, FolderInput } from 'lucide-react';
 
 type ViewMode = '2col' | '1col' | 'list';
 import { Deck, DeckCard, ScryfallCard } from '../../types';
@@ -26,6 +26,8 @@ interface DecklistTabProps {
   onManageSections: () => void;
   /** Replace the whole bulk selection at once (used by the deck-errors sheet). */
   onSelectMany: (scryfallIds: string[]) => void;
+  /** Shortcut button on each card: pick a section to move it to. */
+  onMoveCard: (card: DeckCard) => void;
 }
 
 function groupCardsByCategory(cards: DeckCard[]): Record<string, DeckCard[]> {
@@ -138,6 +140,7 @@ const FlippableCard = React.memo(function FlippableCard({
   onCardClick,
   onQuickAdd,
   onQuickRemove,
+  onQuickMove,
   hasError,
   selected,
   onToggleSelect,
@@ -147,6 +150,7 @@ const FlippableCard = React.memo(function FlippableCard({
   onCardClick: (card: DeckCard) => void;
   onQuickAdd: (card: DeckCard) => void;
   onQuickRemove: (card: DeckCard) => void;
+  onQuickMove: (card: DeckCard) => void;
   hasError?: boolean;
   selected: boolean;
   onToggleSelect: (scryfallId: string) => void;
@@ -228,6 +232,7 @@ const FlippableCard = React.memo(function FlippableCard({
                 showAdd={isBasicLand(card)}
                 onAdd={(e) => { e.stopPropagation(); onQuickAdd(card); }}
                 onRemove={(e) => { e.stopPropagation(); onQuickRemove(card); }}
+                onMove={selectable ? (e) => { e.stopPropagation(); onQuickMove(card); } : undefined}
               />
             )}
             {/* The commander is structural (managed via the card sheet), so it
@@ -319,6 +324,7 @@ const ListCardRow = React.memo(function ListCardRow({
   onCardClick,
   onQuickAdd,
   onQuickRemove,
+  onQuickMove,
   hasError,
   selected,
   onToggleSelect,
@@ -328,6 +334,7 @@ const ListCardRow = React.memo(function ListCardRow({
   onCardClick: (card: DeckCard) => void;
   onQuickAdd: (card: DeckCard) => void;
   onQuickRemove: (card: DeckCard) => void;
+  onQuickMove: (card: DeckCard) => void;
   hasError?: boolean;
   selected: boolean;
   onToggleSelect: (scryfallId: string) => void;
@@ -417,6 +424,11 @@ const ListCardRow = React.memo(function ListCardRow({
                 <Plus size={14} />
               </button>
             )}
+            {selectable && (
+              <button onClick={() => onQuickMove(card)} aria-label="Mover para seção" style={rowActionBtnStyle('var(--text-secondary)')}>
+                <FolderInput size={14} />
+              </button>
+            )}
           </>
         )}
       </div>
@@ -432,6 +444,7 @@ interface CategorySectionProps {
   onCardClick: (card: DeckCard) => void;
   onQuickAdd: (card: DeckCard) => void;
   onQuickRemove: (card: DeckCard) => void;
+  onQuickMove: (card: DeckCard) => void;
   viewMode: ViewMode;
   errorCardIds: Set<string>;
   selectedIds: Set<string>;
@@ -442,7 +455,7 @@ interface CategorySectionProps {
   counted: boolean;
 }
 
-const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, viewMode, errorCardIds, selectedIds, onToggleSelect, selectionMode, onManageSections, counted }: CategorySectionProps) {
+const CategorySection = React.memo(function CategorySection({ category, cards, expanded, onToggle, onCardClick, onQuickAdd, onQuickRemove, onQuickMove, viewMode, errorCardIds, selectedIds, onToggleSelect, selectionMode, onManageSections, counted }: CategorySectionProps) {
   const totalQty = cards.reduce((s, c) => s + c.quantity, 0);
   // Hidden power-user shortcut: hold a section header to manage sections.
   const headerPress = useLongPress({
@@ -505,6 +518,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     onCardClick={onCardClick}
                     onQuickAdd={onQuickAdd}
                     onQuickRemove={onQuickRemove}
+                    onQuickMove={onQuickMove}
                     hasError={errorCardIds.has(card.scryfallId)}
                     selected={selectedIds.has(card.scryfallId)}
                     onToggleSelect={onToggleSelect}
@@ -528,6 +542,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
                     onCardClick={onCardClick}
                     onQuickAdd={onQuickAdd}
                     onQuickRemove={onQuickRemove}
+                    onQuickMove={onQuickMove}
                     hasError={errorCardIds.has(card.scryfallId)}
                     selected={selectedIds.has(card.scryfallId)}
                     onToggleSelect={onToggleSelect}
@@ -543,7 +558,7 @@ const CategorySection = React.memo(function CategorySection({ category, cards, e
   );
 });
 
-export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect, onManageSections, onSelectMany }: DecklistTabProps) {
+export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect, onManageSections, onSelectMany, onMoveCard }: DecklistTabProps) {
   const selectionMode = selectedIds.size > 0;
   const { updateDeck, addCard, removeCard } = useDeckStore();
   const [selectedCard, setSelectedCard] = React.useState<DeckCard | null>(null);
@@ -861,6 +876,7 @@ export function DecklistTab({ deck, forcedExpandAll, selectedIds, onToggleSelect
             onCardClick={handleCardClick}
             onQuickAdd={handleQuickAdd}
             onQuickRemove={handleQuickRemove}
+            onQuickMove={onMoveCard}
             viewMode={viewMode}
             errorCardIds={errorCardIds}
             selectedIds={selectedIds}

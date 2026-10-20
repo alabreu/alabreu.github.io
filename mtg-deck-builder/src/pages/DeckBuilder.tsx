@@ -21,6 +21,7 @@ import { useSupabaseSession } from '../lib/useSupabaseSession';
 import { EdhrecSheet, EdhrecIcon } from '../features/deck-builder/EdhrecSheet';
 import { CONTENT_MAX_WIDTH, edgeInset } from '../design-system/responsive';
 import { glassSurface, GLASS_SHADOW, GLASS_LABEL } from '../design-system/glass';
+import { DeckCard } from '../types';
 
 type MenuRowTone = 'default' | 'accent' | 'danger';
 const MENU_ROW_TONES: Record<MenuRowTone, { bg: string; border: string; icon: string; title: string }> = {
@@ -145,6 +146,8 @@ export default function DeckBuilder() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
   const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
   const [moveToOpen, setMoveToOpen] = React.useState(false);
+  // Card picked through the per-card "move to section" shortcut.
+  const [moveCard, setMoveCard] = React.useState<DeckCard | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
   const [bulkListOpen, setBulkListOpen] = React.useState(false);
@@ -272,6 +275,13 @@ export default function DeckBuilder() {
     clearSelection();
   }
   const moveTargets = materializeCategories(deck).filter((c) => c !== 'Comandante');
+
+  function handleMoveCard(category: string) {
+    if (!moveCard) return;
+    addCategory(deckId, category); // idempotent — creates the section if new
+    updateCardCategory(deckId, moveCard.scryfallId, category);
+    setMoveCard(null);
+  }
   const selectionActive = selectedIds.size > 0;
 
   return (
@@ -338,6 +348,7 @@ export default function DeckBuilder() {
             onToggleSelect={toggleSelect}
             onSelectMany={selectMany}
             onManageSections={() => setManageSectionsOpen(true)}
+            onMoveCard={setMoveCard}
           />
         </div>
 
@@ -682,6 +693,16 @@ export default function DeckBuilder() {
         sections={moveTargets}
         count={selectedIds.size}
         onPick={handleMoveTo}
+      />
+
+      {/* Move one card via the shortcut on the card itself */}
+      <MoveToSectionSheet
+        isOpen={moveCard !== null}
+        onClose={() => setMoveCard(null)}
+        sections={moveTargets.filter((c) => c !== moveCard?.category)}
+        count={1}
+        cardName={moveCard?.name}
+        onPick={handleMoveCard}
       />
 
       {/* Import cards sheet */}

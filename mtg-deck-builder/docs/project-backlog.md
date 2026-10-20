@@ -75,6 +75,8 @@ ações suas (ver `manual-backlog.md`).
 
 ## ✅ Feito
 
+- **Atalho "Mover para seção" na carta** (20/10/2026) — botão à direita,
+  na altura do (−), abre a lista de seções (ou cria uma nova).
 - **Seções fora da contagem** (20/10/2026) — interruptor "Conta no deck" em
   Gerenciar seções; cartas dessas seções ficam fora do total, validação e
   estatísticas, vão como "em consideração" pro Tutor e como sideboard no Export.

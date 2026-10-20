@@ -11,6 +11,8 @@ interface Props {
   sections: string[];
   /** How many cards are selected — shown in the header. */
   count: number;
+  /** Single-card shortcut: names the card in the header instead of a count. */
+  cardName?: string;
   /** Move the selected cards to this section. The name may be a brand-new
    *  section the user just typed; the caller creates it if needed. */
   onPick: (category: string) => void;
@@ -19,7 +21,7 @@ interface Props {
 /** Picks (or creates) a destination section for the cards currently selected
  *  in the decklist. "Criar seção" sits at the top, above a divider, then the
  *  existing sections follow. */
-export function MoveToSectionSheet({ isOpen, onClose, sections, count, onPick }: Props) {
+export function MoveToSectionSheet({ isOpen, onClose, sections, count, cardName, onPick }: Props) {
   const [creating, setCreating] = React.useState(false);
   const [newName, setNewName] = React.useState('');
 
@@ -42,7 +44,7 @@ export function MoveToSectionSheet({ isOpen, onClose, sections, count, onPick }:
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={`Mover ${count} carta${count !== 1 ? 's' : ''} para…`}
+      title={cardName ? `Mover "${cardName}" para…` : `Mover ${count} carta${count !== 1 ? 's' : ''} para…`}
       maxHeight="80dvh"
     >
       <div style={{ padding: '8px 0 24px' }}>
