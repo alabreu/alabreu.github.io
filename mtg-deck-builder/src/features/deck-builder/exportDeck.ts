@@ -8,15 +8,19 @@ import { isCategoryCounted } from '../../lib/deckCounting';
  * ignored by parseDecklist (and read back as section markers by it too),
  * so this format round-trips through Importar cartas.
  *
- * Sections switched off ("fora da contagem") go after the main ones. Without
+ * Sections switched off ("fora da contagem") are left out unless
+ * `includeUncounted` is set; then they go after the main ones. Without
  * headers they sit under a "SIDEBOARD:" line, which Moxfield reads as the
  * sideboard and parseDecklist skips.
  */
-export function buildDecklistText(deck: Deck, opts?: { includeSectionHeaders?: boolean }): string {
+export function buildDecklistText(
+  deck: Deck,
+  opts?: { includeSectionHeaders?: boolean; includeUncounted?: boolean }
+): string {
   const includeSectionHeaders = opts?.includeSectionHeaders ?? true;
   const all = materializeCategories(deck);
   const mainSections = all.filter((c) => isCategoryCounted(deck, c));
-  const sideSections = all.filter((c) => !isCategoryCounted(deck, c));
+  const sideSections = opts?.includeUncounted ? all.filter((c) => !isCategoryCounted(deck, c)) : [];
   const sections = [...mainSections, ...sideSections];
   const grouped: Record<string, typeof deck.cards> = {};
   for (const card of deck.cards) {

@@ -80,7 +80,11 @@ function DraggableRow({
   useDrag(onDragGesture, {
     target: rowRef,
     axis: 'y',
-    filterTaps: true,
+    // No tap filtering here: with it, use-gesture swallows (in the capture
+    // phase) every click inside the row that didn't start a gesture — on touch
+    // that killed the switch and the delete button. A tap on the row itself
+    // does nothing, so there's nothing to filter.
+    filterTaps: false,
     delay: LONG_PRESS_MS,
     preventScroll: LONG_PRESS_MS,
     preventScrollAxis: 'y',
@@ -143,7 +147,7 @@ function DraggableRow({
       {/* The commander section is structural and cannot be deleted */}
       {name !== 'Comandante' && (
       <button
-        onClick={() => onDelete(name)}
+          onClick={() => onDelete(name)}
         aria-label={`Apagar seção ${name}`}
         style={{
           width: '30px',

@@ -15,11 +15,13 @@ interface Props {
 export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
   const [copied, setCopied] = React.useState(false);
   const [includeSectionHeaders, setIncludeSectionHeaders] = React.useState(true);
+  // Sections switched off ("fora da contagem") stay out of the export by default.
+  const [includeUncounted, setIncludeUncounted] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const text = React.useMemo(
-    () => buildDecklistText(deck, { includeSectionHeaders }),
-    [deck, includeSectionHeaders]
+    () => buildDecklistText(deck, { includeSectionHeaders, includeUncounted }),
+    [deck, includeSectionHeaders, includeUncounted]
   );
   const totalCards = countedTotal(deck);
   const sideTotal = deck.cards.reduce((s, c) => s + c.quantity, 0) - totalCards;
@@ -46,55 +48,22 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
       <div style={{ padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
           {totalCards} {totalCards === 1 ? 'carta' : 'cartas'}
-          {sideTotal > 0 && ` + ${sideTotal} no sideboard (seções fora da contagem)`}. Toque em "Copiar tudo" ou selecione
+          {sideTotal > 0 && includeUncounted && ` + ${sideTotal} das seções fora do deck`}. Toque em "Copiar tudo" ou selecione
           manualmente o trecho que quiser copiar.
         </p>
 
-        <button
-          onClick={() => setIncludeSectionHeaders((v) => !v)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            padding: '12px 14px',
-            backgroundColor: 'var(--surface-1)',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-md)',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            textAlign: 'left',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
-            Incluir títulos das seções
-          </span>
-          <span
-            style={{
-              width: '40px',
-              height: '24px',
-              borderRadius: '999px',
-              flexShrink: 0,
-              backgroundColor: includeSectionHeaders ? 'var(--accent)' : 'var(--surface-3)',
-              position: 'relative',
-              transition: 'background-color 0.15s',
-            }}
-          >
-            <span
-              style={{
-                position: 'absolute',
-                top: '3px',
-                left: includeSectionHeaders ? '19px' : '3px',
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                backgroundColor: '#fff',
-                transition: 'left 0.15s',
-              }}
-            />
-          </span>
-        </button>
+        <ToggleRow
+          label="Incluir títulos das seções"
+          on={includeSectionHeaders}
+          onToggle={() => setIncludeSectionHeaders((v) => !v)}
+        />
+        {sideTotal > 0 && (
+          <ToggleRow
+            label="Incluir seções fora do deck"
+            on={includeUncounted}
+            onToggle={() => setIncludeUncounted((v) => !v)}
+          />
+        )}
 
         <textarea
           ref={textareaRef}
@@ -130,5 +99,57 @@ export function ExportDeckSheet({ isOpen, onClose, deck }: Props) {
         </Button>
       </div>
     </BottomSheet>
+  );
+}
+
+function ToggleRow({ label, on, onToggle }: { label: string; on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        padding: '12px 14px',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-md)',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>
+        {label}
+      </span>
+      <span
+        style={{
+          width: '40px',
+          height: '24px',
+          borderRadius: '999px',
+          flexShrink: 0,
+          backgroundColor: on ? 'var(--accent)' : 'var(--surface-3)',
+          position: 'relative',
+          transition: 'background-color 0.15s',
+        }}
+      >
+        <span
+          style={{
+            position: 'absolute',
+            top: '3px',
+            left: on ? '19px' : '3px',
+            width: '18px',
+            height: '18px',
+            borderRadius: '50%',
+            backgroundColor: '#fff',
+            transition: 'left 0.15s',
+          }}
+        />
+      </span>
+    </button>
   );
 }
