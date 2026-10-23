@@ -75,6 +75,10 @@ ações suas (ver `manual-backlog.md`).
 
 ## ✅ Feito
 
+- **Seções na busca/EDHREC + EDHREC em lista única** (23/10/2026) — botão de
+  seção nas cartas da busca e do EDHREC (adiciona direto na seção, ou move se
+  já estiver no deck); "+ Nova seção…" no seletor do detalhe da carta; EDHREC
+  mostra todas as categorias numa lista só, com chips fixos que rolam até cada uma.
 - **Navegar entre cartas no detalhe** (20/10/2026) — swipe lateral na faixa
   da imagem, setas ←/→ no teclado ou os botões laterais; vale no deck (seções
   abertas, na ordem da tela) e na busca (resultados carregados).

@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
 import { BottomSheet } from '../../design-system/components/BottomSheet';
 import { Button } from '../../design-system/components/Button';
+import { Input } from '../../design-system/components/Input';
 import { Badge } from '../../design-system/components/Badge';
 import { ManaSymbol, ManaCost, SymbolText } from '../../design-system/components/ManaSymbol';
 import { CardImage } from './CardImage';
 import { DeckCard, ScryfallCard, DEFAULT_CATEGORIES, ManaColor, Deck } from '../../types';
 import { useDeckStore, materializeCategories } from '../../store/useDeckStore';
 import { scryfallToDeckCard, canBeCommanderCard } from './cardUtils';
-import { Crown, Plus, Minus, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
+import { Crown, Plus, Minus, Check, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Users, UserMinus, ExternalLink } from 'lucide-react';
 import { getUsdBrlRate, formatBrl, ligaMagicUrl } from '../../lib/usdBrl';
 import { getPriceSource, tcgplayerUrl } from '../../lib/priceSource';
 
@@ -63,6 +64,8 @@ interface CardBottomSheetProps {
 }
 
 const SWIPE_MIN_PX = 50;
+/** Sentinel option value for "+ Nova seção…" in the category select. */
+const NEW_SECTION_VALUE = '__new_section__';
 
 /** True while typing in a field — arrow keys belong to the caret then. */
 function isEditableTarget(t: EventTarget | null): boolean {
@@ -100,8 +103,10 @@ export function CardBottomSheet({
   onPrev,
   onNext,
 }: CardBottomSheetProps) {
-  const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory, patchCardData } = useDeckStore();
+  const { addCard, removeCard, setCardQuantity, setCommander, setPartner, removePartner, updateCardCategory, patchCardData, addCategory } = useDeckStore();
   const [selectedCategory, setSelectedCategory] = React.useState('Outros');
+  // Inline "Nova seção…" field under the category select.
+  const [newSectionName, setNewSectionName] = React.useState<string | null>(null);
   const [flipped, setFlipped] = React.useState(false);
   const [fetchedCard, setFetchedCard] = React.useState<ScryfallCard | null>(null);
   const [qtyInput, setQtyInput] = React.useState('0');
@@ -209,6 +214,7 @@ export function CardBottomSheet({
 
   React.useEffect(() => {
     setFlipped(false);
+    setNewSectionName(null);
     if (existingCard) {
       setSelectedCategory(existingCard.category);
     } else if (card) {
@@ -314,10 +320,23 @@ export function CardBottomSheet({
 
   function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const cat = e.target.value;
+    if (cat === NEW_SECTION_VALUE) {
+      setNewSectionName('');
+      return;
+    }
     setSelectedCategory(cat);
     if (isInDeck) {
       updateCardCategory(deckId, card!.id, cat);
     }
+  }
+
+  function handleCreateSection() {
+    const name = newSectionName?.trim();
+    if (!name || name === NEW_SECTION_VALUE) return;
+    addCategory(deckId, name); // idempotent
+    setSelectedCategory(name);
+    if (isInDeck) updateCardCategory(deckId, card!.id, name);
+    setNewSectionName(null);
   }
 
   const oracleText =
@@ -596,6 +615,7 @@ export function CardBottomSheet({
                   {cat}
                 </option>
               ))}
+              <option value={NEW_SECTION_VALUE}>+ Nova seção…</option>
             </select>
             <ChevronDown
               size={14}
@@ -609,6 +629,24 @@ export function CardBottomSheet({
               }}
             />
           </div>
+          {newSectionName !== null && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Input
+                autoFocus
+                placeholder="Nome da nova seção…"
+                value={newSectionName}
+                onChange={(e) => setNewSectionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateSection();
+                  if (e.key === 'Escape') { e.stopPropagation(); setNewSectionName(null); }
+                }}
+                fullWidth
+              />
+              <Button variant="primary" size="md" onClick={handleCreateSection} disabled={!newSectionName.trim()}>
+                <Check size={15} />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Actions */}

@@ -16,6 +16,7 @@ import { CardActionsOverlay } from '../card/CardActionsOverlay';
 import { getUsdBrlRate } from '../../lib/usdBrl';
 import { getPriceSource, getCardPriceLink } from '../../lib/priceSource';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
+import { useSectionPicker } from './useSectionPicker';
 import {
   SearchFilters,
   EMPTY_FILTERS,
@@ -539,6 +540,8 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
   // Prev/next inside the card sheet walks the loaded results in order.
   const searchNavIndex = selectedCard ? results.findIndex((c) => c.id === selectedCard.id) : -1;
 
+  const sectionPicker = useSectionPicker(deck);
+
   function handleCardClick(card: ScryfallCard) {
     setSelectedCard(card);
     setSheetOpen(true);
@@ -1040,6 +1043,7 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
                       qty={qty}
                       onAdd={(e) => handleQuickAdd(card, e)}
                       onRemove={(e) => handleQuickRemove(card, e)}
+                      onMove={sectionPicker.canPick(card) ? (e) => { e.stopPropagation(); sectionPicker.open(card); } : undefined}
                     />
                   </div>
 
@@ -1104,6 +1108,8 @@ export function SearchTab({ deck, initialQuery, initialQueryVersion }: SearchTab
       <SyntaxHelpSheet isOpen={syntaxHelpOpen} onClose={() => setSyntaxHelpOpen(false)} />
 
       {/* Card detail bottom sheet */}
+      {sectionPicker.sheet}
+
       <CardBottomSheet
         onPrev={searchNavIndex > 0 ? () => setSelectedCard(results[searchNavIndex - 1]) : undefined}
         onNext={searchNavIndex >= 0 && searchNavIndex < results.length - 1 ? () => setSelectedCard(results[searchNavIndex + 1]) : undefined}

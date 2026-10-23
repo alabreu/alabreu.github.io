@@ -13,6 +13,7 @@ import { Deck, ScryfallCard } from '../../types';
 import { useDeckStore } from '../../store/useDeckStore';
 import { EdhrecList, fetchEdhrecLists, hydrateCards, translateHeader } from './edhrec';
 import { validateDeck, collectErrorCardIds } from './deckValidation';
+import { useSectionPicker } from './useSectionPicker';
 
 interface Props {
   isOpen: boolean;
@@ -64,7 +65,13 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
   const [activeHeader, setActiveHeader] = React.useState<string | null>(null);
   const [hydrated, setHydrated] = React.useState<Record<string, ScryfallCard[]>>({});
   const [hydrating, setHydrating] = React.useState(false);
-  const [hydrateFailedKey, setHydrateFailedKey] = React.useState<string | null>(null);
+  const [failedKeys, setFailedKeys] = React.useState<Set<string>>(() => new Set());
+  // A chip tapped before its section loaded jumps the hydration queue.
+  const [priorityHeader, setPriorityHeader] = React.useState<string | null>(null);
+  const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const chipRowRef = React.useRef<HTMLDivElement | null>(null);
+  const chipRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+  const sectionPicker = useSectionPicker(deck);
   const [selectedCard, setSelectedCard] = React.useState<ScryfallCard | null>(null);
   const [cardSheetOpen, setCardSheetOpen] = React.useState(false);
 
@@ -116,49 +123,132 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
     };
   }, [isOpen, cacheKey, deck.commanderName, deck.partnerName]);
 
-  // Hydrate the active list via Scryfall
+  // Every list is shown in one long page (like edhrec.com), so hydrate them
+  // all via Scryfall, one at a time from the top — or the tapped one first.
   React.useEffect(() => {
-    if (!lists || !activeHeader) return;
-    const key = hydKey(activeHeader);
-    if (hydrated[key] || hydrateFailedKey === key) return;
-    const list = lists.find((l) => l.header === activeHeader);
-    if (!list) return;
-    let cancelled = false;
+    if (!isOpen || !lists || hydrating) return;
+    const pending = (l: EdhrecList) => !hydrated[hydKey(l.header)] && !failedKeys.has(hydKey(l.header));
+    const next =
+      lists.find((l) => l.header === priorityHeader && pending(l)) ?? lists.find(pending);
+    if (!next) return;
+    const key = hydKey(next.header);
     setHydrating(true);
-    hydrateCards(list.cards.slice(0, MAX_CARDS_PER_LIST).map((c) => c.name))
-      .then((cards) => {
-        // Store under the captured key even if the user switched chips — the
-        // data stays correct and the fetch isn't wasted
-        setHydrated((prev) => ({ ...prev, [key]: cards }));
-      })
-      .catch(() => {
-        // Don't cache failures: allow retry instead of a session-long empty list
-        if (!cancelled) setHydrateFailedKey(key);
-      })
-      .finally(() => {
-        if (!cancelled) setHydrating(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    hydrateCards(next.cards.slice(0, MAX_CARDS_PER_LIST).map((c) => c.name))
+      .then((cards) => setHydrated((prev) => ({ ...prev, [key]: cards })))
+      // Failures aren't cached: "Tentar novamente" clears the key for a retry
+      .catch(() => setFailedKeys((prev) => new Set(prev).add(key)))
+      .finally(() => setHydrating(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lists, activeHeader, hydrated, hydrateFailedKey, cacheKey]);
-
-  const activeList = lists?.find((l) => l.header === activeHeader) ?? null;
-  const synergyByName = React.useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const c of activeList?.cards ?? []) {
-      if (typeof c.synergy === 'number') map[c.name] = c.synergy;
-    }
-    return map;
-  }, [activeList]);
+  }, [isOpen, lists, hydrated, failedKeys, hydrating, priorityHeader, cacheKey]);
 
   // EDHREC uses front-face names; Scryfall returns 'Front // Back' for DFCs
-  const synergyFor = (name: string): number | undefined =>
-    synergyByName[name] ?? synergyByName[name.split(' // ')[0]];
+  const synergyByList = React.useMemo(() => {
+    const out: Record<string, Record<string, number>> = {};
+    for (const l of lists ?? []) {
+      const map: Record<string, number> = {};
+      for (const c of l.cards) if (typeof c.synergy === 'number') map[c.name] = c.synergy;
+      out[l.header] = map;
+    }
+    return out;
+  }, [lists]);
+  const synergyFor = (header: string, name: string): number | undefined =>
+    synergyByList[header]?.[name] ?? synergyByList[header]?.[name.split(' // ')[0]];
 
-  const cards = activeHeader ? hydrated[hydKey(activeHeader)] : undefined;
-  const hydrateFailed = activeHeader ? hydrateFailedKey === hydKey(activeHeader) : false;
+  // Scroll-spy: the chip of the section at the top of the sheet lights up.
+  React.useEffect(() => {
+    if (!isOpen || !lists) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (visible.length === 0) return;
+        const top = visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        const header = (top.target as HTMLElement).dataset.header;
+        if (header) setActiveHeader(header);
+      },
+      { rootMargin: '-120px 0px -65% 0px' }
+    );
+    for (const l of lists) {
+      const el = sectionRefs.current[l.header];
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [isOpen, lists]);
+
+  // Keep the active chip in view inside the horizontally scrolling row.
+  React.useEffect(() => {
+    const row = chipRowRef.current;
+    const chip = activeHeader ? chipRefs.current[activeHeader] : null;
+    if (!row || !chip) return;
+    const target = chip.offsetLeft - row.clientWidth / 2 + chip.clientWidth / 2;
+    row.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [activeHeader]);
+
+  function jumpTo(header: string) {
+    setActiveHeader(header);
+    setPriorityHeader(header);
+    sectionRefs.current[header]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderCard(card: ScryfallCard, header: string) {
+    const qty = deckCardMap[card.id] ?? 0;
+    const imageUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
+    const synergy = synergyFor(header, card.name);
+    const priceLink = getCardPriceLink(card, usdBrlRate, priceSource);
+
+    return (
+      <div key={card.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+        <div style={{ position: 'relative' }}>
+          <CardImage
+            imageUrl={imageUrl}
+            name={card.name}
+            size="normal"
+            onClick={() => {
+              setSelectedCard(card);
+              setCardSheetOpen(true);
+            }}
+            showQuantityBadge={qty > 0 ? qty : undefined}
+            highlightInDeck={qty > 0}
+            highlightError={errorCardIds.has(card.id)}
+          />
+          <CardActionsOverlay
+            qty={qty}
+            onAdd={(e) => {
+              e.stopPropagation();
+              addCard(deck.id, scryfallToDeckCard(card, defaultCategoryFor(card)));
+            }}
+            onRemove={(e) => {
+              e.stopPropagation();
+              removeCard(deck.id, card.id);
+            }}
+            onMove={sectionPicker.canPick(card) ? (e) => { e.stopPropagation(); sectionPicker.open(card); } : undefined}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingBottom: '2px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+              {card.name}
+            </p>
+            {typeof synergy === 'number' && (
+              <p style={{ fontSize: '10px', color: synergy >= 0 ? 'var(--accent)' : 'var(--text-muted)', margin: '1px 0 0' }}>
+                Sinergia {synergy >= 0 ? '+' : ''}{Math.round(synergy * 100)}%
+              </p>
+            )}
+          </div>
+          {priceLink && (
+            <a
+              href={priceLink.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', flexShrink: 0 }}
+            >
+              {priceLink.label}
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -218,6 +308,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
             {/* Category chips */}
             {lists && lists.length > 0 && (
               <div
+                ref={chipRowRef}
                 style={{
                   display: 'flex',
                   gap: '8px',
@@ -225,6 +316,12 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                   WebkitOverflowScrolling: 'touch',
                   padding: '12px 20px',
                   flexShrink: 0,
+                  // Shortcuts stay on top while the long list scrolls under them
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 3,
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderBottom: '1px solid var(--border-subtle)',
                 }}
               >
                 {lists.map((l) => {
@@ -232,7 +329,8 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                   return (
                     <button
                       key={l.header}
-                      onClick={() => setActiveHeader(l.header)}
+                      ref={(el) => { chipRefs.current[l.header] = el; }}
+                      onClick={() => jumpTo(l.header)}
                       style={{
                         padding: '7px 12px',
                         fontSize: '12px',
@@ -256,7 +354,7 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
             )}
 
             <div style={{ padding: '4px 16px 32px' }}>
-              {(loadingLists || hydrating) && (
+              {loadingLists && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                   {Array.from({ length: 6 }).map((_, i) => (
                     <SkeletonCard key={i} />
@@ -274,114 +372,77 @@ export function EdhrecSheet({ isOpen, onClose, deck }: Props) {
                 </div>
               )}
 
-              {!loadingLists && !hydrating && hydrateFailed && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '32px 16px' }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center' }}>
-                    Não foi possível carregar as cartas desta categoria.
-                  </p>
-                  <button
-                    onClick={() => setHydrateFailedKey(null)}
-                    style={{
-                      padding: '8px 16px',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      fontFamily: 'inherit',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--surface-2)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-default)',
-                      cursor: 'pointer',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
+              {/* Every list, one after the other, like the site */}
+              {!loadingLists && lists?.map((l) => {
+                const key = hydKey(l.header);
+                const listCards = hydrated[key];
+                const failed = failedKeys.has(key);
+                return (
+                  <div
+                    key={l.header}
+                    ref={(el) => { sectionRefs.current[l.header] = el; }}
+                    data-header={l.header}
+                    // Lands below the sticky chip row when jumped to
+                    style={{ scrollMarginTop: '64px', marginBottom: '24px' }}
                   >
-                    Tentar novamente
-                  </button>
-                </div>
-              )}
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: '12px 0 10px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      {translateHeader(l.header)}
+                      <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-muted)' }}>
+                        {Math.min(l.cards.length, MAX_CARDS_PER_LIST)}
+                      </span>
+                    </h3>
 
-              {!loadingLists && !hydrating && cards && cards.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
-                    gap: '12px',
-                  }}
-                >
-                  {cards.map((card) => {
-                    const qty = deckCardMap[card.id] ?? 0;
-                    const imageUrl =
-                      card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
-                    const synergy = synergyFor(card.name);
-
-                    const priceLink = getCardPriceLink(card, usdBrlRate, priceSource);
-
-                    return (
-                      <div key={card.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                        <div style={{ position: 'relative' }}>
-                          <CardImage
-                            imageUrl={imageUrl}
-                            name={card.name}
-                            size="normal"
-                            onClick={() => {
-                              setSelectedCard(card);
-                              setCardSheetOpen(true);
-                            }}
-                            showQuantityBadge={qty > 0 ? qty : undefined}
-                            highlightInDeck={qty > 0}
-                            highlightError={errorCardIds.has(card.id)}
-                          />
-                          <CardActionsOverlay
-                            qty={qty}
-                            onAdd={(e) => {
-                              e.stopPropagation();
-                              addCard(deck.id, scryfallToDeckCard(card, defaultCategoryFor(card)));
-                            }}
-                            onRemove={(e) => {
-                              e.stopPropagation();
-                              removeCard(deck.id, card.id);
-                            }}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingBottom: '2px' }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                              {card.name}
-                            </p>
-                            {typeof synergy === 'number' && (
-                              <p style={{ fontSize: '10px', color: synergy >= 0 ? 'var(--accent)' : 'var(--text-muted)', margin: '1px 0 0' }}>
-                                Sinergia {synergy >= 0 ? '+' : ''}{Math.round(synergy * 100)}%
-                              </p>
-                            )}
-                          </div>
-                          {priceLink && (
-                            <a
-                              href={priceLink.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                color: 'var(--accent)',
-                                textDecoration: 'none',
-                                flexShrink: 0,
-                              }}
-                            >
-                              {priceLink.label}
-                            </a>
-                          )}
-                        </div>
+                    {failed ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', margin: 0 }}>
+                          Não foi possível carregar as cartas desta categoria.
+                        </p>
+                        <button
+                          onClick={() => setFailedKeys((prev) => { const n = new Set(prev); n.delete(key); return n; })}
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            fontFamily: 'inherit',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--surface-2)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-default)',
+                            cursor: 'pointer',
+                            WebkitTapHighlightColor: 'transparent',
+                          }}
+                        >
+                          Tentar novamente
+                        </button>
                       </div>
-                    );
-                  })}
-                </motion.div>
-              )}
+                    ) : !listCards ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)', gap: '12px' }}>
+                        {Array.from({ length: viewMode === '2col' ? 2 : 1 }).map((_, i) => (
+                          <SkeletonCard key={i} />
+                        ))}
+                      </div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: viewMode === '2col' ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)',
+                          gap: '12px',
+                        }}
+                      >
+                        {listCards.map((card) => renderCard(card, l.header))}
+                      </motion.div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
       </BottomSheet>
+
+      {sectionPicker.sheet}
 
       {/* Card detail */}
       <CardBottomSheet
