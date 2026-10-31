@@ -13,6 +13,16 @@ const LAST_USER_KEY = 'mtg-deck-builder-last-synced-user';
 // account switch to tell "the previous account's decks" (drop them) apart from
 // "decks created offline since / never attributed to anyone" (keep them).
 const SYNCED_IDS_KEY = 'mtg-deck-builder-synced-ids';
+// The deck ids this device has *confirmed* exist in the cloud for a given
+// account ({ userId, ids }). Unlike SYNCED_IDS_KEY (attribution, updated as
+// soon as a deck is created locally), an id is only added here after a
+// successful push/pull and removed after a successful cloud delete. It is the
+// "last common state" used to tell deletions apart from creations on merge:
+//  - local has it, cloud doesn't, id confirmed → deleted on another device → drop
+//  - cloud has it, local doesn't, id confirmed → deleted here while not syncing → delete in cloud
+// Without it, a deck deleted on device A was re-uploaded by device B (which
+// still had it locally) on B's next login — deleted decks "came back".
+const CLOUD_IDS_KEY = 'mtg-deck-builder-cloud-ids';
 
 // Monotonic token identifying the current sync "session". Each pull/startSyncing
 // captures the token at call time; when the active account switches (or the
@@ -55,18 +65,54 @@ function writeSyncedIds(ids: Iterable<string>): void {
   safeSetItem(SYNCED_IDS_KEY, JSON.stringify([...ids]));
 }
 
-/** Newest-updatedAt-wins merge of local and cloud decks, by id. Decks that
- *  exist on only one side are kept as-is. Returns decks that need pushing
- *  (new locally, or locally newer than the cloud copy). */
-function mergeDecks(local: Deck[], cloud: CloudRow[]): { merged: Deck[]; toPush: Deck[] } {
+/** Confirmed-in-cloud ids for this account, or null if unknown (never
+ *  recorded on this device, or recorded for a different account). */
+function readCloudIds(userId: string): Set<string> | null {
+  const raw = safeGetItem(CLOUD_IDS_KEY);
+  if (raw === null) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.userId !== userId || !Array.isArray(parsed.ids)) return null;
+    return new Set<string>(parsed.ids);
+  } catch {
+    return null;
+  }
+}
+
+function writeCloudIds(userId: string, ids: Iterable<string>): void {
+  safeSetItem(CLOUD_IDS_KEY, JSON.stringify({ userId, ids: [...ids] }));
+}
+
+function updateCloudIds(userId: string, fn: (ids: Set<string>) => void): void {
+  const ids = readCloudIds(userId) ?? new Set<string>();
+  fn(ids);
+  writeCloudIds(userId, ids);
+}
+
+/** Newest-updatedAt-wins merge of local and cloud decks, by id. A deck that
+ *  exists on only one side is kept, unless `cloudIds` (ids last confirmed in
+ *  the cloud) shows it was deleted on the other side. Returns decks that need
+ *  pushing (new locally, or locally newer than the cloud copy) and ids that
+ *  must be deleted from the cloud (deleted locally while not syncing). */
+export function mergeDecks(
+  local: Deck[],
+  cloud: CloudRow[],
+  cloudIds: Set<string> | null = null,
+): { merged: Deck[]; toPush: Deck[]; toDelete: string[] } {
   const cloudById = new Map(cloud.map((r) => [r.id, r]));
   const localIds = new Set(local.map((d) => d.id));
   const merged: Deck[] = [];
   const toPush: Deck[] = [];
+  const toDelete: string[] = [];
 
   for (const d of local) {
     const row = cloudById.get(d.id);
-    if (!row || d.updatedAt > cloudTime(row.updated_at)) {
+    if (!row) {
+      // Was in the cloud before and is gone now → deleted on another device.
+      if (cloudIds?.has(d.id)) continue;
+      merged.push(d);
+      toPush.push(d);
+    } else if (d.updatedAt > cloudTime(row.updated_at)) {
       merged.push(d);
       toPush.push(d);
     } else {
@@ -74,9 +120,13 @@ function mergeDecks(local: Deck[], cloud: CloudRow[]): { merged: Deck[]; toPush:
     }
   }
   for (const row of cloud) {
-    if (!localIds.has(row.id)) merged.push(row.data);
+    if (localIds.has(row.id)) continue;
+    // Was synced here before and is gone locally → deleted on this device
+    // while not syncing (offline, logged out, app closed before the push).
+    if (cloudIds?.has(row.id)) toDelete.push(row.id);
+    else merged.push(row.data);
   }
-  return { merged, toPush };
+  return { merged, toPush, toDelete };
 }
 
 async function pushDeck(userId: string, deck: Deck) {
@@ -89,6 +139,10 @@ async function pushDeck(userId: string, deck: Deck) {
     return;
   }
   lastPushedAt.set(deck.id, deck.updatedAt);
+  // Only record it if it still exists locally — a delete may have raced this push.
+  if (useDeckStore.getState().decks.some((d) => d.id === deck.id)) {
+    updateCloudIds(userId, (ids) => ids.add(deck.id));
+  }
 }
 
 async function pushDeletion(userId: string, deckId: string) {
@@ -96,8 +150,14 @@ async function pushDeletion(userId: string, deckId: string) {
   // Filter by user_id too (not just id) — defense in depth beyond RLS so a
   // deletion can never touch another account's row.
   const { error } = await supabase.from('decks').delete().eq('id', deckId).eq('user_id', userId);
-  if (error) console.error('deckSync delete failed', error);
   lastPushedAt.delete(deckId);
+  if (error) {
+    // Keep the id in CLOUD_IDS so the next pull retries the delete instead
+    // of resurrecting the deck.
+    console.error('deckSync delete failed', error);
+    return;
+  }
+  updateCloudIds(userId, (ids) => ids.delete(deckId));
 }
 
 /** Pulls this account's cloud decks and merges them into the local store.
@@ -121,6 +181,9 @@ export async function pullAndMergeOnLogin(userId: string): Promise<void> {
   const cloud = (data ?? []) as CloudRow[];
 
   const lastUser = safeGetItem(LAST_USER_KEY);
+  // Deletion detection is only safe when we know this device's last common
+  // state with *this* account.
+  const cloudIds = lastUser && lastUser !== userId ? null : readCloudIds(userId);
   let local: Deck[];
   if (lastUser && lastUser !== userId) {
     // A different account synced on this browser before.
@@ -142,12 +205,19 @@ export async function pullAndMergeOnLogin(userId: string): Promise<void> {
     local = useDeckStore.getState().decks;
   }
 
-  const { merged, toPush } = mergeDecks(local, cloud);
+  const { merged, toPush, toDelete } = mergeDecks(local, cloud, cloudIds);
   if (token !== activeToken) return; // re-check right before mutating the store
   useDeckStore.setState({ decks: merged });
+  // Everything currently in the cloud is now confirmed; deletions below and
+  // pushes of new decks update this set as they succeed.
+  writeCloudIds(userId, cloud.map((r) => r.id));
   for (const d of merged) {
     const row = cloud.find((r) => r.id === d.id);
     lastPushedAt.set(d.id, row ? Math.max(d.updatedAt, cloudTime(row.updated_at)) : d.updatedAt);
+  }
+  for (const id of toDelete) {
+    if (token !== activeToken) return;
+    await pushDeletion(userId, id);
   }
   for (const d of toPush) {
     if (token !== activeToken) return;
