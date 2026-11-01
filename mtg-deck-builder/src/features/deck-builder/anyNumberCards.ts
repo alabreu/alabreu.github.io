@@ -7,24 +7,24 @@
 // anything derived from oracle text would only cover cards added after the
 // change (we don't persist oracle_text on DeckCard).
 //
-// GENERATED — refreshed by `node scripts/build-any-number-cards.mjs`, which the
-// monthly "Refresh function tags" workflow also runs. It is committed rather
-// than fetched at runtime so deck validation stays synchronous: a list that
-// arrives late would flash a false "excede o limite" error and then clear it.
-//
-// The seed below was written by hand and may lag a new set; the script is the
-// source of truth and will correct it on the next run.
+// GENERATED — do not edit by hand. Run `node scripts/build-any-number-cards.mjs`,
+// which the monthly refresh workflow also runs. It is committed rather than
+// fetched at runtime so deck validation stays synchronous: a list that arrived
+// late would flash a false "excede o limite" error and then clear it.
 export const ANY_NUMBER_CARDS: Record<string, number | null> = {
-  'relentless rats': null,
-  'rat colony': null,
-  'persistent petitioners': null,
-  'shadowborn apostle': null,
+  "cid, timeless artificer": null,
   "dragon's approach": null,
-  'slime against humanity': null,
-  'hare apparent': null,
-  'templar knight': null,
-  'nazgûl': 9,
-  'seven dwarves': 7,
+  "hare apparent": null,
+  "nazgûl": 9,
+  "persistent petitioners": null,
+  "rat colony": null,
+  "relentless rats": null,
+  "seven dwarves": 7,
+  "shadowborn apostle": null,
+  "slime against humanity": null,
+  "sphinx's approach": null,
+  "tempest hawk": null,
+  "templar knight": null,
 };
 
 /** Front face only, lowercased — matches how the snapshot is keyed. */
